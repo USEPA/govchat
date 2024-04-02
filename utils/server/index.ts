@@ -75,14 +75,18 @@ export const OpenAIStream = async (
     temperature: temperature,
     stream: true,
   };
+
+    //console.log("!!!Sending to APIM!!!")
+    console.log("URL: " + url);
+    //console.log("Header: " + JSON.stringify(header));
+    console.log("Messages: " +JSON.stringify(body));
   const res = await fetch(url, {
     headers: header,
-    method: 'POST',
+    method: 'post',
     body: JSON.stringify(body),
   });
 
-  //console.log("!!!Sending to APIM!!!")
-  //console.log(JSON.stringify(body));
+
 
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
@@ -119,13 +123,15 @@ export const OpenAIStream = async (
           if(data !== "[DONE]"){
             try {
               const json = JSON.parse(data);
-              if (json.choices[0].finish_reason != null) {
+              if (json.choices[0] && json.choices[0].finish_reason && json.choices[0].finish_reason != null) {
                 controller.close();
                 return;
               }
+              if (json.choices[0] && json.choices[0].delta) {
               const text = json.choices[0].delta.content;
               const queue = encoder.encode(text);
               controller.enqueue(queue);
+              }
             } catch (e) {
               controller.error(e + " Data: " + data);              
             }

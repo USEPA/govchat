@@ -22,6 +22,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(req.headers);
 
     const response = await fetch(url, {
+      method: 'post',
       headers: {
         'Content-Type': 'application/json',
         ...(OPENAI_API_TYPE === 'openai' && {

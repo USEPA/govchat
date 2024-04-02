@@ -80,7 +80,7 @@ const Home = ({
     ['GetModels', apiKey, serverSideApiKeyIsSet],
     ({ signal }) => {
       if (!apiKey && !serverSideApiKeyIsSet) return null;
-
+      return {};
       return getModels(
         {
           key: apiKey,

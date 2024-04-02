@@ -24,6 +24,15 @@ COPY --from=build /app/next.config.js ./next.config.js
 COPY --from=build /app/next-i18next.config.js ./next-i18next.config.js
 COPY --from=build /app/*env ./
 
+# Create a user named "chat"
+RUN adduser -D chat
+
+# Change ownership of the app directory to the "chat" user
+RUN chown -R chat:chat /app
+
+# Switch to the "chat" user
+USER chat
+
 # Expose the port the app will run on
 EXPOSE 3000
 
