@@ -35,9 +35,7 @@ export const TemperatureSlider: FC<Props> = ({
         {label}
       </label>
       <span className="text-[12px] text-black/50 dark:text-white/50 text-sm">
-        {t(
-          'Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.',
-        )}
+      Left makes responses more focused and deterministic, right makes it more creative and random.
       </span>
       <span className="mt-2 mb-1 text-center text-neutral-900 dark:text-neutral-100">
         {temperature.toFixed(1)}
