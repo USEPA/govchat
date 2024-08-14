@@ -41,3 +41,17 @@ html {
 pre:has(div.codeblock) {
   padding: 0;
 }
+
+#rules_section p {
+    padding-top: 8px;
+}
+
+#rules_section ul {
+  list-style-type: circle;
+  margin-left: 30px
+}
+
+#rules_section a {
+  text-decoration: underline;
+  color: #0000EE; 
+}
