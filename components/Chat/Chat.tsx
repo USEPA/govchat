@@ -32,6 +32,7 @@ import { ErrorMessageDiv } from './ErrorMessageDiv';
 //import { ModelSelect } from './ModelSelect';
 import { SystemPrompt } from './SystemPrompt';
 import { TemperatureSlider } from './Temperature';
+import { Rules } from './Rules';
 import { MemoizedChatMessage } from './MemoizedChatMessage';
 
 interface Props {
@@ -411,6 +412,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                       {
                         //<ModelSelect />
                       }
+                      <Rules />
                       <SystemPrompt
                         conversation={selectedConversation}
                         prompts={prompts}
