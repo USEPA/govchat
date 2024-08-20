@@ -11,11 +11,11 @@ return (
         <h1 id="epa-generative-ai-gen-ai-rules-of-behavior-draft"> EPA Generative AI (Gen AI) Rules of Behavior Draft</h1>
 <p>June 2024</p>
 <p>These rules of behavior apply to EPA employees, contractors, subcontractors, grantees, and volunteers in the safe, secure, and ethical use of EPA authorized Gen AI technologies on EPA provided devices and in the performance of their official duties. While these rules of behavior highlight some areas of special concern, all EPA policies that govern your work and work products apply to work products produced with the assistance of Gen AI.</p>
-<p><strong><span class="underline">Definitions</span></strong></p>
+<p><strong><span className="underline">Definitions</span></strong></p>
 <p><strong>Generative</strong> <strong>Artificial Intelligence (Gen AI)</strong> is an artificial intelligence technology that allows users to create new content, such as text, audio, imagery, or other data, in response to user input.</p>
 <p><strong>Public Gen AI</strong> tools are services accessible via the internet for which EPA has no direct role in the configuration of the services. Public Gen AI tools include services which are free as well as those which require payment for use.</p>
 <p><strong>EPA Internal Gen AI</strong> tools are configured to operate within EPA’s security boundaries and safely and securely use non-public information as input.</p>
-<p><span class="underline"><strong>Public vs EPA Internal Gen AI</strong></span></p>
+<p><span className="underline"><strong>Public vs EPA Internal Gen AI</strong></span></p>
 <p><strong>Public Gen</strong> <strong>AI —</strong> Public Gen AI pose risks and vulnerabilities because such tools may store, share, or otherwise use information provided as an input.</p>
 <p>Public Gen AI may never be used with non-public information because the tool may save your input and potentially share it with others.<br />
 <br />
@@ -25,7 +25,7 @@ Inputting non-public information into Public Gen AI may in some circumstances ha
 <p>At this time, EPA personnel may not use standalone Public Gen AI tools that generate content based on users’ inputted prompts (e.g., ChatGPT, DALL-E, etc.). Notwithstanding this prohibition, EPA personnel may use online search engines (e.g., Google, Yahoo, etc.) which provide search result summaries created with generative AI, as well as generative AI features within existing EPA authorized platforms and software, so long as users do not input non-public information into such tools and otherwise follow the rules of behavior outlined in this document.</p>
 <p><strong>EPA Internal Gen AI</strong> — Currently there are no EPA Internal Gen AI tools available. However, EPA is configuring Internal Gen AI tools, and they will be listed here when they become available.</p>
 <p><strong>Other EPA Gen AI functionality</strong> Within existing EPA authorized platforms and software, there may exist Generative AI features. These rules of behavior apply to EPA’s staff use of these features.</p>
-<p><strong><span class="underline">Rules that Apply to Public and EPA Internal Gen AI</span></strong></p>
+<p><strong><span className="underline">Rules that Apply to Public and EPA Internal Gen AI</span></strong></p>
 <p>These rules of behavior apply to EPA employees, contractors, subcontractors, grantees, and volunteers.</p>
 <ul>
 <li><p>Use only EPA authorized Gen AI tools, listed above.</p></li>
@@ -35,12 +35,12 @@ Inputting non-public information into Public Gen AI may in some circumstances ha
 <li><p>Assume responsibility for the quality, objectivity, utility, integrity, and reliability of the work product when Gen AI is used to assist in developing a work product.</p></li>
 <li><p>Reduce or mitigate any errors, inaccuracies, and biases introduced by using Gen AI by:</p>
 <ul>
-<li><p>Transparently disclosing the use of Gen AI in development of your work products, for example by writing "This work may contain elements generated or assisted by AI technology;"</p></li>
+<li><p>Transparently disclosing the use of Gen AI in development of your work products, for example by writing &quot;This work may contain elements generated or assisted by AI technology;&quot;</p></li>
 <li><p>Fact checking and verifying that Gen AI sourced content used in your work product is correct and without bias; and</p></li>
 <li><p>Providing appropriate citations for any reused original content.</p></li>
 </ul></li>
 </ul>
-<p><strong><span class="underline">Examples</span></strong> <span class="underline"><strong>of</strong></span> <span class="underline"><strong>Acceptable Uses of</strong></span> <strong><span class="underline">Gen</span></strong> <span class="underline"><strong>AI</strong></span></p>
+<p><strong><span className="underline">Examples</span></strong> <span className="underline"><strong>of</strong></span> <span className="underline"><strong>Acceptable Uses of</strong></span> <strong><span className="underline">Gen</span></strong> <span className="underline"><strong>AI</strong></span></p>
 <p>Following are examples of acceptable uses of Gen AI technologies. These examples are not intended to be comprehensive and assume the verification of all content produced by Gen AI tools by expert human analysis.</p>
 <ol type="1">
 <li><p><strong>Developing</strong> <strong>Initial Drafts of Communication Materials:</strong> Gen AI technologies can assist in drafting both internal and public-facing communications. All Gen AI assisted communications intended for public release must undergo rigorous vetting by designated personnel for accuracy and appropriateness.</p></li>
@@ -51,7 +51,7 @@ Inputting non-public information into Public Gen AI may in some circumstances ha
 <li><p><strong>Scientific Data Analysis:</strong> Using Gen AI to analyze scientific data, identify patterns and generate hypotheses.</p></li>
 <li><p><strong>Environmental Monitoring:</strong> Use Gen AI to assist in the real-time analysis of environmental data, predictive modeling, and simulation of ecological scenarios to inform decision-making.</p></li>
 </ol>
-<p><strong><span class="underline">Examples</span></strong> <span class="underline"><strong>of Unacceptable Uses of Gen AI</strong></span></p>
+<p><strong><span className="underline">Examples</span></strong> <span className="underline"><strong>of Unacceptable Uses of Gen AI</strong></span></p>
 <p>Following are examples of unacceptable uses of AI technologies. These examples are not intended to be exhaustive.</p>
 <ol type="1">
 <li><p><strong>Inherently Governmental Functions &amp; Decisions:</strong> Gen AI may never be used as the sole performer of an inherently governmental function or decision-maker in any EPA-related activities. Examples include final selection decisions in a hiring action; final scoring of a grant application; final selection of a contract awardee; final determinations in permitting, compliance or enforcement actions.</p></li>
@@ -59,7 +59,7 @@ Inputting non-public information into Public Gen AI may in some circumstances ha
 <li><p><strong>Misinformation:</strong> Using Gen AI to create false or misleading content or alter original artifacts that are represented to be original is strictly prohibited.</p></li>
 <li><p><strong>Bias and Discrimination</strong>: Using Gen AI to create biased information or altering original artifacts to produce biased information that is represented to be not biased is strictly prohibited.</p></li>
 </ol>
-<p><strong><span class="underline">Policy</span></strong> <span class="underline"><strong>References</strong></span></p>
+<p><strong><span className="underline">Policy</span></strong> <span className="underline"><strong>References</strong></span></p>
 <p>This guidance is grounded in EPA and federal policy, laws and regulations governing the use of information technology and AI, including but not limited to:</p>
 <ul>
 <li><p><a href="https://www.congress.gov/107/plaws/publ347/PLAW-107publ347.pdf">E-Government Act of 2002, Public Law 107-347, Title III, Federal Information Security Management Act as amended</a></p></li>
