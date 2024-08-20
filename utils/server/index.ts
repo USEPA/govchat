@@ -31,7 +31,8 @@ export const OpenAIStream = async (
   messages: Message[],
   principalName: string|null,
   bearer: string|null,
-  bearerAuth: string|null
+  bearerAuth: string|null,
+  userName: string|null
 ) => {
   let url = `${OPENAI_API_HOST}/v1/chat/completions`;
   if (OPENAI_API_TYPE === 'azure') {
@@ -90,6 +91,12 @@ export const OpenAIStream = async (
 
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
+  const loggingObjectTempResult:string[] = [];
+  const loggingObject: { messages: any; userName: string|null; result: string } = { 
+    messages: body, 
+    userName: userName, 
+    result: ""
+  };
 
   console.debug("get Chat");
   if (res.status !== 200) {
@@ -124,12 +131,15 @@ export const OpenAIStream = async (
             try {
               const json = JSON.parse(data);
               if (json.choices[0] && json.choices[0].finish_reason && json.choices[0].finish_reason != null) {
+                loggingObject.result = loggingObjectTempResult.join('');
+                console.log(JSON.stringify(loggingObject));
                 controller.close();
                 return;
               }
               if (json.choices[0] && json.choices[0].delta) {
               const text = json.choices[0].delta.content;
               const queue = encoder.encode(text);
+              loggingObjectTempResult.push(text);
               controller.enqueue(queue);
               }
             } catch (e) {

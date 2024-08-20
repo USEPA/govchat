@@ -54,11 +54,12 @@ const handler = async (req: Request): Promise<Response> => {
     var principalName:string|null = req.headers.get("x-ms-client-principal-name");
     var bearer:string|null =req.headers.get("x-ms-token-aad-access-token")? req.headers.get("x-ms-token-aad-access-token") : req.headers.get("x-ms-client-principal");
     var bearerAuth: string|null = req.headers.get("x-ms-client-principal-id");
+    const userName = req.headers.get("x-ms-client-principal-name")
     console.log(principalName);
     console.log(bearer);
     encoding.free();
 
-    const stream = await OpenAIStream(model, promptToSend, temperatureToUse, key, messagesToSend, principalName, bearer, bearerAuth );
+    const stream = await OpenAIStream(model, promptToSend, temperatureToUse, key, messagesToSend, principalName, bearer, bearerAuth, userName );
 
     return new Response(stream);
   } catch (error) {
