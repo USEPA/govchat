@@ -14,6 +14,7 @@
   "dependencies": {
     "@azure/identity": "^4.4.0",
     "@dqbd/tiktoken": "^1.0.2",
+    "@sentry/nextjs": "^8.30.0",
     "@tabler/icons-react": "^2.9.0",
     "eventsource-parser": "^0.1.0",
     "i18next": "^22.4.13",
