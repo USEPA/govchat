@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from 'react-query';
-import { DefaultAzureCredential,ChainedTokenCredential } from "@azure/identity";
 import { getAuthToken } from "@/utils/lib/azure"
-//import { getCache } from "@/utils/lib/cache"
 
 import { GetServerSideProps } from 'next';
 import { useTranslation } from 'next-i18next';
@@ -50,7 +48,7 @@ interface Props {
   defaultModelId: OpenAIModelID;
 }
 
-let aztoken=null;
+let aztoken="";
 
 const Home = ({
   serverSideApiKeyIsSet,
