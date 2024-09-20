@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from 'react-query';
+import { DefaultAzureCredential,ChainedTokenCredential } from "@azure/identity";
+import { getAuthToken } from "@/utils/lib/azure"
+//import { getCache } from "@/utils/lib/cache"
 
 import { GetServerSideProps } from 'next';
 import { useTranslation } from 'next-i18next';
@@ -46,6 +49,8 @@ interface Props {
   serverSidePluginKeysSet: boolean;
   defaultModelId: OpenAIModelID;
 }
+
+let aztoken=null;
 
 const Home = ({
   serverSideApiKeyIsSet,
@@ -394,6 +399,12 @@ const Home = ({
 };
 export default Home;
 
+// export const getAzCreds = () => {
+//    return azcredential;
+// }
+
+
+
 export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
   const defaultModelId =
     (process.env.DEFAULT_MODEL &&
@@ -403,6 +414,10 @@ export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
       process.env.DEFAULT_MODEL) ||
     fallbackModelID;
 
+  aztoken = await getAuthToken();
+  console.log("I'm still alive");
+  //const azToken = getCache("cachedToken");
+  console.log("I'm still alive really",aztoken);  
   let serverSidePluginKeysSet = false;
 
   const googleApiKey = process.env.GOOGLE_API_KEY;
@@ -416,6 +431,7 @@ export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
     props: {
       serverSideApiKeyIsSet: !!process.env.OPENAI_API_KEY,
       defaultModelId,
+      aztoken,
       serverSidePluginKeysSet,
       ...(await serverSideTranslations(locale ?? 'en', [
         'common',
@@ -428,3 +444,4 @@ export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
     },
   };
 };
+

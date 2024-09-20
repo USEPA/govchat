@@ -82,6 +82,7 @@ When deploying the application, the following environment variables can be set:
 | GOOGLE_CSE_ID                     |                                | See [Custom Search JSON API documentation][GCSE]                                                                                          |
 | AZURE_APIM_KEY | | Required if using APIM. Use the subscription key if needed.
 | NODE_TLS_REJECT_UNAUTHORIZED | | Set to `0` if using a self signed cert to prevent TLS errors.|
+| AZURE_USE_MANAGED_IDENTITY | false | Determines if the identity of the app services is used to auth against AOAI|
 
 If you do not provide an OpenAI API key with `OPENAI_API_KEY`, users will have to provide their own key.
 
