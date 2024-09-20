@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import { DefaultAzureCredential,ChainedTokenCredential } from "@azure/identity";
 import { getAuthToken } from "@/utils/lib/azure"
 //import { getCache } from "@/utils/lib/cache"
@@ -81,9 +81,9 @@ const Home = ({
 
   const stopConversationRef = useRef<boolean>(false);
 
-  const { data, error, refetch } = useQuery(
-    ['GetModels', apiKey, serverSideApiKeyIsSet],
-    ({ signal }) => {
+  const { data, error, refetch } = useQuery({
+    queryKey: ['GetModels', apiKey, serverSideApiKeyIsSet],
+    queryFn: ({ signal }) => {
       if (!apiKey && !serverSideApiKeyIsSet) return null;
       return {};
       return getModels(
@@ -93,7 +93,9 @@ const Home = ({
         signal,
       );
     },
-    { enabled: true, refetchOnMount: false },
+    enabled: true,
+    refetchOnMount: false
+  }
   );
 
   useEffect(() => {
