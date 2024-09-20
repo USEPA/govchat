@@ -39,8 +39,8 @@ import { Chatbar } from '@/components/Chatbar/Chatbar';
 import { Navbar } from '@/components/Mobile/Navbar';
 import Promptbar from '@/components/Promptbar';
 
-import HomeContext from './home.context';
-import { HomeInitialState, initialState } from './home.state';
+import HomeContext from '@/utils/home/home.context';
+import { HomeInitialState, initialState } from '@/utils/home/home.state';
 
 import { v4 as uuidv4 } from 'uuid';
 
