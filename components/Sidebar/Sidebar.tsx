@@ -8,6 +8,7 @@ import {
 } from './components/OpenCloseButton';
 
 import Search from '../Search';
+import { Logo } from '../Chat/logo';
 
 interface Props<T> {
   isOpen: boolean;
@@ -59,6 +60,9 @@ const Sidebar = <T,>({
       <div
         className={`fixed top-0 ${side}-0 z-40 flex h-full w-[260px] flex-none flex-col space-y-2 bg-white p-2 text-[14px] border border-neutral-200 transition-all sm:relative sm:top-0`}
       >
+        <div className="w-full bg-white flex justify-center my-2">
+            <Logo />
+        </div>
         <div className="flex items-center">
           <button
             className="text-sidebar flex w-[190px] flex-shrink-0 cursor-pointer select-none items-center gap-3 rounded-md border border-neutral-200 p-3 text-black  transition-colors duration-200 hover:bg-gray-500/10"
