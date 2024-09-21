@@ -1,4 +1,10 @@
-export const Rules = () => {
+import { FC } from "react";
+
+interface Props {
+  isAdvancedOpen: Boolean;
+}
+
+export const Rules: FC<Props> = ({ isAdvancedOpen }) => {
 return (
     <div className="flex flex-col">
       <label className="mb-2 text-left text-neutral-700 dark:text-neutral-400">
@@ -6,7 +12,9 @@ return (
       </label>
       <div
         id="rules_section"
-        className="p-4 border border-neutral-300 dark:border-neutral-600 text-neutral-700 rounded-md bg-neutral-100 dark:bg-neutral-800 overflow-y-auto max-h-64"
+        className={`p-4 border border-neutral-300 dark:border-neutral-600 text-neutral-700 rounded-md bg-neutral-100 dark:bg-neutral-800 overflow-y-auto transition-max-h duration-300 ${
+          isAdvancedOpen ? 'max-h-[200px]' : 'max-h-[500px]'
+        }`}
       >
         <h1 id="epa-generative-ai-gen-ai-rules-of-behavior-draft"> EPA Generative AI (Gen AI) Rules of Behavior Draft</h1>
 <p>June 2024</p>

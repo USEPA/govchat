@@ -34,6 +34,7 @@ import { SystemPrompt } from './SystemPrompt';
 import { TemperatureSlider } from './Temperature';
 import { Rules } from './Rules';
 import { MemoizedChatMessage } from './MemoizedChatMessage';
+import { AdvancedSettings } from './AdvancedSettings';
 
 interface Props {
   stopConversationRef: MutableRefObject<boolean>;
@@ -307,6 +308,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
     }
   };
   const throttledScrollDown = throttle(scrollDown, 250);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // useEffect(() => {
   //   console.log('currentMessage', currentMessage);
@@ -403,7 +405,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                         <Spinner size="16px" className="mx-auto" />
                       </div>
                     ) : (
-                      'Gov Chat'
+                      'GovChat'
                     )}
                   </div>
 
@@ -412,27 +414,14 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                       {
                         //<ModelSelect />
                       }
-                      <Rules />
-                      <SystemPrompt
-                        conversation={selectedConversation}
-                        prompts={prompts}
-                        onChangePrompt={(prompt) =>
-                          handleUpdateConversation(selectedConversation, {
-                            key: 'prompt',
-                            value: prompt,
-                          })
-                        }
-                      />
-
-                      <TemperatureSlider
-                        label={t('Temperature')}
-                        onChangeTemperature={(temperature) =>
-                          handleUpdateConversation(selectedConversation, {
-                            key: 'temperature',
-                            value: temperature,
-                          })
-                        }
-                      />
+                        <Rules isAdvancedOpen={showAdvanced} />
+                        <AdvancedSettings 
+                          selectedConversation={selectedConversation} 
+                          prompts={prompts} 
+                          handleUpdateConversation={handleUpdateConversation} 
+                          t={t}
+                          onToggle={setShowAdvanced}
+                        />
                     </div>
                 </div>
               </>
