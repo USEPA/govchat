@@ -75,7 +75,8 @@ export const PromptModal: FC<Props> = ({ prompt, onClose, onUpdatePrompt }) => {
               placeholder={t('A name for your prompt.') || ''}
               value={name}
               onChange={(e) => setName(e.target.value)}
-            />
+              title="Prompt Name"
+            />  
 
             <div className="mt-6 text-sm font-bold text-black dark:text-neutral-200">
               {t('Description')}
@@ -119,6 +120,7 @@ export const PromptModal: FC<Props> = ({ prompt, onClose, onUpdatePrompt }) => {
                 onUpdatePrompt(updatedPrompt);
                 onClose();
               }}
+              title="Save"
             >
               {t('Save')}
             </button>

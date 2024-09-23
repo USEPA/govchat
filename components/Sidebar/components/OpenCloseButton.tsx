@@ -36,6 +36,7 @@ export const OpenSidebarButton = ({ onClick, side }: Props) => {
         side === 'right' ? 'right-2' : 'left-2'
       } sm:h-8 sm:w-8 sm:text-neutral-700`}
       onClick={onClick}
+      title="Open Sidebar"
     >
       {side === 'right' ? <IconArrowBarLeft /> : <IconArrowBarRight />}
     </button>

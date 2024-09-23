@@ -27,6 +27,8 @@ const Search: FC<Props> = ({ placeholder, searchTerm, onSearch }) => {
         placeholder={t(placeholder) || ''}
         value={searchTerm}
         onChange={handleSearchChange}
+        title="Search"
+        aria-label='Search'
       />
 
       {searchTerm && (

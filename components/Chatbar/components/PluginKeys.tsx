@@ -213,6 +213,8 @@ export const PluginKeys = () => {
                         handleClearPluginKey(pluginKey);
                       }
                     }}
+                    title="Clear Google Search Plugin Keys"
+                    aria-label="Clear Google Search Plugin Keys"
                   >
                     Clear Google Search Plugin Keys
                   </button>

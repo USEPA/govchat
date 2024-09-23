@@ -70,6 +70,7 @@ const Sidebar = <T,>({
               handleCreateItem();
               handleSearchTerm('');
             }}
+            title="Add Item"
           >
             <IconPlus size={16} />
             {addItemButtonTitle}

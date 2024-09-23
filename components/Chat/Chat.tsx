@@ -435,6 +435,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                     className="ml-2 cursor-pointer hover:opacity-50"
                     onClick={onClearAll}
                     title="Clear all messages"
+                    aria-label='Clear all messages'
                   >
                     <IconClearAll size={18} />
                   </button>

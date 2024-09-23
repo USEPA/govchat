@@ -109,6 +109,7 @@ const Folder = ({
               onKeyDown={handleEnterDown}
               autoFocus
               title="Rename"
+              aria-label='Rename'
             />
           </div>
         ) : (
@@ -119,6 +120,8 @@ const Folder = ({
             onDragOver={allowDrop}
             onDragEnter={highlightDrop}
             onDragLeave={removeHighlight}
+            title="Folder"
+            aria-label="Folder"
           >
             {isOpen ? (
               <IconCaretDown size={18} />

@@ -263,6 +263,8 @@ export const ChatInput = ({
           <button
             className="absolute top-0 left-0 right-0 mx-auto mb-3 flex w-fit items-center gap-3 rounded border border-neutral-200 bg-white py-2 px-4 text-black hover:opacity-50 dark:border-neutral-600 dark:bg-[#343541] dark:text-white md:mb-0 md:mt-2"
             onClick={handleStopConversation}
+            title="Stop Conversation"
+            aria-label='Stop Conversation'
           >
             <IconPlayerStop size={16} /> {t('Stop Generating')}
           </button>
@@ -274,6 +276,8 @@ export const ChatInput = ({
             <button
               className="absolute top-0 left-0 right-0 mx-auto mb-3 flex w-fit items-center gap-3 rounded border border-neutral-200 bg-white py-2 px-4 text-black hover:opacity-50 dark:border-neutral-600 dark:bg-[#343541] dark:text-white md:mb-0 md:mt-2"
               onClick={onRegenerate}
+              title="Regenerate response"
+              aria-label='Regenerate response'
             >
               <IconRepeat size={16} /> {t('Regenerate response')}
             </button>
@@ -311,6 +315,7 @@ export const ChatInput = ({
             className="absolute right-2 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"
             onClick={handleSend}
             title="Send"
+            aria-label='Send'
           >
             {messageIsStreaming ? (
               <div className="h-4 w-4 animate-spin rounded-full border-t-2 border-neutral-800 opacity-60 dark:border-neutral-100"></div>
@@ -325,6 +330,7 @@ export const ChatInput = ({
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-300 text-gray-800 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-neutral-200"
                 onClick={onScrollDownClick}
                 title="Scroll to bottom"
+                aria-label="Scroll to bottom"
               >
                 <IconArrowDown size={18} />
               </button>

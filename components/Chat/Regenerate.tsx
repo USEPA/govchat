@@ -17,6 +17,8 @@ export const Regenerate: FC<Props> = ({ onRegenerate }) => {
       <button
         className="flex h-12 gap-2 w-full items-center justify-center rounded-lg border border-b-neutral-300 bg-neutral-100 text-sm font-semibold text-neutral-500 dark:border-none dark:bg-[#444654] dark:text-neutral-200"
         onClick={onRegenerate}
+        title='Regenerate response'
+        aria-label='Regenerate response'
       >
         <IconRefresh />
         <div>{t('Regenerate response')}</div>

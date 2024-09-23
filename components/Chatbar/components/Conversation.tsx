@@ -113,6 +113,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
             onKeyDown={handleEnterDown}
             autoFocus
             title="Rename"
+            aria-label='Rename'
           />
         </div>
       ) : (
@@ -128,6 +129,8 @@ export const ConversationComponent = ({ conversation }: Props) => {
           disabled={messageIsStreaming}
           draggable="true"
           onDragStart={(e) => handleDragStart(e, conversation)}
+          title="Select Conversation"
+          aria-label='Select Conversation'
         >
           <IconMessage size={18} />
           <div

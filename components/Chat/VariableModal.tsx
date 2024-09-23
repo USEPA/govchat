@@ -115,6 +115,8 @@ export const VariableModal: FC<Props> = ({
         <button
           className="mt-6 w-full rounded-lg border border-neutral-500 px-4 py-2 text-neutral-900 shadow hover:bg-neutral-100 focus:outline-none dark:border-neutral-800 dark:border-opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-300"
           onClick={handleSubmit}
+          title="Submit"
+          aria-label="Submit"
         >
           Submit
         </button>

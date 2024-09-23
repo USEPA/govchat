@@ -94,6 +94,7 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
                 handleSave();
                 onClose();
               }}
+              title="Save"
             >
               {t('Save')}
             </button>

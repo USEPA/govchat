@@ -32,6 +32,7 @@ export const Import: FC<Props> = ({ onImport }) => {
           };
           reader.readAsText(file);
         }}
+        title="Import File"
       />
 
       <SidebarButton
