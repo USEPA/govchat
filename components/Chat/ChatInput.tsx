@@ -303,6 +303,8 @@ export const ChatInput = ({
             onCompositionEnd={() => setIsTyping(false)}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
+            id="ChatInput"
+            autoFocus
           />
 
           <button

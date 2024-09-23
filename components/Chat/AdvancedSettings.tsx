@@ -31,7 +31,7 @@ export const AdvancedSettings: FC<Props> = ({ selectedConversation, prompts, han
       {/* Toggle button */}
       <button
         onClick={toggleAdvancedSettings}
-        className="flex items-center justify-between w-full p-3 hover:bg-gray-500/5 text-black/80 border border-neutral-200 rounded-lg focus:outline-none"
+        className="flex items-center justify-between w-full p-3 hover:bg-gray-500/5 text-black/80 border border-neutral-200 rounded-lg"
       >
         <span>Advanced Settings</span>
         <span className={`transition-transform ${showAdvanced ? 'rotate-180' : 'rotate-0'}`}>

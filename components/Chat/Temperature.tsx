@@ -34,20 +34,21 @@ export const TemperatureSlider: FC<Props> = ({
       <label className="mb-2 text-left text-neutral-700 dark:text-neutral-400">
         {label}
       </label>
-      <span className="text-[12px] text-black/50 dark:text-white/50 text-sm">
+      <span className="text-[12px] text-black/70 dark:text-white/50 text-sm">
       Left makes responses more focused and deterministic, right makes it more creative and random.
       </span>
       <span className="mt-2 mb-1 text-center text-neutral-900 dark:text-neutral-100">
         {temperature.toFixed(1)}
       </span>
       <input
-        className="cursor-pointer"
+        className="cursor-pointer text-black"
         type="range"
         min={0}
         max={1}
         step={0.1}
         value={temperature}
         onChange={handleChange}
+        title="Change Model Temperature"
       />
       <ul className="w mt-2 pb-8 flex justify-between px-[24px] text-neutral-900 dark:text-neutral-100">
         <li className="flex justify-center relative">
