@@ -16,7 +16,7 @@ return (
           isAdvancedOpen ? 'max-h-[200px]' : 'max-h-[500px]'
         }`}
       >
-<p className="text-xs text-black/80">GenAI Rules dated September 2024</p>
+<h1 className="text-xs text-black/80">GenAI Rules dated September 2024</h1>
 <p>These rules of behavior apply to EPA employees, contractors,
 subcontractors, grantees, and volunteers in the safe, secure, and
 ethical use of EPA authorized GenAI technologies on EPA provided devices
@@ -24,7 +24,7 @@ and in the performance of their official duties. While these rules of
 behavior highlight some areas of special concern, all EPA policies that
 govern your work and work products apply to work products produced with
 the assistance of GenAI.</p>
-<p><strong><div className="underline text-center">Definitions</div></strong></p>
+<p><strong><h2 className="underline text-center">Definitions</h2></strong></p>
 <p><strong>Generative Artificial Intelligence (GenAI)</strong> is an
 artificial intelligence technology that allows users to create new
 content, such as text, audio, imagery, or other data, in response to
@@ -36,7 +36,7 @@ those which require payment for use.</p>
 <p><strong>EPA Internal GenAI</strong> tools are configured to operate
 within EPA’s security boundaries and safely and securely use non-public
 information as input.</p>
-<p><strong><div className="underline text-center">Public vs EPA Internal GenAI</div></strong></p>
+<p><strong><h2 className="underline text-center"  >Public vs EPA Internal GenAI</h2></strong></p>
 <p><strong>Public GenAI —</strong> Public Gen AI pose risks and
 vulnerabilities because such tools may store, share, or otherwise use
 information provided as an input.</p>
@@ -77,8 +77,8 @@ available.</p>
 authorized platforms and software, there may exist Generative AI
 features. These rules of behavior apply to EPA’s staff use of these
 features.</p>
-<p><strong><div className="underline text-center">Rules that Apply to Public and EPA Internal
-GenAI</div></strong></p>
+<p><strong><h2 className="underline text-center"  >Rules that Apply to Public and EPA Internal
+GenAI</h2></strong></p>
 <p>These rules of behavior apply to EPA employees, contractors,
 subcontractors, grantees, and volunteers.</p>
 <ul>
@@ -106,7 +106,7 @@ your work product is correct and without bias; and</p></li>
 content.</p></li>
 </ul></li>
 </ul>
-<p><strong><div className="underline text-center">Examples of Acceptable Uses of GenAI</div></strong></p>
+<p><strong><h2 className="underline text-center"  >Examples of Acceptable Uses of GenAI</h2></strong></p>
 <p>Following are examples of acceptable uses of GenAI technologies.
 These examples are not intended to be comprehensive and assume the
 verification of all content produced by GenAI tools by expert human
@@ -143,7 +143,7 @@ scientific data, identify patterns and generate hypotheses.</p></li>
 the real-time analysis of environmental data, predictive modeling, and
 simulation of ecological scenarios to inform decision-making.</p></li>
 </ol>
-<p><strong><div className="underline text-center">Examples of Unacceptable Uses of GenAI</div></strong></p>
+<p><strong><h2 className="underline text-center"  >Examples of Unacceptable Uses of GenAI</h2></strong></p>
 <p>Following are examples of unacceptable uses of AI technologies. These
 examples are not intended to be exhaustive.</p>
 <ol type="1">
@@ -168,7 +168,7 @@ biased information or altering original artifacts to produce biased
 information that is represented to be not biased is strictly
 prohibited.</p></li>
 </ol>
-<p><strong><div className="underline text-center">Policy References</div></strong></p>
+<p><strong><h2 className="underline text-center"  >Policy References</h2></strong></p>
 <p>This guidance is grounded in EPA and federal policy, laws and
 regulations governing the use of information technology and AI,
 including but not limited to:</p>
