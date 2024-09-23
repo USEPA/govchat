@@ -55,7 +55,7 @@ const handler = async (req: Request): Promise<Response> => {
     var bearer:string|null =req.headers.get("x-ms-token-aad-access-token")? req.headers.get("x-ms-token-aad-access-token") : req.headers.get("x-ms-client-principal");
     var bearerAuth: string|null = req.headers.get("x-ms-client-principal-id");
     const userName = req.headers.get("x-ms-client-principal-name")
-    console.log("principalName:" + principalName);
+    // console.log("principalName:" + principalName);
     // console.log("bearer:" + bearer);
     encoding.free();
 
