@@ -47,7 +47,7 @@ export const OpenAIStream = async (
     ...(OPENAI_API_TYPE === 'openai' && {
       Authorization: `Bearer ${key ? key : process.env.OPENAI_API_KEY}`
     }),
-    ...(OPENAI_API_TYPE === 'azure' && process.env.AZURE_USE_MANAGED_IDENTITY=="false" && {
+    ...(OPENAI_API_TYPE === 'azure' && process.env.AZURE_USE_MANAGED_IDENTITY!="true" && {
       'api-key': `${key ? key : process.env.OPENAI_API_KEY}`
     }),
     ...(OPENAI_API_TYPE === 'azure' && process.env.AZURE_USE_MANAGED_IDENTITY=="true" && {
