@@ -267,7 +267,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
     if (chatContainerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } =
         chatContainerRef.current;
-      const bottomTolerance = 30;
+      const bottomTolerance = 230;
 
       if (scrollTop + clientHeight < scrollHeight - bottomTolerance) {
         setAutoScrollEnabled(false);
