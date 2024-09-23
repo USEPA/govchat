@@ -216,6 +216,7 @@ export const SystemPrompt: FC<Props> = ({
         rows={1}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        aria-label="Edit System Prompt"
       />
 
       {showPromptList && filteredPrompts.length > 0 && (

@@ -308,6 +308,7 @@ export const ChatInput = ({
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             id="ChatInput"
+            aria-label="Chat input field"
             autoFocus
           />
 

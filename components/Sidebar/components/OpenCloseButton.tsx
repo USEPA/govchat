@@ -16,6 +16,7 @@ export const CloseSidebarButton = ({ onClick, side }: Props) => {
         } sm:h-8 sm:w-8 sm:text-neutral-700`}
         onClick={onClick}
         title="Hide Sidebar"
+        aria-label="Hide Sidebar"
       >
         {side === 'right' ? <IconArrowBarRight /> : <IconArrowBarLeft />}
       </button>

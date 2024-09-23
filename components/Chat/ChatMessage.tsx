@@ -163,6 +163,7 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex, onEdit }) =
                       margin: '0',
                       overflow: 'hidden',
                     }}
+                    aria-label="Edit chat message"
                   />
 
                   <div className="mt-10 flex justify-center space-x-4">
