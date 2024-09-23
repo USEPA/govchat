@@ -98,8 +98,8 @@ assist in developing a work product.</p></li>
 introduced by using GenAI by:</p>
 <ul>
 <li><p>Transparently disclosing the use of GenAI in development of your
-work products, for example by writing "This work may contain elements
-generated or assisted by AI technology;"</p></li>
+work products, for example by writing &quot;This work may contain elements
+generated or assisted by AI technology;&quot;</p></li>
 <li><p>Fact checking and verifying that GenAI sourced content used in
 your work product is correct and without bias; and</p></li>
 <li><p>Providing appropriate citations for any reused original
