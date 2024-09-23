@@ -17,15 +17,7 @@ const handler = async (req: Request): Promise<Response> => {
       url = `${OPENAI_API_HOST}/openai/deployments?api-version=${OPENAI_API_VERSION}`;
     }
 
-    console.log("models.ts - about to get the model credentials");
-    //to test we are always getting the token we need to change this
-    //const credential = getAzureCredential();
     let token = await getAuthToken();
-    //console.log("auth token:"+to);  
-
-    console.log("load the models: " + url) ;
-    console.log("model headers");
-    console.log(req.headers);
 
     const response = await fetch(url, {
       method: 'post',

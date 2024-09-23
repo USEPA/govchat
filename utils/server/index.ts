@@ -39,14 +39,8 @@ export const OpenAIStream = async (
   let url = `${OPENAI_API_HOST}/v1/chat/completions`;
   if (OPENAI_API_TYPE === 'azure') {
     url = `${OPENAI_API_HOST}/openai/deployments/${AZURE_DEPLOYMENT_ID}/chat/completions?api-version=${OPENAI_API_VERSION}`;
-    console.log(url);
   }
-  console.log("about to get credential");
-  //let token = getCache("cachedToken");
-  //console.log("auth token:",token); 
-  //let token = process.env.AUTH_TOKEN ? JSON.parse(process.env.AUTH_TOKEN) : '';
   let token = await getAuthToken();
-  console.log("auth token:",token); 
 
   const header = {
     'Content-Type': 'application/json',
@@ -89,17 +83,11 @@ export const OpenAIStream = async (
     stream: true,
   };
 
-    //console.log("!!!Sending to APIM!!!")
-    console.log("URL: " + url);
-    //console.log("Header: " + JSON.stringify(header));
-    console.log("Messages: " +JSON.stringify(body));
   const res = await fetch(url, {
     headers: header,
     method: 'post',
     body: JSON.stringify(body),
   });
-
-
 
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
@@ -110,7 +98,6 @@ export const OpenAIStream = async (
     result: ""
   };
 
-  console.debug("get Chat");
   if (res.status !== 200) {
     const result = await res.json();
     if (result.error) {

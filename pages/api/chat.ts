@@ -49,14 +49,14 @@ const handler = async (req: Request): Promise<Response> => {
       tokenCount += tokens.length;
       messagesToSend = [message, ...messagesToSend];
     }
-    console.log("!!!HEADERS!!!");
-    console.log(req.headers);
+    // console.log("!!!HEADERS!!!");
+    // console.log(req.headers);
     var principalName:string|null = req.headers.get("x-ms-client-principal-name");
     var bearer:string|null =req.headers.get("x-ms-token-aad-access-token")? req.headers.get("x-ms-token-aad-access-token") : req.headers.get("x-ms-client-principal");
     var bearerAuth: string|null = req.headers.get("x-ms-client-principal-id");
     const userName = req.headers.get("x-ms-client-principal-name")
     console.log("principalName:" + principalName);
-    console.log("bearer:" + bearer);
+    // console.log("bearer:" + bearer);
     encoding.free();
 
 
