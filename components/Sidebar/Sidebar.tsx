@@ -78,6 +78,7 @@ const Sidebar = <T,>({
           <button
             className="ml-2 flex flex-shrink-0 cursor-pointer items-center gap-3 rounded-md border border-neutral-200 p-3 text-black transition-colors duration-200 hover:bg-gray-500/10"
             onClick={handleCreateFolder}
+            title="Create Folder"
           >
             <IconFolderPlus size={16} />
           </button>

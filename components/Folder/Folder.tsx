@@ -108,6 +108,7 @@ const Folder = ({
               onChange={(e) => setRenameValue(e.target.value)}
               onKeyDown={handleEnterDown}
               autoFocus
+              title="Rename"
             />
           </div>
         ) : (
@@ -146,6 +147,7 @@ const Folder = ({
                 setIsDeleting(false);
                 setIsRenaming(false);
               }}
+              title="Delete"
             >
               <IconCheck size={18} />
             </SidebarActionButton>
@@ -155,6 +157,7 @@ const Folder = ({
                 setIsDeleting(false);
                 setIsRenaming(false);
               }}
+              title="Cancel Rename"
             >
               <IconX size={18} />
             </SidebarActionButton>
@@ -169,6 +172,7 @@ const Folder = ({
                 setIsRenaming(true);
                 setRenameValue(currentFolder.name);
               }}
+              title="Rename"
             >
               <IconPencil size={18} />
             </SidebarActionButton>
@@ -177,6 +181,7 @@ const Folder = ({
                 e.stopPropagation();
                 setIsDeleting(true);
               }}
+              title="Stop Deleting"
             >
               <IconTrash size={18} />
             </SidebarActionButton>

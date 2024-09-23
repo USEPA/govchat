@@ -16,7 +16,7 @@ return (
           isAdvancedOpen ? 'max-h-[200px]' : 'max-h-[500px]'
         }`}
       >
-<p className="text-xs text-black/30">GenAI Rules dated September 2024</p>
+<p className="text-xs text-black/80">GenAI Rules dated September 2024</p>
 <p>These rules of behavior apply to EPA employees, contractors,
 subcontractors, grantees, and volunteers in the safe, secure, and
 ethical use of EPA authorized GenAI technologies on EPA provided devices

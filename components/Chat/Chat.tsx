@@ -379,7 +379,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
               <a
                 href="https://platform.openai.com/account/api-keys"
                 target="_blank"
-                rel="noreferrer"
+                rel="noreferrer noopener"
                 className="text-blue-500 hover:underline"
               >
                 openai.com
@@ -434,6 +434,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                   <button
                     className="ml-2 cursor-pointer hover:opacity-50"
                     onClick={onClearAll}
+                    title="Clear all messages"
                   >
                     <IconClearAll size={18} />
                   </button>

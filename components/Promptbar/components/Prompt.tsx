@@ -100,11 +100,11 @@ export const PromptComponent = ({ prompt }: Props) => {
 
       {(isDeleting || isRenaming) && (
         <div className="absolute right-1 z-10 flex text-gray-300">
-          <SidebarActionButton handleClick={handleDelete}>
+          <SidebarActionButton handleClick={handleDelete} title="Delete">
             <IconCheck size={18} />
           </SidebarActionButton>
 
-          <SidebarActionButton handleClick={handleCancelDelete}>
+          <SidebarActionButton handleClick={handleCancelDelete} title='Cancel Delete'>
             <IconX size={18} />
           </SidebarActionButton>
         </div>
@@ -112,7 +112,7 @@ export const PromptComponent = ({ prompt }: Props) => {
 
       {!isDeleting && !isRenaming && (
         <div className="absolute right-1 z-10 flex text-gray-300">
-          <SidebarActionButton handleClick={handleOpenDeleteModal}>
+          <SidebarActionButton handleClick={handleOpenDeleteModal} title='Open Delete Modal'>
             <IconTrash size={18} />
           </SidebarActionButton>
         </div>

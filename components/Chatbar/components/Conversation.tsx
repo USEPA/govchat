@@ -112,6 +112,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
             onChange={(e) => setRenameValue(e.target.value)}
             onKeyDown={handleEnterDown}
             autoFocus
+            title="Rename"
           />
         </div>
       ) : (
@@ -142,10 +143,10 @@ export const ConversationComponent = ({ conversation }: Props) => {
       {(isDeleting || isRenaming) &&
         selectedConversation?.id === conversation.id && (
           <div className="absolute right-1 z-10 flex text-gray-500">
-            <SidebarActionButton handleClick={handleConfirm}>
+            <SidebarActionButton handleClick={handleConfirm} title="Confirm">
               <IconCheck size={18} />
             </SidebarActionButton>
-            <SidebarActionButton handleClick={handleCancel}>
+            <SidebarActionButton handleClick={handleCancel} title="Cancel">
               <IconX size={18} />
             </SidebarActionButton>
           </div>
@@ -155,10 +156,10 @@ export const ConversationComponent = ({ conversation }: Props) => {
         !isDeleting &&
         !isRenaming && (
           <div className="absolute right-1 z-10 flex text-gray-500">
-            <SidebarActionButton handleClick={handleOpenRenameModal}>
+            <SidebarActionButton handleClick={handleOpenRenameModal} title="Open Rename Modal">
               <IconPencil size={18} />
             </SidebarActionButton>
-            <SidebarActionButton handleClick={handleOpenDeleteModal}>
+            <SidebarActionButton handleClick={handleOpenDeleteModal} title="Open Delete Modal">
               <IconTrash size={18} />
             </SidebarActionButton>
           </div>
