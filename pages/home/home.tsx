@@ -401,11 +401,6 @@ const Home = ({
 };
 export default Home;
 
-// export const getAzCreds = () => {
-//    return azcredential;
-// }
-
-
 
 export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
   const defaultModelId =
@@ -417,9 +412,6 @@ export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
     fallbackModelID;
 
   aztoken = await getAuthToken();
-  console.log("I'm still alive");
-  //const azToken = getCache("cachedToken");
-  console.log("I'm still alive really",aztoken);  
   let serverSidePluginKeysSet = false;
 
   const googleApiKey = process.env.GOOGLE_API_KEY;
