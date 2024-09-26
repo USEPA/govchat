@@ -1,19 +1,10 @@
-# Chatbot UI
+# Govchat
 
-Chatbot UI is an open source chat UI for AI models.
+Govchat is an open source chat UI for AI models. It is based on an old version of Chatbot-ui.
 
 ![Chatbot UI](./public/screenshots/screenshot-0402023.jpg)
 
-## Updates
-
-Chatbot UI will be updated over time.
-
-Expect frequent improvements.
-
-**Next up:**
-
-- [ ] Sharing
-- [ ] "Bots"
+Version system: ![Version yy.0m.micro](https://img.shields.io/badge/calver-YY.0M.MICRO-22bfda.svg)
 
 ## Deploy
 
@@ -26,13 +17,12 @@ docker build -t chatgpt-ui .
 docker run -e OPENAI_API_KEY=xxxxxxxx -p 3000:3000 chatgpt-ui
 ```
 
-
 ## Running Locally
 
 **1. Clone Repo**
 
 ```bash
-git clone https://github.com/Patrick-Davis-MSFT/chatbot-ui.git
+git clone ...
 ```
 
 **2. Install Dependencies**
@@ -134,8 +124,3 @@ If you don't have an OpenAI API key, you can get one [here](https://platform.ope
     * Continuous Deployment: Off
     * Webhook URL: Default Value
 
-## Contact
-
-If you have any questions, feel free to reach out to Mckay on [Twitter](https://twitter.com/mckaywrigley).
-
-[GCSE]: https://developers.google.com/custom-search/v1/overview
