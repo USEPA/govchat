@@ -52,5 +52,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.GIT_TAG }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.GIT_TAG }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
           labels: ${{ steps.meta.outputs.labels }}
