@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 import toast from 'react-hot-toast';
+import { sendGTMEvent } from '@next/third-parties/google'
 
 import { useTranslation } from 'next-i18next';
 
@@ -482,6 +483,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             onSend={(message, plugin) => {
               setCurrentMessage(message);
               handleSend(message, 0, plugin);
+              sendGTMEvent({ event: 'messageSent', messageLength: message.content.length });
             }}
             onScrollDownClick={handleScrollDown}
             onRegenerate={() => {
