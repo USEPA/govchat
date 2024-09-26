@@ -29,6 +29,13 @@ jobs:
       - name: Set Image Name
         run: echo "IMAGE_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3.3.0
+        with:
+          registry: https://ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       # Build and push the Docker image with two tags: one using the Git tag or SHA, and another using 'main'.
       - name: Build and push Docker image
         uses: docker/build-push-action@v6.7.0
