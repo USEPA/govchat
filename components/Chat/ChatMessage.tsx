@@ -198,7 +198,7 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex, onEdit }) =
               {!isEditing && (
                 <div className="md:-mr-8 ml-1 md:ml-0 flex flex-col md:flex-row gap-4 md:gap-1 items-center md:items-start justify-end md:justify-start">
                   <button
-                    className="invisible group-hover:visible focus:visible text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                    className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                     onClick={toggleEditing}
                     title="Edit Message"
                     aria-label='Edit Message'
@@ -206,7 +206,7 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex, onEdit }) =
                     <IconEdit size={20} />
                   </button>
                   <button
-                    className="invisible group-hover:visible focus:visible text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                    className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                     onClick={handleDeleteMessage}
                     title="Delete Message"
                     aria-label='Delete Message'
@@ -283,7 +283,7 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex, onEdit }) =
                   />
                 ) : (
                   <button
-                    className="invisible group-hover:visible focus:visible text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                    className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                     onClick={copyOnClick}
                     title="Copy Message"
                     aria-label='Copy Message'
