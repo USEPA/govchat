@@ -35,7 +35,7 @@ export const TemperatureSlider: FC<Props> = ({
         {label}
       </label>
       <span className="text-[12px] text-black/70 dark:text-white/50 text-sm">
-      Left makes responses more focused and deterministic, right makes it more creative and random.
+      Lower values are more focused and deterministic, higher ones are more creative and random.
       </span>
       <span className="mt-2 mb-1 text-center text-neutral-900 dark:text-neutral-100">
         {temperature.toFixed(1)}
