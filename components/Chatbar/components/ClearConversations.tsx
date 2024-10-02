@@ -28,23 +28,21 @@ export const ClearConversations: FC<Props> = ({ onClearConversations }) => {
       </div>
 
       <div className="flex w-[40px]">
-        <IconCheck
-          className="ml-auto mr-1 min-w-[20px] text-neutral-400 hover:text-black"
-          size={18}
-          onClick={(e) => {
+        <button onClick={(e) => {
             e.stopPropagation();
             handleClearConversations();
-          }}
-        />
-
-        <IconX
-          className="ml-auto min-w-[20px] text-neutral-400 hover:text-black"
+          }}><IconCheck
+          className="ml-auto mr-1 min-w-[20px] text-neutral-400 hover:text-black"
           size={18}
-          onClick={(e) => {
+        /></button>
+
+        <button onClick={(e) => {
             e.stopPropagation();
             setIsConfirming(false);
-          }}
-        />
+          }}><IconX
+          className="ml-auto min-w-[20px] text-neutral-400 hover:text-black"
+          size={18}
+        /></button>
       </div>
     </div>
   ) : (
