@@ -15,7 +15,7 @@
     "@azure/identity": "^4.4.0",
     "@dqbd/tiktoken": "^1.0.2",
     "@next/third-parties": "^14.2.13",
-    "@sentry/nextjs": "^8.30.0",
+    "@sentry/nextjs": "^8.33.1",
     "@tabler/icons-react": "^2.9.0",
     "@tanstack/react-query": "5.56.2",
     "eventsource-parser": "^0.1.0",
