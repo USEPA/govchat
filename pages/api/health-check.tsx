@@ -12,8 +12,9 @@ export default async function healthCheck(req: NextRequest) {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'x-ms-client-principal-name': 'test-principal', // These can be mock values
-        'x-ms-token-aad-access-token': 'mock-token',
+        'x-ms-client-principal-name': req.headers?.get("x-ms-client-principal-name") || '',
+        'x-ms-token-aad-access-token': req.headers?.get("x-ms-token-aad-access-token") || '',
+        'x-ms-client-principal-id': req.headers?.get("x-ms-client-principal-id") || ''
       },
       body: JSON.stringify({
         model: {
