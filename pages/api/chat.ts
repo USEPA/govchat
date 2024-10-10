@@ -2,43 +2,26 @@ import { DEFAULT_SYSTEM_PROMPT, DEFAULT_TEMPERATURE } from '@/utils/app/const';
 import { OpenAIError, OpenAIStream } from '@/utils/server';
 import { ChatBody, Message } from '@/types/chat';
 
-// @ts-expect-error
-import wasm from '../../node_modules/@dqbd/tiktoken/lite/tiktoken_bg.wasm?module';
-
 import tiktokenModel from '@dqbd/tiktoken/encoders/cl100k_base.json';
-import { Tiktoken, init } from '@dqbd/tiktoken/lite/init';
+import { NextApiRequest, NextApiResponse } from 'next';
+import { Tiktoken } from '@dqbd/tiktoken';
 
-
- export const config = {
-   runtime: 'edge',
- };
-
-const handler = async (req: Request): Promise<Response> => {
+const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
   try {
-    const { model, messages, key, prompt, temperature } = (await req.json()) as ChatBody;
-
-    await init((imports) => WebAssembly.instantiate(wasm, imports));
+    const { model, messages, key, prompt, temperature } = req.body as ChatBody;
     const encoding = new Tiktoken(
       tiktokenModel.bpe_ranks,
       tiktokenModel.special_tokens,
       tiktokenModel.pat_str,
     );
-
-    let promptToSend = prompt;
-    if (!promptToSend) {
-      promptToSend = DEFAULT_SYSTEM_PROMPT;
-    }
-
-    let temperatureToUse = temperature;
-    if (temperatureToUse == null) {
-      temperatureToUse = DEFAULT_TEMPERATURE;
-    }
+    let promptToSend = prompt || DEFAULT_SYSTEM_PROMPT;
+    let temperatureToUse = temperature ?? DEFAULT_TEMPERATURE;
 
     const prompt_tokens = encoding.encode(promptToSend);
-
     let tokenCount = prompt_tokens.length;
     let messagesToSend: Message[] = [];
 
+    // Reverse loop through the messages to add them until the token limit is reached
     for (let i = messages.length - 1; i >= 0; i--) {
       const message = messages[i];
       const tokens = encoding.encode(message.content);
@@ -49,26 +32,54 @@ const handler = async (req: Request): Promise<Response> => {
       tokenCount += tokens.length;
       messagesToSend = [message, ...messagesToSend];
     }
-    // console.log("!!!HEADERS!!!");
-    // console.log(req.headers);
-    var principalName:string|null = req.headers.get("x-ms-client-principal-name");
-    var bearer:string|null =req.headers.get("x-ms-token-aad-access-token")? req.headers.get("x-ms-token-aad-access-token") : req.headers.get("x-ms-client-principal");
-    var bearerAuth: string|null = req.headers.get("x-ms-client-principal-id");
-    const userName = req.headers.get("x-ms-client-principal-name")
-    // console.log("principalName:" + principalName);
-    // console.log("bearer:" + bearer);
+
+    const principalName: string = req.headers['x-ms-client-principal-name']?.toString() || "";
+    const bearer: string = req.headers['x-ms-token-aad-access-token']?.toString() || req.headers['x-ms-client-principal']?.toString() || "";
+    const bearerAuth: string = req.headers['x-ms-client-principal-id']?.toString() || "";
+    const userName: string = req.headers['x-ms-client-principal-name']?.toString() || "";
+
     encoding.free();
 
+    const stream = await OpenAIStream(
+      model,
+      promptToSend,
+      temperatureToUse,
+      key,
+      messagesToSend,
+      principalName,
+      bearer,
+      bearerAuth,
+      userName
+    );
 
-    const stream = await OpenAIStream(model, promptToSend, temperatureToUse, key, messagesToSend, principalName, bearer, bearerAuth, userName );
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
 
-    return new Response(stream);
+    const reader = stream.getReader();
+    const decoder = new TextDecoder();
+
+    const processStream = async () => {
+      let done = false;
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        if (value) {
+          const chunk = decoder.decode(value, { stream: !done });
+          res.write(chunk);
+        }
+      }
+      res.end();
+    };
+
+    await processStream();
+
   } catch (error) {
     console.error(error);
     if (error instanceof OpenAIError) {
-      return new Response('Error', { status: 500, statusText: error.message });
+      res.status(500).send(error.message);
     } else {
-      return new Response('Error', { status: 500 });
+      res.status(500).send('Internal Server Error');
     }
   }
 };

@@ -1,14 +1,12 @@
 import { OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION, AZURE_APIM } from '@/utils/app/const';
 import { OpenAIModel, OpenAIModelID, OpenAIModels } from '@/types/openai';
 import { getAuthToken } from '@/utils/lib/azure';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-export const config = {
-  runtime: 'edge',
-};
 
-const handler = async (req: Request): Promise<Response> => {
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { key } = (await req.json()) as {
+    const { key } = req.body as {
       key: string;
     };
 
@@ -18,9 +16,9 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     let token = await getAuthToken();
-
+    // TODO: Seems to currently not be working. Also doesn't seem to be used right now.
     const response = await fetch(url, {
-      method: 'post',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(OPENAI_API_TYPE === 'openai' && {
@@ -42,10 +40,8 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     if (response.status === 401) {
-      return new Response(response.body, {
-        status: 500,
-        headers: response.headers,
-      });
+      res.status(500).json({ error: 'Unauthorized' });
+      return;
     } else if (response.status !== 200) {
       console.error(
         `OpenAI API returned an error ${response.status
@@ -69,11 +65,11 @@ const handler = async (req: Request): Promise<Response> => {
         }
       })
       .filter(Boolean);
-      console.log("loaded models");
-    return new Response(JSON.stringify(models), { status: 200 });
+    console.log("loaded models");
+    res.status(200).json(models);
   } catch (error) {
     console.error(error);
-    return new Response('Error', { status: 500 });
+    res.status(500).send('Error');
   }
 };
 

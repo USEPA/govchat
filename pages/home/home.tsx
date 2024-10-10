@@ -86,12 +86,6 @@ const Home = ({
     queryFn: ({ signal }) => {
       if (!apiKey && !serverSideApiKeyIsSet) return null;
       return {};
-      return getModels(
-        {
-          key: apiKey,
-        },
-        signal,
-      );
     },
     enabled: true,
     refetchOnMount: false
