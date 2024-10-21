@@ -53,8 +53,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
     );
 
     res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
 
     const reader = stream.getReader();
     const decoder = new TextDecoder();
