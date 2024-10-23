@@ -1,5 +1,5 @@
 # ---- Base Node ----
-FROM node:alpine AS base
+FROM node:alpine@sha256:c9bb43423a6229aeddf3d16ae6aaa0ff71a0b2951ce18ec8fedb6f5d766cf286 AS base
 WORKDIR /app
 COPY package*.json ./
 COPY *env ./
@@ -14,7 +14,7 @@ COPY . .
 RUN npm run build
 
 # ---- Production ----
-FROM node:alpine AS production
+FROM node:alpine@sha256:c9bb43423a6229aeddf3d16ae6aaa0ff71a0b2951ce18ec8fedb6f5d766cf286 AS production
 WORKDIR /app
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY --from=build /app/.next ./.next
