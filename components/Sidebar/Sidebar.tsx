@@ -63,14 +63,23 @@ const Sidebar = <T,>({
         <a aria-label="Skip to Text Prompt Input" href="#ChatInput" className="w-full bg-white flex justify-center my-2">
             <Logo />
         </a>
-        <div className="flex items-center">
-          <a href="https://work.epa.gov/data/artificial-intelligence-epa-generative-ai"
-            className="text-sidebar flex h-[42px] w-full flex-shrink-0 underline cursor-pointer select-none items-center gap-3 rounded-md border border-neutral-200 p-3 text-black  transition-colors duration-200 hover:bg-gray-500/10"
-          >
-            <IconExternalLink size={16} />
-            AI Intranet Site
-          </a>
+        <div className="text-black text-[8pt]">
+            <span className="mb-1 font-bold">Information About: </span>
+            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-basic-information">AI</a> |&nbsp;
+            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-generative-ai">Generative AI</a> |&nbsp;
+            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-govchat">GovChat</a>
+            
         </div>
+
+        <div className="text-black text-[8pt]">
+            <span className="mb-1 font-bold">AI: </span>
+            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-ai-use-cases">Use Cases</a> |&nbsp;
+            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-training-and-events">Training</a> |&nbsp;
+            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-resources">Resources</a><br/>
+            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-ai-community">Community of Practice</a> |&nbsp;
+            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-government-use">Government Use</a>
+        </div>
+
         <div className="flex items-center">
           <button
             className="text-sidebar flex h-[42px] w-[190px] flex-shrink-0 cursor-pointer select-none items-center gap-3 rounded-md border border-neutral-200 p-3 text-black  transition-colors duration-200 hover:bg-gray-500/10"
