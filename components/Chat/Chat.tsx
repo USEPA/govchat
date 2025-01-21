@@ -275,7 +275,9 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         setAutoScrollEnabled(false);
         setShowScrollDownButton(true);
       } else {
-        setAutoScrollEnabled(true);
+        if(loading) {
+          setAutoScrollEnabled(true);
+        }
         setShowScrollDownButton(false);
       }
     }
