@@ -34,6 +34,7 @@ import { ErrorMessageDiv } from './ErrorMessageDiv';
 import { SystemPrompt } from './SystemPrompt';
 import { TemperatureSlider } from './Temperature';
 import { Rules } from './Rules';
+import { Notice } from './Notice';
 import { MemoizedChatMessage } from './MemoizedChatMessage';
 import { AdvancedSettings } from './AdvancedSettings';
 
@@ -421,6 +422,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                       {
                         //<ModelSelect />
                       }
+                        <Notice />
                         <Rules isAdvancedOpen={showAdvanced} />
                         <AdvancedSettings 
                           selectedConversation={selectedConversation} 
