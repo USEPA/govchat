@@ -20,9 +20,16 @@ export const Notice: FC = () => {
                             Follow the instructions in that email to access your RLH custodian portal. If you cannot locate that email or have any access issues,
                             send an email to <a href="mailto:EPA_Legal_Hold@epa.gov" title="mailto:EPA_Legal_Hold@epa.gov" className="underline">EPA_Legal_Hold@epa.gov</a>.
                         </span>
+                        <br /><br />
+                        Additionally, the GovChat inputs and outputs may be considered Federal records that require retention according to the <a href="https://www.archives.gov/news/topics/federal-records-act" className="underline">Federal Records Act</a>.
+Please follow the EPA Records Management Policy, <a href="https://www.epa.gov/system/files/documents/2021-08/records_management_policy.pdf" className="underline">CIO 2155.5</a> and the <a
+href="https://patt.epa.gov/app/mu-plugins/pattracking/includes/admin/pages/record_schedule/" className="underline">EPA records schedules</a> for more guidance. 
+If you have questions, please feel free to reach out to <a href="mailto:records@epa.gov" title="mailto:records@epa.gov" className="underline">records@epa.gov</a>.
+
                     </li>
                 </ul>
             </div>
+            <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">Your conversations using this tool are recorded.</p>
         </div>
     );
 }

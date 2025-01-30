@@ -244,7 +244,7 @@ Circular No. A-130 - Managing Information as a Strategic Resource July
 </ul>
 
       </div>
-      <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">Your conversations using this tool are recorded.</p>
+      
     </div>
   );
 }
