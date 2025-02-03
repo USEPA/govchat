@@ -69,10 +69,6 @@ generative AI features within existing EPA authorized platforms and
 software, so long as users do not input non-public information into such
 tools and otherwise follow the rules of behavior outlined in this
 document.</p>
-<p><strong>EPA Internal GenAI</strong> — Currently there are no EPA
-Internal Gen AI tools available. However, EPA is configuring Internal
-Gen AI tools, and they will be listed here when they become
-available.</p>
 <p><strong>Other EPA GenAI functionality</strong> Within existing EPA
 authorized platforms and software, there may exist Generative AI
 features. These rules of behavior apply to EPA’s staff use of these
@@ -187,10 +183,6 @@ href="https://www.federalregister.gov/documents/2020/12/08/2020-27065/promoting-
 Order 13960 “Promoting the Use of Trustworthy Artificial Intelligence in
 the Federal Government” December 3, 2020</a></p></li>
 <li><p><a
-href="https://www.federalregister.gov/documents/2023/11/01/2023-24283/safe-secure-and-trustworthy-development-and-use-of-artificial-intelligence">Executive
-Order 14110 “Safe, Secure, and Trustworthy Development and Use of
-Artificial Intelligence” October 30, 2023</a></p></li>
-<li><p><a
 href="https://obamawhitehouse.archives.gov/sites/default/files/omb/assets/omb/memoranda/fy2006/m06-19.pdf">OMB
 Memorandum 06-19 “Reporting Incidents Involving Personally Identifiable
 Information and Incorporating the Cost for Security in Agency
@@ -200,10 +192,6 @@ href="https://georgewbush-whitehouse.archives.gov/omb/memoranda/fy2008/m08-21.pd
 Memorandum 08-21 “FY 2008 Reporting Instructions for the Federal
 Information Security Management Act and Agency Privacy Management” July
 14, 2008</a></p></li>
-<li><p><a
-href="https://www.whitehouse.gov/wp-content/uploads/2024/03/M-24-10-Advancing-Governance-Innovation-and-Risk-Management-for-Agency-Use-of-Artificial-Intelligence.pdf">OMB
-Memorandum 24-10 “Advancing Governance, Innovation, and Risk Management
-for Agency Use of Artificial Intelligence” March 28, 2024</a></p></li>
 <li><p><a
 href="https://www.epa.gov/system/files/documents/2023-12/information_security_program_management_procedure.pdf">CIO
 2150-P-23.2 EPA Information Security – Program Management Procedure
