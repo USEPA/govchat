@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import handler from './chat';
+import { OpenAIModels } from '@/types/openai';
 
 export default async function healthCheck(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -10,12 +11,7 @@ export default async function healthCheck(req: NextApiRequest, res: NextApiRespo
     req.headers['x-ms-client-principal-id'] = req.headers['x-ms-client-principal-id'] || '';
 
     req.body = {
-      model: {
-        id: 'gpt-35-turbo',
-        name: 'GPT-3.5',
-        maxLength: 12000,
-        tokenLimit: 4000,
-      },
+      model: OpenAIModels['gpt-4'],
       messages: [
         {
           role: 'user',
