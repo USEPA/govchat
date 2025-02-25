@@ -28,6 +28,10 @@ import { PluginSelect } from './PluginSelect';
 import { PromptList } from './PromptList';
 import { VariableModal } from './VariableModal';
 
+import { Tiktoken } from '@dqbd/tiktoken';
+import { get_encoding } from "@dqbd/tiktoken";
+
+
 interface Props {
   onSend: (message: Message, plugin: Plugin | null) => void;
   onRegenerate: () => void;
@@ -62,6 +66,9 @@ export const ChatInput = ({
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showPluginSelect, setShowPluginSelect] = useState(false);
   const [plugin, setPlugin] = useState<Plugin | null>(null);
+  const [promptTokenLength, setPromptTokenLength] = useState(0);
+  const [contextTokenLength, setContextTokenLength] = useState(0);
+  const [highCharacterCount, setHighCharacterCount] = useState(false);
 
   const promptListRef = useRef<HTMLUListElement | null>(null);
 
@@ -72,6 +79,8 @@ export const ChatInput = ({
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     const maxLength = selectedConversation?.model.maxLength;
+
+
 
     if (maxLength && value.length > maxLength) {
       alert(
@@ -84,8 +93,21 @@ export const ChatInput = ({
     }
 
     setContent(value);
+
+    setPromptTokenLength( getTokenLength(value) );
+
+    setContextTokenLength( contextTokenLength + promptTokenLength );
+
+    console.log(`token len: ${promptTokenLength } (from ${value.length } chars) of model : ${selectedConversation?.model.id }  with token limit: ${selectedConversation?.model.tokenLimit} ` ); 
+
+    if (promptTokenLength > (selectedConversation?.model.tokenLimit * .75)) {
+      console.log('approaching limit' ); 
+      setHighCharacterCount(true);
+    }
+
     updatePromptListVisibility(value);
   };
+
 
   const handleSend = () => {
     if (messageIsStreaming) {
@@ -137,6 +159,7 @@ export const ChatInput = ({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+
     if (showPromptList) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -168,7 +191,7 @@ export const ChatInput = ({
     } else if (e.key === '/' && e.metaKey) {
       e.preventDefault();
       setShowPluginSelect(!showPluginSelect);
-    }
+    } 
   };
 
   const parseVariables = (content: string) => {
@@ -255,6 +278,17 @@ export const ChatInput = ({
       window.removeEventListener('click', handleOutsideClick);
     };
   }, []);
+
+
+
+  function getTokenLength(text: string): number {
+    if (!Tiktoken) {
+      throw new Error("Tiktoken not initialized.");
+    }
+    const encoded = get_encoding("cl100k_base").encode(text);   // Tiktoken.get_encoding("cl100k_base").encode(text);)
+    return encoded.length;
+  }
+
 
   return (
     <div className="absolute bottom-0 left-0 w-full border-transparent bg-gradient-to-b from-transparent via-white to-white pt-6 dark:border-white/20 dark:via-[#343541] dark:to-[#343541] md:pt-2">
@@ -359,6 +393,25 @@ export const ChatInput = ({
             />
           )}
         </div>
+
+
+
+        {highCharacterCount && ( //   using Tiktoken  &  OpenAIModels: Record<OpenAIModelID, OpenAIModel> = {  [OpenAIModelID.GPT_4]: {    id: OpenAIModelID.GPT_4,
+          <div className="absolute bottom-14 w-full">
+
+
+
+            approx. characters left: {selectedConversation?.model.tokenLimit - content?.length}
+
+            <span className="text-xs text-red-500 dark:text-red-400">
+            
+            
+            </span>
+
+          </div>
+        )}
+
+
       </div>
     </div>
   );

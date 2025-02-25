@@ -108,6 +108,8 @@ const Home = ({
       value: conversation,
     });
 
+    console.log('home.handleSelectConversation triggered'); 
+
     saveConversation(conversation);
   };
 
@@ -259,6 +261,10 @@ const Home = ({
         value: settings.theme,
       });
     }
+
+
+    console.log('home.useEffect triggered');
+
 
     const apiKey = localStorage.getItem('apiKey');
 
