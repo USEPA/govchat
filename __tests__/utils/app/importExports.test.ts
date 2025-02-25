@@ -100,7 +100,7 @@ describe('cleanData Functions', () => {
                 content: 'Hi',
               },
             ],
-            model: OpenAIModels[OpenAIModelID.GPT_3_5],
+            model: OpenAIModels[OpenAIModelID.GPT_4],
             prompt: DEFAULT_SYSTEM_PROMPT,
             temperature: DEFAULT_TEMPERATURE,
             folderId: null,
