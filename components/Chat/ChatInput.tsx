@@ -67,8 +67,10 @@ export const ChatInput = ({
   const [showPluginSelect, setShowPluginSelect] = useState(false);
   const [plugin, setPlugin] = useState<Plugin | null>(null);
   const [promptTokenLength, setPromptTokenLength] = useState(0);
-  const [contextTokenLength, setContextTokenLength] = useState(0);
+  //const [contextTokenLength, setContextTokenLength] = useState(0);
   const [highCharacterCount, setHighCharacterCount] = useState(false);
+  const [pastCharacterCount, setPastCharacterCount] = useState(false);
+  
 
   const promptListRef = useRef<HTMLUListElement | null>(null);
 
@@ -94,15 +96,26 @@ export const ChatInput = ({
 
     setContent(value);
 
-    setPromptTokenLength( getTokenLength(value) );
 
-    setContextTokenLength( contextTokenLength + promptTokenLength );
+    // only run the token count every 5 characters since it slows down the display of what's typed
+    if (value.length % 5 == 0) {
+      setPromptTokenLength(getTokenLength(value));
 
-    console.log(`token len: ${promptTokenLength } (from ${value.length } chars) of model : ${selectedConversation?.model.id }  with token limit: ${selectedConversation?.model.tokenLimit} ` ); 
 
-    if (promptTokenLength > (selectedConversation?.model.tokenLimit * .75)) {
-      console.log('approaching limit' ); 
-      setHighCharacterCount(true);
+      selectedConversation.tokenLength += promptTokenLength;
+      //setContextTokenLength(contextTokenLength + promptTokenLength);
+
+      console.log(`token len: ${promptTokenLength} (from ${value.length} chars) of model : ${selectedConversation?.model.id}  with token limit: ${selectedConversation?.model.tokenLimit} `); 
+
+      if (selectedConversation.tokenLength > selectedConversation.model.tokenLimit ) {
+        console.log('approaching limit');
+        setPastCharacterCount(true);
+      }
+      else if (selectedConversation.tokenLength > (selectedConversation.model.tokenLimit * .75)) {
+        console.log('approaching limit');
+        setHighCharacterCount(true);
+      }
+
     }
 
     updatePromptListVisibility(value);
