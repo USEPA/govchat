@@ -27,6 +27,7 @@ import {
 import { saveFolders } from '@/utils/app/folders';
 import { savePrompts } from '@/utils/app/prompts';
 import { getSettings } from '@/utils/app/settings';
+import { getTokenLength } from '@/utils/app/tokens';
 
 import { Conversation } from '@/types/chat';
 import { KeyValuePair } from '@/types/data';
@@ -43,6 +44,9 @@ import HomeContext from '@/utils/home/home.context';
 import { HomeInitialState, initialState } from '@/utils/home/home.state';
 
 import { v4 as uuidv4 } from 'uuid';
+
+
+
 
 interface Props {
   serverSideApiKeyIsSet: boolean;
@@ -322,11 +326,19 @@ const Home = ({
 
     const selectedConversation = localStorage.getItem('selectedConversation');
     if (selectedConversation) {
+      
       const parsedSelectedConversation: Conversation =
         JSON.parse(selectedConversation);
+
       const cleanedSelectedConversation = cleanSelectedConversation(
         parsedSelectedConversation,
       );
+
+      selectedConversation.tokenLength = 0;
+      
+      for (let i = 0; i < cleanedSelectedConversation.messages.length; i++) {
+        cleanedSelectedConversation.tokenLength += getTokenLength(cleanedSelectedConversation.messages[i].content);
+      }
 
       dispatch({
         field: 'selectedConversation',

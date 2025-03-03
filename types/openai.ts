@@ -3,8 +3,8 @@ import { OPENAI_API_TYPE } from '../utils/app/const';
 export interface OpenAIModel {
   id: string;
   name: string;
-  maxLength: number; // maximum length of a message
-  tokenLimit: number; // context length for a conversation
+  maxLength: number; // maximum length of a message in CHARACTERS
+  tokenLimit: number; // context length for a conversation in TOKENS
 }
 
 export enum OpenAIModelID {

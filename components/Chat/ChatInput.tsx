@@ -28,8 +28,7 @@ import { PluginSelect } from './PluginSelect';
 import { PromptList } from './PromptList';
 import { VariableModal } from './VariableModal';
 
-import { Tiktoken } from '@dqbd/tiktoken';
-import { get_encoding } from "@dqbd/tiktoken";
+import { getTokenLength } from '@/utils/app/tokens';
 
 
 interface Props {
@@ -105,14 +104,15 @@ export const ChatInput = ({
       selectedConversation.tokenLength += promptTokenLength;
       //setContextTokenLength(contextTokenLength + promptTokenLength);
 
-      console.log(`token len: ${promptTokenLength} (from ${value.length} chars) of model : ${selectedConversation?.model.id}  with token limit: ${selectedConversation?.model.tokenLimit} `); 
+      console.log(`token len: ${promptTokenLength} / ${selectedConversation.tokenLength} (from ${value.length} chars) of model : ${selectedConversation.model.id}  with token limit: ${selectedConversation.model.tokenLimit} 
+          |||| full model info: ${JSON.stringify(selectedConversation.model)} `); 
 
       if (selectedConversation.tokenLength > selectedConversation.model.tokenLimit ) {
-        console.log('approaching limit');
+        console.log('past token limit');
         setPastCharacterCount(true);
       }
       else if (selectedConversation.tokenLength > (selectedConversation.model.tokenLimit * .75)) {
-        console.log('approaching limit');
+        console.log('approaching token limit');
         setHighCharacterCount(true);
       }
 
@@ -291,17 +291,6 @@ export const ChatInput = ({
       window.removeEventListener('click', handleOutsideClick);
     };
   }, []);
-
-
-
-  function getTokenLength(text: string): number {
-    if (!Tiktoken) {
-      throw new Error("Tiktoken not initialized.");
-    }
-    const encoded = get_encoding("cl100k_base").encode(text);   // Tiktoken.get_encoding("cl100k_base").encode(text);)
-    return encoded.length;
-  }
-
 
   return (
     <div className="absolute bottom-0 left-0 w-full border-transparent bg-gradient-to-b from-transparent via-white to-white pt-6 dark:border-white/20 dark:via-[#343541] dark:to-[#343541] md:pt-2">

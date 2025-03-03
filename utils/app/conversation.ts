@@ -24,7 +24,9 @@ export const updateConversation = (
 export const saveConversation = (conversation: Conversation) => {
   localStorage.setItem('selectedConversation', JSON.stringify(conversation));
 
-    console.log('conversation.saveConversation triggered'); 
+  selectedConversation = conversation;
+
+  console.log('conversation.saveConversation triggered'); 
 
 };
 
