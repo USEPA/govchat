@@ -43,3 +43,4 @@ manifest.yml
 
 # Sentry Config File
 .env.sentry-build-plugin
+.vs/

@@ -22,8 +22,10 @@ export const OPENAI_ORGANIZATION =
 export const AZURE_DEPLOYMENT_ID =
   process.env.AZURE_DEPLOYMENT_ID || '';
 
-export const AZURE_APIM = process.env.AZURE_APIM_KEY || false
+export const AZURE_APIM = process.env.AZURE_APIM_KEY || false;
 
-export const AZURE_USE_MANAGED_IDENTITY = process.env.AZURE_USE_MANAGED_IDENTITY || false
+export const AZURE_USE_MANAGED_IDENTITY = process.env.AZURE_USE_MANAGED_IDENTITY || false;
 
 //export const myAZCredentials = new DefaultAzureCredential();
+
+export const CHARACTERS_PER_TOKEN = 4;

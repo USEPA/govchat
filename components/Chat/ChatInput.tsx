@@ -30,6 +30,8 @@ import { VariableModal } from './VariableModal';
 
 import { getTokenLength } from '@/utils/app/tokens';
 
+import { CHARACTERS_PER_TOKEN } from '@/utils/app/const';
+
 
 interface Props {
   onSend: (message: Message, plugin: Plugin | null) => void;
@@ -67,9 +69,8 @@ export const ChatInput = ({
   const [plugin, setPlugin] = useState<Plugin | null>(null);
   const [promptTokenLength, setPromptTokenLength] = useState(0);
   //const [contextTokenLength, setContextTokenLength] = useState(0);
-  const [highCharacterCount, setHighCharacterCount] = useState(false);
-  const [pastCharacterCount, setPastCharacterCount] = useState(false);
-  
+  const [isHighCharacterCount, setIsHighCharacterCount] = useState(false);
+  const [isPastCharacterCount, setIsPastCharacterCount] = useState(false);
 
   const promptListRef = useRef<HTMLUListElement | null>(null);
 
@@ -80,8 +81,7 @@ export const ChatInput = ({
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     const maxLength = selectedConversation?.model.maxLength;
-
-
+    var tmpTokenCount = selectedConversation.tokenLength;
 
     if (maxLength && value.length > maxLength) {
       alert(
@@ -95,25 +95,24 @@ export const ChatInput = ({
 
     setContent(value);
 
-
-    // only run the token count every 5 characters since it slows down the display of what's typed
-    if (value.length % 5 == 0) {
+    // only run the token count every 8 characters since it slows down the display of what's typed
+    if (value.length % 8 == 0) {
       setPromptTokenLength(getTokenLength(value));
 
-
-      selectedConversation.tokenLength += promptTokenLength;
+      tmpTokenCount += promptTokenLength;
       //setContextTokenLength(contextTokenLength + promptTokenLength);
 
-      console.log(`token len: ${promptTokenLength} / ${selectedConversation.tokenLength} (from ${value.length} chars) of model : ${selectedConversation.model.id}  with token limit: ${selectedConversation.model.tokenLimit} 
+      console.log(`token len: ${promptTokenLength} / ${tmpTokenCount} (from ${value.length} chars) of model : ${selectedConversation.model.id}  with token limit: ${selectedConversation.model.tokenLimit} 
           |||| full model info: ${JSON.stringify(selectedConversation.model)} `); 
 
-      if (selectedConversation.tokenLength > selectedConversation.model.tokenLimit ) {
+      if (tmpTokenCount > selectedConversation.model.tokenLimit ) {
         console.log('past token limit');
-        setPastCharacterCount(true);
+        setIsPastCharacterCount(true);
       }
-      else if (selectedConversation.tokenLength > (selectedConversation.model.tokenLimit * .75)) {
+      else if (tmpTokenCount > (selectedConversation.model.tokenLimit * .75)) {
         console.log('approaching token limit');
-        setHighCharacterCount(true);
+        setIsHighCharacterCount(true);
+
       }
 
     }
@@ -134,6 +133,7 @@ export const ChatInput = ({
 
     onSend({ role: 'user', content }, plugin);
     setContent('');
+    setPromptTokenLength(0);
     setPlugin(null);
 
     if (window.innerWidth < 640 && textareaRef && textareaRef.current) {
@@ -292,6 +292,14 @@ export const ChatInput = ({
     };
   }, []);
 
+
+  useEffect(() => {
+    console.log(`isHighCharacterCount changed to: ${isHighCharacterCount}`);
+    // Perform actions based on the new value of myVariable here
+
+  }, [isHighCharacterCount]); // The effect runs whenever isHighCharacterCount or isPastCharacterCount changes
+
+
   return (
     <div className="absolute bottom-0 left-0 w-full border-transparent bg-gradient-to-b from-transparent via-white to-white pt-6 dark:border-white/20 dark:via-[#343541] dark:to-[#343541] md:pt-2">
       <div className="stretch mx-2 mt-4 flex flex-row gap-3 last:mb-2 md:mx-4 md:mt-[52px] md:last:mb-6 lg:mx-auto lg:max-w-3xl">
@@ -396,23 +404,26 @@ export const ChatInput = ({
           )}
         </div>
 
+        {isHighCharacterCount && ( 
 
+          <div id="charLimitDisplay" className="absolute bottom-14 w-full hidden">
 
-        {highCharacterCount && ( //   using Tiktoken  &  OpenAIModels: Record<OpenAIModelID, OpenAIModel> = {  [OpenAIModelID.GPT_4]: {    id: OpenAIModelID.GPT_4,
-          <div className="absolute bottom-14 w-full">
-
-
-
-            approx. characters left: {selectedConversation?.model.tokenLimit - content?.length}
+            approx. characters left: { ( selectedConversation.model.tokenLimit * CHARACTERS_PER_TOKEN ) - ( ( selectedConversation?.tokenLength * CHARACTERS_PER_TOKEN ) + content?.length) }
 
             <span className="text-xs text-red-500 dark:text-red-400">
-            
             
             </span>
 
           </div>
         )}
-
+        {isPastCharacterCount && ( 
+          <div id="charLimitDisplay" className="absolute bottom-14 w-full hidden">
+            past character limit: { content?.length - selectedConversation.model.maxLength }
+            <span className="text-xs text-red-500 dark:text-red-400">
+            
+            </span>
+          </div>
+        )}
 
       </div>
     </div>

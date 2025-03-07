@@ -266,9 +266,7 @@ const Home = ({
       });
     }
 
-
     console.log('home.useEffect triggered');
-
 
     const apiKey = localStorage.getItem('apiKey');
 
@@ -329,16 +327,23 @@ const Home = ({
       
       const parsedSelectedConversation: Conversation =
         JSON.parse(selectedConversation);
+      
+      var allMessages = '';
+
+      parsedSelectedConversation.tokenLength = 0;
+      
+      for (let i = 0; i < parsedSelectedConversation.messages.length; i++) {
+        console.log("SelectedConversation.message[" + i + "]: " + parsedSelectedConversation.messages[i].content);
+        allMessages += parsedSelectedConversation.messages[i].content + ' ';
+      }
+      
+      parsedSelectedConversation.tokenLength += getTokenLength(allMessages);
+
+      console.log("SelectedConversation.tokenLength: " + parsedSelectedConversation.tokenLength);
 
       const cleanedSelectedConversation = cleanSelectedConversation(
         parsedSelectedConversation,
       );
-
-      selectedConversation.tokenLength = 0;
-      
-      for (let i = 0; i < cleanedSelectedConversation.messages.length; i++) {
-        cleanedSelectedConversation.tokenLength += getTokenLength(cleanedSelectedConversation.messages[i].content);
-      }
 
       dispatch({
         field: 'selectedConversation',
