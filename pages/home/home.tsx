@@ -27,7 +27,6 @@ import {
 import { saveFolders } from '@/utils/app/folders';
 import { savePrompts } from '@/utils/app/prompts';
 import { getSettings } from '@/utils/app/settings';
-import { getTokenLength } from '@/utils/app/tokens';
 
 import { Conversation } from '@/types/chat';
 import { KeyValuePair } from '@/types/data';
@@ -327,19 +326,6 @@ const Home = ({
       
       const parsedSelectedConversation: Conversation =
         JSON.parse(selectedConversation);
-      
-      var allMessages = '';
-
-      parsedSelectedConversation.tokenLength = 0;
-      
-      for (let i = 0; i < parsedSelectedConversation.messages.length; i++) {
-        console.log("SelectedConversation.message[" + i + "]: " + parsedSelectedConversation.messages[i].content);
-        allMessages += parsedSelectedConversation.messages[i].content + ' ';
-      }
-      
-      parsedSelectedConversation.tokenLength += getTokenLength(allMessages);
-
-      console.log("SelectedConversation.tokenLength: " + parsedSelectedConversation.tokenLength);
 
       const cleanedSelectedConversation = cleanSelectedConversation(
         parsedSelectedConversation,

@@ -259,6 +259,10 @@ export const ChatInput = ({
     }
   };
 
+  const showContextInfo = () => {
+
+  }
+
   useEffect(() => {
     if (promptListRef.current) {
       promptListRef.current.scrollTop = activePromptIndex * 30;
@@ -302,7 +306,7 @@ export const ChatInput = ({
 
   return (
     <div className="absolute bottom-0 left-0 w-full border-transparent bg-gradient-to-b from-transparent via-white to-white pt-6 dark:border-white/20 dark:via-[#343541] dark:to-[#343541] md:pt-2">
-      <div className="stretch mx-2 mt-4 flex flex-row gap-3 last:mb-2 md:mx-4 md:mt-[52px] md:last:mb-6 lg:mx-auto lg:max-w-3xl">
+      <div className="stretch mx-2 mt-4 flex flex-row gap-3 last:mb-2 md:mx-4 md:mt-[52px] md:last:mb-12 lg:mx-auto lg:max-w-3xl">
         {messageIsStreaming && (
           <button
             className="absolute top-0 left-0 right-0 mx-auto mb-3 flex w-fit items-center gap-3 rounded border border-neutral-200 bg-white py-2 px-4 text-black hover:opacity-50 dark:border-neutral-600 dark:bg-[#343541] dark:text-white md:mb-0 md:mt-2"
@@ -402,28 +406,29 @@ export const ChatInput = ({
               onClose={() => setIsModalVisible(false)}
             />
           )}
+
         </div>
 
-        {isHighCharacterCount && ( 
+        <div className="charLimitDisp">
+          {isHighCharacterCount && (
 
-          <div id="charLimitDisplay" className="absolute bottom-14 w-full hidden">
-
-            approx. characters left: { ( selectedConversation.model.tokenLimit * CHARACTERS_PER_TOKEN ) - ( ( selectedConversation?.tokenLength * CHARACTERS_PER_TOKEN ) + content?.length) }
-
-            <span className="text-xs text-red-500 dark:text-red-400">
-            
+            <span className="text-orange-400">
+              approx. characters left in conversation context:
+              {(selectedConversation.model.tokenLimit * CHARACTERS_PER_TOKEN) - ((selectedConversation?.tokenLength * CHARACTERS_PER_TOKEN) + content?.length)}
             </span>
+          )}
 
-          </div>
-        )}
-        {isPastCharacterCount && ( 
-          <div id="charLimitDisplay" className="absolute bottom-14 w-full hidden">
-            past character limit: { content?.length - selectedConversation.model.maxLength }
-            <span className="text-xs text-red-500 dark:text-red-400">
-            
+          {isPastCharacterCount && (
+            <span className="text-red-300">
+              this conversation is past the context limit. approx. characters over:
+              { ((selectedConversation?.tokenLength * CHARACTERS_PER_TOKEN) + content?.length) - (selectedConversation.model.tokenLimit * CHARACTERS_PER_TOKEN)}
             </span>
-          </div>
-        )}
+          )}
+
+        {/*  {(isPastCharacterCount || isHighCharacterCount) && (*/}
+        {/*    <span class="helpCircle" onFocus="showContextInfo();">&nbsp;&nbsp;?&nbsp;&nbsp;</span>*/}
+        {/*  )}*/}
+        </div>
 
       </div>
     </div>
