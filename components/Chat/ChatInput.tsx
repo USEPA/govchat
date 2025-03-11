@@ -18,7 +18,7 @@ import {
 
 import { useTranslation } from 'next-i18next';
 
-import { Message } from '@/types/chat';
+import { Message, Conversation } from '@/types/chat';
 import { Plugin } from '@/types/plugin';
 import { Prompt } from '@/types/prompt';
 
@@ -80,8 +80,9 @@ export const ChatInput = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
+
     const maxLength = selectedConversation?.model.maxLength;
-    var tmpTokenCount = selectedConversation.tokenLength;
+    var tmpTokenCount = selectedConversation.tokenLength !== null ? selectedConversation.tokenLength : 0;
 
     if (maxLength && value.length > maxLength) {
       alert(
@@ -412,7 +413,7 @@ export const ChatInput = ({
         <div className="charLimitDisp">
           {isHighCharacterCount && (
 
-            <span className="text-orange-400">
+            <span className="text-orange-500">
               approx. characters left in conversation context:
               {(selectedConversation.model.tokenLimit * CHARACTERS_PER_TOKEN) - ((selectedConversation?.tokenLength * CHARACTERS_PER_TOKEN) + content?.length)}
             </span>

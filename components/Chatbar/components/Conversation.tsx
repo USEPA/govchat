@@ -37,6 +37,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState('');
+  const [conversationColor, setConversationColor] = useState('black'); // possible colors: black, orange, red
 
   const handleEnterDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter') {
@@ -100,10 +101,21 @@ export const ConversationComponent = ({ conversation }: Props) => {
     }
   }, [isRenaming, isDeleting]);
 
+  useEffect(() => {
+    if (conversation.tokenLength > conversation.model.tokenLimit) {
+      setConversationColor('text-red-300');
+    } else if (conversation.tokenLength > conversation.model.tokenLimit * .75) {
+      setConversationColor('text-orange-500');
+    } else {
+      setConversationColor('text-black');
+    }
+  }, [conversation]);
+
+
   return (
     <div className="relative flex items-center">
       {isRenaming && selectedConversation?.id === conversation.id ? (
-        <div className="flex w-full items-center text-black gap-3 rounded-lg p-3">
+        <div className="flex w-full items-center text-black gap-3 rounded-lg p-3 {conversationColor}">
           <IconMessage size={18} />
           <input
             className="mr-12 flex-1 overflow-hidden overflow-ellipsis border-neutral-400 bg-transparent text-left text-[12.5px] leading-3 outline-none focus:border-neutral-100"
