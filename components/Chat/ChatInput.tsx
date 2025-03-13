@@ -81,6 +81,8 @@ export const ChatInput = ({
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
 
+    console.log("selectedConversation: " + selectedConversation?.name + " | using model: " + selectedConversation.model.id);
+
     const maxLength = selectedConversation?.model.maxLength;
     var tmpTokenCount = selectedConversation.tokenLength !== null ? selectedConversation.tokenLength : 0;
 
@@ -103,17 +105,22 @@ export const ChatInput = ({
       tmpTokenCount += promptTokenLength;
       //setContextTokenLength(contextTokenLength + promptTokenLength);
 
-      console.log(`token len: ${promptTokenLength} / ${tmpTokenCount} (from ${value.length} chars) of model : ${selectedConversation.model.id}  with token limit: ${selectedConversation.model.tokenLimit} 
-          |||| full model info: ${JSON.stringify(selectedConversation.model)} `); 
+      //console.log(`token len: ${promptTokenLength} / ${tmpTokenCount} (from ${value.length} chars) of model : ${selectedConversation.model.id}  with token limit: ${selectedConversation.model.tokenLimit} 
+      //    |||| full model info: ${JSON.stringify(selectedConversation.model)} `); 
 
-      if (tmpTokenCount > selectedConversation.model.tokenLimit ) {
+      if (tmpTokenCount > selectedConversation.model.tokenLimit) {
         console.log('past token limit');
+        setIsHighCharacterCount(false);
         setIsPastCharacterCount(true);
       }
       else if (tmpTokenCount > (selectedConversation.model.tokenLimit * .75)) {
         console.log('approaching token limit');
         setIsHighCharacterCount(true);
-
+        setIsPastCharacterCount(false);
+      }
+      else {
+        setIsHighCharacterCount(false);
+        setIsPastCharacterCount(false);
       }
 
     }
@@ -280,7 +287,18 @@ export const ChatInput = ({
     }
   }, [content]);
 
+  // Create a synthetic event object to Manually trigger the handleChange function
+  const event = {
+    target: {
+      value: '',
+    },
+  } as React.ChangeEvent<HTMLTextAreaElement>;
+
+
   useEffect(() => {
+
+    handleChange(event);
+
     const handleOutsideClick = (e: MouseEvent) => {
       if (
         promptListRef.current &&
@@ -297,12 +315,15 @@ export const ChatInput = ({
     };
   }, []);
 
-
   useEffect(() => {
-    console.log(`isHighCharacterCount changed to: ${isHighCharacterCount}`);
-    // Perform actions based on the new value of myVariable here
+    handleChange(event);
+  }, [selectedConversation]);
 
-  }, [isHighCharacterCount]); // The effect runs whenever isHighCharacterCount or isPastCharacterCount changes
+  //useEffect(() => {
+  //  console.log(`isHighCharacterCount currently set to: ${isHighCharacterCount}`);
+  //  console.log(`isPastCharacterCount currently set to: ${isPastCharacterCount}`);
+
+  //}, [isHighCharacterCount, isPastCharacterCount]);
 
 
   return (
@@ -420,15 +441,15 @@ export const ChatInput = ({
           )}
 
           {isPastCharacterCount && (
-            <span className="text-red-300">
+            <span className="text-red-500">
               this conversation is past the context limit. approx. characters over:
               { ((selectedConversation?.tokenLength * CHARACTERS_PER_TOKEN) + content?.length) - (selectedConversation.model.tokenLimit * CHARACTERS_PER_TOKEN)}
             </span>
           )}
 
-        {/*  {(isPastCharacterCount || isHighCharacterCount) && (*/}
-        {/*    <span class="helpCircle" onFocus="showContextInfo();">&nbsp;&nbsp;?&nbsp;&nbsp;</span>*/}
-        {/*  )}*/}
+          { (isPastCharacterCount || isHighCharacterCount) && (
+            <span className="helpCircle" title="Once past the context limit, the conversation will no longer produce responses relevant to content before the limit">&nbsp;&nbsp;?&nbsp;&nbsp;</span>
+          )}
         </div>
 
       </div>

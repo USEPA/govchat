@@ -13,7 +13,7 @@ export const getTokenLength = (text: string) => {
   //const encoded = get_encoding("cl100k_base").encode(text);   // cl100k_base is for gpt-4 and gpt-35 and earlier
   const encoded = get_encoding("o200k_base").encode(text);   // o200k_base is for gpt-4o
 
-  console.log( 'encoded text: ' + encoded);
+  //console.log( 'encoded text: ' + encoded);
 
   return encoded.length;
 }

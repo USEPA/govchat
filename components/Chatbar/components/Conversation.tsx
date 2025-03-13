@@ -37,7 +37,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState('');
-  const [conversationColor, setConversationColor] = useState('black'); // possible colors: black, orange, red
+  const [conversationColor, setConversationColor] = useState('text-black'); // possible colors: text-black, text-orange, text-red
 
   const handleEnterDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter') {
@@ -102,20 +102,22 @@ export const ConversationComponent = ({ conversation }: Props) => {
   }, [isRenaming, isDeleting]);
 
   useEffect(() => {
-    if (conversation.tokenLength > conversation.model.tokenLimit) {
-      setConversationColor('text-red-300');
-    } else if (conversation.tokenLength > conversation.model.tokenLimit * .75) {
-      setConversationColor('text-orange-500');
-    } else {
-      setConversationColor('text-black');
+    if (conversation.id == selectedConversation.id) {
+      if (selectedConversation.tokenLength > selectedConversation.model.tokenLimit) {
+        setConversationColor('text-red-500');
+      } else if (selectedConversation.tokenLength > selectedConversation.model.tokenLimit * .75) {
+        setConversationColor('text-orange-500');
+      } else {
+        setConversationColor('text-black');
+      }
     }
-  }, [conversation]);
+  }, [selectedConversation]);
 
 
   return (
     <div className="relative flex items-center">
       {isRenaming && selectedConversation?.id === conversation.id ? (
-        <div className="flex w-full items-center text-black gap-3 rounded-lg p-3 {conversationColor}">
+        <div className="flex w-full items-center text-black gap-3 rounded-lg p-3">
           <IconMessage size={18} />
           <input
             className="mr-12 flex-1 overflow-hidden overflow-ellipsis border-neutral-400 bg-transparent text-left text-[12.5px] leading-3 outline-none focus:border-neutral-100"
@@ -130,7 +132,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
         </div>
       ) : (
         <button
-          className={`flex w-full cursor-pointer items-center gap-3 rounded-lg p-3 text-sm text-black  transition-colors duration-200 hover:bg-gray-500/10 ${
+            className={`flex w-full cursor-pointer items-center gap-3 rounded-lg p-3 text-sm ${conversationColor}  transition-colors duration-200 hover:bg-gray-500/10 ${
             messageIsStreaming ? 'disabled:cursor-not-allowed' : ''
           } ${
             selectedConversation?.id === conversation.id

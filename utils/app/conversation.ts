@@ -31,7 +31,7 @@ export const saveConversation = (conversation: Conversation) => {
   conversation.tokenLength = 0;
 
   for (let i = 0; i < conversation.messages.length; i++) {
-    console.log("SelectedConversation.message[" + i + "]: " + conversation.messages[i].content);
+    //console.log("SelectedConversation.message[" + i + "]: " + conversation.messages[i].content);
     allMessages += conversation.messages[i].content + ' ';
   }
 
