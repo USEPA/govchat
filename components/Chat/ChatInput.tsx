@@ -81,7 +81,7 @@ export const ChatInput = ({
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
 
-    console.log("selectedConversation: " + selectedConversation?.name + " | using model: " + selectedConversation.model.id);
+    //console.log("selectedConversation: " + selectedConversation?.name + " | using model: " + selectedConversation.model.id);
 
     const maxLength = selectedConversation?.model.maxLength;
     var tmpTokenCount = selectedConversation.tokenLength !== null ? selectedConversation.tokenLength : 0;

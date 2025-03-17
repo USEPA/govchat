@@ -24,8 +24,6 @@ export const updateConversation = (
 
 export const saveConversation = (conversation: Conversation) => {
 
-  console.log('conversation.saveConversation triggered'); 
-
   // perform tokenCount
   var allMessages = '';
   conversation.tokenLength = 0;
