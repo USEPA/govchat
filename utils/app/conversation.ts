@@ -1,4 +1,5 @@
 import { Conversation } from '@/types/chat';
+import { getTokenLength } from '@/utils/app/tokens';
 
 export const updateConversation = (
   updatedConversation: Conversation,
@@ -22,7 +23,26 @@ export const updateConversation = (
 };
 
 export const saveConversation = (conversation: Conversation) => {
+
+  console.log('conversation.saveConversation triggered'); 
+
+  // perform tokenCount
+  var allMessages = '';
+  conversation.tokenLength = 0;
+
+  for (let i = 0; i < conversation.messages.length; i++) {
+    //console.log("SelectedConversation.message[" + i + "]: " + conversation.messages[i].content);
+    allMessages += conversation.messages[i].content + ' ';
+  }
+
+  conversation.tokenLength += getTokenLength(allMessages);
+
+  console.log("SelectedConversation.tokenLength: " + conversation.tokenLength);
+
   localStorage.setItem('selectedConversation', JSON.stringify(conversation));
+
+  //selectedConversation = conversation;
+
 };
 
 export const saveConversations = (conversations: Conversation[]) => {

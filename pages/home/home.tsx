@@ -44,6 +44,9 @@ import { HomeInitialState, initialState } from '@/utils/home/home.state';
 
 import { v4 as uuidv4 } from 'uuid';
 
+
+
+
 interface Props {
   serverSideApiKeyIsSet: boolean;
   serverSidePluginKeysSet: boolean;
@@ -107,6 +110,8 @@ const Home = ({
       field: 'selectedConversation',
       value: conversation,
     });
+
+    console.log('home.handleSelectConversation triggered'); 
 
     saveConversation(conversation);
   };
@@ -195,6 +200,7 @@ const Home = ({
       prompt: DEFAULT_SYSTEM_PROMPT,
       temperature: lastConversation?.temperature ?? DEFAULT_TEMPERATURE,
       folderId: null,
+      tokenLength: 0,
     };
 
     const updatedConversations = [...conversations, newConversation];
@@ -260,6 +266,8 @@ const Home = ({
       });
     }
 
+    console.log('home.useEffect triggered');
+
     const apiKey = localStorage.getItem('apiKey');
 
     if (serverSideApiKeyIsSet) {
@@ -316,8 +324,10 @@ const Home = ({
 
     const selectedConversation = localStorage.getItem('selectedConversation');
     if (selectedConversation) {
+      
       const parsedSelectedConversation: Conversation =
         JSON.parse(selectedConversation);
+
       const cleanedSelectedConversation = cleanSelectedConversation(
         parsedSelectedConversation,
       );
