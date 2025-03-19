@@ -319,12 +319,6 @@ export const ChatInput = ({
     handleChange(event);
   }, [selectedConversation]);
 
-  //useEffect(() => {
-  //  console.log(`isHighCharacterCount currently set to: ${isHighCharacterCount}`);
-  //  console.log(`isPastCharacterCount currently set to: ${isPastCharacterCount}`);
-
-  //}, [isHighCharacterCount, isPastCharacterCount]);
-
 
   return (
     <div className="absolute bottom-0 left-0 w-full border-transparent bg-gradient-to-b from-transparent via-white to-white pt-6 dark:border-white/20 dark:via-[#343541] dark:to-[#343541] md:pt-2">
@@ -435,7 +429,7 @@ export const ChatInput = ({
           {isHighCharacterCount && (
 
             <span className="text-orange-500">
-              approx. characters left in conversation context:
+              Warning: you are approaching the maximum number of words this model is able to keep in context. Consider starting a new conversation. Characters left:
               {(selectedConversation.model.tokenLimit * CHARACTERS_PER_TOKEN) - ((selectedConversation?.tokenLength * CHARACTERS_PER_TOKEN) + content?.length)}
             </span>
           )}
