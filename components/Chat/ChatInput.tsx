@@ -58,7 +58,7 @@ export const ChatInput = ({
     dispatch: homeDispatch,
   } = useContext(HomeContext);
 
-  const [content, setContent] = useState<string>();
+  const [content, setContent] = useState<string>('');
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const [showPromptList, setShowPromptList] = useState(false);
   const [activePromptIndex, setActivePromptIndex] = useState(0);
@@ -71,6 +71,8 @@ export const ChatInput = ({
   //const [contextTokenLength, setContextTokenLength] = useState(0);
   const [isHighCharacterCount, setIsHighCharacterCount] = useState(false);
   const [isPastCharacterCount, setIsPastCharacterCount] = useState(false);
+  const [tokenLength, setTokenLength] = useState(0);
+  const [tokenLimit, setTokenLimit] = useState(0);
 
   const promptListRef = useRef<HTMLUListElement | null>(null);
 
@@ -83,37 +85,30 @@ export const ChatInput = ({
 
     //console.log("selectedConversation: " + selectedConversation?.name + " | using model: " + selectedConversation.model.id);
 
-    const maxLength = selectedConversation?.model.maxLength;
-    var tmpTokenCount = selectedConversation.tokenLength !== null ? selectedConversation.tokenLength : 0;
-
-    if (maxLength && value.length > maxLength) {
-      alert(
-        t(
-          `Message limit is {{maxLength}} characters. You have entered {{valueLength}} characters.`,
-          { maxLength, valueLength: value.length },
-        ),
-      );
-      return;
+    var tmpTokenCount = 0;
+    if (selectedConversation) {
+      tmpTokenCount = selectedConversation.tokenLength !== null ? selectedConversation.tokenLength : 0;
+      setTokenLimit(selectedConversation.model.tokenLimit);
+      setTokenLength(selectedConversation.tokenLength);
     }
-
     setContent(value);
 
     // only run the token count every 8 characters since it slows down the display of what's typed
-    if (value.length % 8 == 0) {
+    if (value.length % 12 == 0) {
       setPromptTokenLength(getTokenLength(value));
 
       tmpTokenCount += promptTokenLength;
       //setContextTokenLength(contextTokenLength + promptTokenLength);
 
-      //console.log(`token len: ${promptTokenLength} / ${tmpTokenCount} (from ${value.length} chars) of model : ${selectedConversation.model.id}  with token limit: ${selectedConversation.model.tokenLimit} 
-      //    |||| full model info: ${JSON.stringify(selectedConversation.model)} `); 
+      //console.log(`token len: ${promptTokenLength} / ${tmpTokenCount} (from ${value.length} chars) `);
+          //of model : ${selectedConversation.model.id}  with token limit: ${selectedConversation.model.tokenLimit} |||| full model info: ${JSON.stringify(selectedConversation.model)} `); 
 
-      if (tmpTokenCount > selectedConversation.model.tokenLimit) {
+      if (selectedConversation && tmpTokenCount > selectedConversation.model.tokenLimit) {
         console.log('past token limit');
         setIsHighCharacterCount(false);
         setIsPastCharacterCount(true);
       }
-      else if (tmpTokenCount > (selectedConversation.model.tokenLimit * .75)) {
+      else if (selectedConversation && tmpTokenCount > (selectedConversation.model.tokenLimit * .75)) {
         console.log('approaching token limit');
         setIsHighCharacterCount(true);
         setIsPastCharacterCount(false);
@@ -428,16 +423,20 @@ export const ChatInput = ({
         <div className="charLimitDisp">
           {isHighCharacterCount && (
 
+            /*if(selectedConversation && content){*/
+            /*  (selectedConversation?.model.tokenLimit * CHARACTERS_PER_TOKEN) - ((selectedConversation?.tokenLength * CHARACTERS_PER_TOKEN) + content?.length)*/
+            /*}*/
+
             <span className="text-orange-500">
               Warning: you are approaching the maximum number of words this model is able to keep in context. Consider starting a new conversation. Characters left:
-              {(selectedConversation.model.tokenLimit * CHARACTERS_PER_TOKEN) - ((selectedConversation?.tokenLength * CHARACTERS_PER_TOKEN) + content?.length)}
+              {(tokenLimit * CHARACTERS_PER_TOKEN) - ((tokenLength * CHARACTERS_PER_TOKEN) + content.length) }
             </span>
           )}
 
           {isPastCharacterCount && (
             <span className="text-red-500">
               this conversation is past the context limit. approx. characters over:
-              { ((selectedConversation?.tokenLength * CHARACTERS_PER_TOKEN) + content?.length) - (selectedConversation.model.tokenLimit * CHARACTERS_PER_TOKEN)}
+              {((tokenLength * CHARACTERS_PER_TOKEN) + content.length) - (tokenLimit * CHARACTERS_PER_TOKEN)}
             </span>
           )}
 
