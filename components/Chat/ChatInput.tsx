@@ -12,6 +12,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -31,6 +32,7 @@ import { VariableModal } from './VariableModal';
 import { getTokenLength } from '@/utils/app/tokens';
 
 import { CHARACTERS_PER_TOKEN } from '@/utils/app/const';
+import { throttle } from 'lodash';
 
 
 interface Props {
@@ -80,6 +82,13 @@ export const ChatInput = ({
     prompt.name.toLowerCase().includes(promptInputValue.toLowerCase()),
   );
 
+  const throttledSetPromptTokenLength = useMemo(() =>
+    throttle((value: string) => {
+      console.log('throttledSetPromptTokenLength called');
+      setPromptTokenLength(getTokenLength(value));
+    }, 5000)
+  , []);
+
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
 
@@ -93,31 +102,26 @@ export const ChatInput = ({
     }
     setContent(value);
 
-    // only run the token count every 8 characters since it slows down the display of what's typed
-    if (value.length % 12 == 0) {
-      setPromptTokenLength(getTokenLength(value));
+    throttledSetPromptTokenLength(value);
 
-      tmpTokenCount += promptTokenLength;
-      //setContextTokenLength(contextTokenLength + promptTokenLength);
+    tmpTokenCount += promptTokenLength;
 
-      //console.log(`token len: ${promptTokenLength} / ${tmpTokenCount} (from ${value.length} chars) `);
-          //of model : ${selectedConversation.model.id}  with token limit: ${selectedConversation.model.tokenLimit} |||| full model info: ${JSON.stringify(selectedConversation.model)} `); 
+    //console.log(`token len: ${promptTokenLength} / ${tmpTokenCount} (from ${value.length} chars) `);
+        //of model : ${selectedConversation.model.id}  with token limit: ${selectedConversation.model.tokenLimit} |||| full model info: ${JSON.stringify(selectedConversation.model)} `); 
 
-      if (selectedConversation && tmpTokenCount > selectedConversation.model.tokenLimit) {
-        console.log('past token limit');
-        setIsHighCharacterCount(false);
-        setIsPastCharacterCount(true);
-      }
-      else if (selectedConversation && tmpTokenCount > (selectedConversation.model.tokenLimit * .75)) {
-        console.log('approaching token limit');
-        setIsHighCharacterCount(true);
-        setIsPastCharacterCount(false);
-      }
-      else {
-        setIsHighCharacterCount(false);
-        setIsPastCharacterCount(false);
-      }
-
+    if (selectedConversation && tmpTokenCount > selectedConversation.model.tokenLimit) {
+      console.log('past token limit');
+      setIsHighCharacterCount(false);
+      setIsPastCharacterCount(true);
+    }
+    else if (selectedConversation && tmpTokenCount > (selectedConversation.model.tokenLimit * .75)) {
+      console.log('approaching token limit');
+      setIsHighCharacterCount(true);
+      setIsPastCharacterCount(false);
+    }
+    else {
+      setIsHighCharacterCount(false);
+      setIsPastCharacterCount(false);
     }
 
     updatePromptListVisibility(value);

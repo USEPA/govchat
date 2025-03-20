@@ -102,10 +102,10 @@ export const ConversationComponent = ({ conversation }: Props) => {
   }, [isRenaming, isDeleting]);
 
   useEffect(() => {
-    if (conversation.id == selectedConversation.id) {
-      if (selectedConversation.tokenLength > selectedConversation.model.tokenLimit) {
+    if (conversation.id == selectedConversation?.id) {
+      if (selectedConversation?.tokenLength > selectedConversation?.model.tokenLimit) {
         setConversationColor('text-red-500');
-      } else if (selectedConversation.tokenLength > selectedConversation.model.tokenLimit * .75) {
+      } else if (selectedConversation?.tokenLength > selectedConversation?.model.tokenLimit * .75) {
         setConversationColor('text-orange-500');
       } else {
         setConversationColor('text-black');
