@@ -30,7 +30,7 @@ import Spinner from '../Spinner';
 import { ChatInput } from './ChatInput';
 import { ChatLoader } from './ChatLoader';
 import { ErrorMessageDiv } from './ErrorMessageDiv';
-//import { ModelSelect } from './ModelSelect';
+import { ModelSelect } from './ModelSelect';
 import { SystemPrompt } from './SystemPrompt';
 import { TemperatureSlider } from './Temperature';
 import { Rules } from './Rules';
@@ -467,7 +467,7 @@ const onDownloadFolder = () => {
                       className="w-full h-[200px] object-cover rounded-lg object-bottom"
                     />
                       {
-                        //<ModelSelect />
+                        <ModelSelect />
                       }
                         <Notice />
                         <Rules isAdvancedOpen={showAdvanced} />
@@ -517,7 +517,7 @@ const onDownloadFolder = () => {
                 {false && showSettings && (
                   <div className="flex flex-col space-y-10 md:mx-auto md:max-w-xl md:gap-6 md:py-3 md:pt-6 lg:max-w-2xl lg:px-0 xl:max-w-3xl">
                     <div className="flex h-full flex-col space-y-4 border-b border-neutral-200 p-4 dark:border-neutral-600 md:rounded-lg md:border">
-                      {// <ModelSelect />
+                      { <ModelSelect />
                       }
                     </div>
                   </div>
