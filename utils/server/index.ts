@@ -1,7 +1,7 @@
 import { Message } from '@/types/chat';
 import { OpenAIModel } from '@/types/openai';
 
-import { AZURE_DEPLOYMENT_ID, OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION, AZURE_APIM } from '../app/const';
+import { AZURE_DEPLOYMENT_ID, OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION, AZURE_APIM, AZURE_SUBSCRIPTION_ID, AZURE_REGION } from '../app/const';
 
 
 import {
@@ -10,6 +10,7 @@ import {
   createParser,
 } from 'eventsource-parser';
 import { getAuthToken } from '../lib/azure';
+import { getEntraToken } from '../lib/azureEntra';
 
 export class OpenAIError extends Error {
   type: string;
@@ -36,41 +37,71 @@ export const OpenAIStream = async (
   bearerAuth: string|null,
   userName: string|null
 ) => {
-  let url = `${OPENAI_API_HOST}/v1/chat/completions`;
-  if (OPENAI_API_TYPE === 'azure') {
-    url = `${OPENAI_API_HOST}/openai/deployments/${AZURE_DEPLOYMENT_ID}/chat/completions?api-version=${OPENAI_API_VERSION}`;
-  }
-  let token = await getAuthToken();
 
-  const header = {
-    'Content-Type': 'application/json',
-    ...(OPENAI_API_TYPE === 'openai' && {
-      Authorization: `Bearer ${key ? key : process.env.OPENAI_API_KEY}`
-    }),
-    ...(OPENAI_API_TYPE === 'azure' && process.env.AZURE_USE_MANAGED_IDENTITY=="false" && {
-      'api-key': `${key ? key : process.env.OPENAI_API_KEY}`
-    }),
-    ...(OPENAI_API_TYPE === 'azure' && process.env.AZURE_USE_MANAGED_IDENTITY=="true" && {
-      Authorization: `Bearer ${token.token}`
-    }),
-    ...((OPENAI_API_TYPE === 'openai' && OPENAI_ORGANIZATION) && {
-      'OpenAI-Organization': OPENAI_ORGANIZATION,
-    }),
-    ...((AZURE_APIM) && {
-      'Ocp-Apim-Subscription-Key': process.env.AZURE_APIM_KEY
-    }),
-    ...((principalName) && {
-      'x-ms-client-principal-name': principalName
-    }),
-    ...((bearer) && { 
-      'x-ms-client-principal': bearer
-    }),
-    ...((bearerAuth) && { 
-      'x-ms-client-principal-id': bearerAuth
-    })
-  };
+
+  console.log('calling openAIStream');
+
+
+  var url = ``; 
+  var header = {};
+
+  if (location.hostname === "localhdddost") {
+
+    console.log('Using localhost');
+    url = `https://management.azure.com/subscriptions/${AZURE_SUBSCRIPTION_ID}/providers/Microsoft.CognitiveServices/locations/${AZURE_REGION}/models?api-version=${OPENAI_API_VERSION}`;
+
+    let entraToken = await getEntraToken();
+
+    console.log('got entraToken:' + entraToken);
+
+    header = {
+      'Content-Type': 'application/json',
+       'Authorization': `Bearer ${entraToken}`
+    };
+
+  }
+  else {
+
+    console.log('Using STAGE/PROD/other');
+    url = `${OPENAI_API_HOST}/v1/chat/completions`;
+    if (OPENAI_API_TYPE === 'azure') {
+      url = `${OPENAI_API_HOST}/openai/deployments/${AZURE_DEPLOYMENT_ID}/chat/completions?api-version=${OPENAI_API_VERSION}`;
+    }
+
+    let token = await getAuthToken();
+
+    header = {
+      'Content-Type': 'application/json',
+      ...(OPENAI_API_TYPE === 'openai' && {
+        Authorization: `Bearer ${key ? key : process.env.OPENAI_API_KEY}`
+      }),
+      ...(OPENAI_API_TYPE === 'azure' && process.env.AZURE_USE_MANAGED_IDENTITY=="false" && {
+        'api-key': `${key ? key : process.env.OPENAI_API_KEY}`
+      }),
+      ...(OPENAI_API_TYPE === 'azure' && process.env.AZURE_USE_MANAGED_IDENTITY=="true" && {
+        Authorization: `Bearer ${token.token}`
+      }),
+      ...((OPENAI_API_TYPE === 'openai' && OPENAI_ORGANIZATION) && {
+        'OpenAI-Organization': OPENAI_ORGANIZATION,
+      }),
+      ...((AZURE_APIM) && {
+        'Ocp-Apim-Subscription-Key': process.env.AZURE_APIM_KEY
+      }),
+      ...((principalName) && {
+        'x-ms-client-principal-name': principalName
+      }),
+      ...((bearer) && { 
+        'x-ms-client-principal': bearer
+      }),
+      ...((bearerAuth) && { 
+        'x-ms-client-principal-id': bearerAuth
+      })
+    };
+
+  }
+
   const body = {
-    ...(OPENAI_API_TYPE === 'openai' && {model: model.id}),
+    ...(OPENAI_API_TYPE === 'openai' && { model: model.id }),
     messages: [
       {
         role: 'system',
@@ -82,6 +113,10 @@ export const OpenAIStream = async (
     temperature: temperature,
     stream: true,
   };
+
+
+
+
 
   const res = await fetch(url, {
     headers: header,
