@@ -11,6 +11,8 @@ import {
 } from 'eventsource-parser';
 import { getAuthToken } from '../lib/azure';
 import { getEntraToken } from '../lib/azureEntra';
+import * as os from 'os';
+
 
 export class OpenAIError extends Error {
   type: string;
@@ -45,10 +47,12 @@ export const OpenAIStream = async (
   var url = ``; 
   var header = {};
 
-  if (location.hostname === "localhdddost") {
+
+  if (os.hostname() === "localhost") {
 
     console.log('Using localhost');
-    url = `https://management.azure.com/subscriptions/${AZURE_SUBSCRIPTION_ID}/providers/Microsoft.CognitiveServices/locations/${AZURE_REGION}/models?api-version=${OPENAI_API_VERSION}`;
+    //url = `https://management.azure.com/subscriptions/${AZURE_SUBSCRIPTION_ID}/providers/Microsoft.CognitiveServices/locations/${AZURE_REGION}/models?api-version=${OPENAI_API_VERSION}`;
+    url = `${OPENAI_API_HOST}/openai/deployments/${AZURE_DEPLOYMENT_ID}/chat/completions?api-version=${OPENAI_API_VERSION}`;
 
     let entraToken = await getEntraToken();
 
