@@ -1,5 +1,4 @@
 import { Conversation } from '@/types/chat';
-import { getTokenLength } from '@/utils/app/tokens';
 
 export const updateConversation = (
   updatedConversation: Conversation,
