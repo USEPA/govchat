@@ -66,10 +66,7 @@ export const ChatInput = ({
   const [showPluginSelect, setShowPluginSelect] = useState(false);
   const [plugin, setPlugin] = useState<Plugin | null>(null);
   const [promptCharacterLength, setPromptCharacterLength] = useState(0);
-  const [isHighCharacterCount, setIsHighCharacterCount] = useState(false);
-  const [isPastCharacterCount, setIsPastCharacterCount] = useState(false);
   const [characterLength, setCharacterLength] = useState(0);
-  const [maxLength, setMaxLength] = useState(0);
 
   const promptListRef = useRef<HTMLUListElement | null>(null);
 
@@ -79,35 +76,8 @@ export const ChatInput = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
-
-    //console.log("selectedConversation: " + selectedConversation?.name + " | using model: " + selectedConversation.model.id);
-    var tmpCharacterCount = 0;
-    setPromptCharacterLength(value.length);
-
-    if (selectedConversation) {
-      tmpCharacterCount = selectedConversation.characterLength ?? 0
-      setMaxLength(selectedConversation.model.maxLength);
-      setCharacterLength(selectedConversation.characterLength ?? 0);
-    }
+    setPromptCharacterLength((selectedConversation?.characterLength ?? 0) + value.length);
     setContent(value);
-
-    tmpCharacterCount += promptCharacterLength;
-    
-    if (selectedConversation && tmpCharacterCount > selectedConversation.model.maxLength) {
-      console.log('past character limit');
-      setIsHighCharacterCount(false);
-      setIsPastCharacterCount(true);
-    }
-    else if (selectedConversation && tmpCharacterCount > (selectedConversation.model.maxLength * .75)) {
-      console.log('approaching character limit');
-      setIsHighCharacterCount(true);
-      setIsPastCharacterCount(false);
-    }
-    else {
-      setIsHighCharacterCount(false);
-      setIsPastCharacterCount(false);
-    }
-
     updatePromptListVisibility(value);
   };
 
@@ -301,6 +271,7 @@ export const ChatInput = ({
     handleChange(event);
   }, [selectedConversation]);
 
+  const maxLength = selectedConversation?.model.maxLength ?? 0;
 
   return (
     <div className="absolute bottom-0 left-0 w-full border-transparent bg-gradient-to-b from-transparent via-white to-white pt-6 dark:border-white/20 dark:via-[#343541] dark:to-[#343541] md:pt-2">
@@ -408,22 +379,21 @@ export const ChatInput = ({
         </div>
 
         <div className="charLimitDisp">
-          {isHighCharacterCount && (
-
+          {(promptCharacterLength <= maxLength && promptCharacterLength > maxLength * .75) && (
             <span className="text-orange-500">
               Warning: you are approaching the maximum number of words this model is able to keep in context. Consider starting a new conversation. Characters left:
-              { maxLength - (characterLength + content.length) }
+              { maxLength - promptCharacterLength }
             </span>
           )}
 
-          {isPastCharacterCount && (
+          {promptCharacterLength > maxLength && (
             <span className="text-red-500">
               this conversation is past the context limit. approx. characters over:
-              {(characterLength + content.length) - maxLength }
+              {promptCharacterLength - maxLength }
             </span>
           )}
 
-          { (isPastCharacterCount || isHighCharacterCount) && (
+          {promptCharacterLength > maxLength * .75 && (
             <span className="helpCircle" title="Once past the context limit, the conversation will no longer produce responses relevant to content before the limit">&nbsp;&nbsp;?&nbsp;&nbsp;</span>
           )}
         </div>
