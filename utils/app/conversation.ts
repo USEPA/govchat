@@ -33,9 +33,6 @@ export const saveConversation = (conversation: Conversation) => {
   }
 
   conversation.characterLength = allMessages.length;
-
-  console.log("SelectedConversation.characterLength: " + conversation.characterLength);
-
   localStorage.setItem('selectedConversation', JSON.stringify(conversation));
 
 };

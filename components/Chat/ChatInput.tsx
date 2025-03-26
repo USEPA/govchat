@@ -29,8 +29,6 @@ import { PluginSelect } from './PluginSelect';
 import { PromptList } from './PromptList';
 import { VariableModal } from './VariableModal';
 
-import { throttle } from 'lodash';
-
 
 interface Props {
   onSend: (message: Message, plugin: Plugin | null) => void;
@@ -57,7 +55,7 @@ export const ChatInput = ({
     dispatch: homeDispatch,
   } = useContext(HomeContext);
 
-  const [content, setContent] = useState<string>('');
+  const [content, setContent] = useState<string>();
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const [showPromptList, setShowPromptList] = useState(false);
   const [activePromptIndex, setActivePromptIndex] = useState(0);
@@ -133,7 +131,6 @@ export const ChatInput = ({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-
     if (showPromptList) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -220,10 +217,6 @@ export const ChatInput = ({
     }
   };
 
-  const showContextInfo = () => {
-
-  }
-
   useEffect(() => {
     if (promptListRef.current) {
       promptListRef.current.scrollTop = activePromptIndex * 30;
@@ -234,23 +227,14 @@ export const ChatInput = ({
     if (textareaRef && textareaRef.current) {
       textareaRef.current.style.height = 'inherit';
       textareaRef.current.style.height = `${textareaRef.current?.scrollHeight}px`;
-      textareaRef.current.style.overflow = `${textareaRef?.current?.scrollHeight > 400 ? 'auto' : 'hidden'
+      textareaRef.current.style.overflow = `${
+          textareaRef?.current?.scrollHeight > 400 ? 'auto' : 'hidden'
         }`;
     }
   }, [content]);
 
-  // Create a synthetic event object to Manually trigger the handleChange function
-  const event = {
-    target: {
-      value: '',
-    },
-  } as React.ChangeEvent<HTMLTextAreaElement>;
-
 
   useEffect(() => {
-
-    handleChange(event);
-
     const handleOutsideClick = (e: MouseEvent) => {
       if (
         promptListRef.current &&
@@ -266,10 +250,6 @@ export const ChatInput = ({
       window.removeEventListener('click', handleOutsideClick);
     };
   }, []);
-
-  useEffect(() => {
-    handleChange(event);
-  }, [selectedConversation]);
 
   const maxLength = selectedConversation?.model.maxLength ?? 0;
 
@@ -309,7 +289,8 @@ export const ChatInput = ({
               resize: 'none',
               bottom: `${textareaRef?.current?.scrollHeight}px`,
               maxHeight: '400px',
-              overflow: `${textareaRef.current && textareaRef.current.scrollHeight > 400
+              overflow: `${
+              textareaRef.current && textareaRef.current.scrollHeight > 400
                 ? 'auto'
                 : 'hidden'
                 }`,
