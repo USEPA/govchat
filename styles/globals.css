@@ -55,21 +55,3 @@ pre:has(div.codeblock) {
   text-decoration: underline;
   color: #0000EE; 
 }
-
-.charLimitDisp {
-    position: absolute;
-    top: 120px;
-    margin-left: 25px; 
-}
-
-.helpCircle {
-    width: 20px;
-    height: 20px;
-    color: black;
-    border-radius: 50%;
-    border-color: black;
-    border-width: 1px;
-    font-size: 17px;
-    margin-left: 10px;
-    font-weight: bold;
-}
