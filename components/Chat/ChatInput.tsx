@@ -85,9 +85,9 @@ export const ChatInput = ({
     setPromptCharacterLength(value.length);
 
     if (selectedConversation) {
-      tmpCharacterCount = selectedConversation.characterLength !== null ? selectedConversation.characterLength : 0;
+      tmpCharacterCount = selectedConversation.characterLength ?? 0
       setMaxLength(selectedConversation.model.maxLength);
-      setCharacterLength(selectedConversation.characterLength);
+      setCharacterLength(selectedConversation.characterLength ?? 0);
     }
     setContent(value);
 
