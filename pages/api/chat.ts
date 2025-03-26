@@ -2,9 +2,17 @@ import { DEFAULT_SYSTEM_PROMPT, DEFAULT_TEMPERATURE } from '@/utils/app/const';
 import { OpenAIError, OpenAIStream } from '@/utils/server';
 import { ChatBody, Message } from '@/types/chat';
 
-import tiktokenModel from '@dqbd/tiktoken/encoders/cl100k_base.json';
+import tiktokenModel from '@dqbd/tiktoken/encoders/o200k_base.json';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { Tiktoken } from '@dqbd/tiktoken';
+
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '2mb'
+    }
+  }
+}
 
 const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
   try {

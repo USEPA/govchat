@@ -3,7 +3,6 @@ import { OpenAIModel } from '@/types/openai';
 
 import { AZURE_DEPLOYMENT_ID, OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION, AZURE_APIM } from '../app/const';
 
-
 import {
   ParsedEvent,
   ReconnectInterval,

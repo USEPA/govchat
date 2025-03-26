@@ -23,4 +23,6 @@ export interface Conversation {
   prompt: string;
   temperature: number;
   folderId: string | null;
+  tokenLength: number;
+  characterLength: number;
 }

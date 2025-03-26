@@ -5,6 +5,7 @@ import {
   IconPlayerStop,
   IconRepeat,
   IconSend,
+  IconHelpCircleFilled
 } from '@tabler/icons-react';
 import {
   KeyboardEvent,
@@ -18,7 +19,7 @@ import {
 
 import { useTranslation } from 'next-i18next';
 
-import { Message } from '@/types/chat';
+import { Message, Conversation } from '@/types/chat';
 import { Plugin } from '@/types/plugin';
 import { Prompt } from '@/types/prompt';
 
@@ -27,6 +28,7 @@ import HomeContext from '@/utils/home/home.context';
 import { PluginSelect } from './PluginSelect';
 import { PromptList } from './PromptList';
 import { VariableModal } from './VariableModal';
+
 
 interface Props {
   onSend: (message: Message, plugin: Plugin | null) => void;
@@ -62,6 +64,8 @@ export const ChatInput = ({
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showPluginSelect, setShowPluginSelect] = useState(false);
   const [plugin, setPlugin] = useState<Plugin | null>(null);
+  const [promptCharacterLength, setPromptCharacterLength] = useState(0);
+  const [characterLength, setCharacterLength] = useState(0);
 
   const promptListRef = useRef<HTMLUListElement | null>(null);
 
@@ -71,21 +75,11 @@ export const ChatInput = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
-    const maxLength = selectedConversation?.model.maxLength;
-
-    if (maxLength && value.length > maxLength) {
-      alert(
-        t(
-          `Message limit is {{maxLength}} characters. You have entered {{valueLength}} characters.`,
-          { maxLength, valueLength: value.length },
-        ),
-      );
-      return;
-    }
-
+    setPromptCharacterLength((selectedConversation?.characterLength ?? 0) + value.length);
     setContent(value);
     updatePromptListVisibility(value);
   };
+
 
   const handleSend = () => {
     if (messageIsStreaming) {
@@ -234,10 +228,11 @@ export const ChatInput = ({
       textareaRef.current.style.height = 'inherit';
       textareaRef.current.style.height = `${textareaRef.current?.scrollHeight}px`;
       textareaRef.current.style.overflow = `${
-        textareaRef?.current?.scrollHeight > 400 ? 'auto' : 'hidden'
-      }`;
+          textareaRef?.current?.scrollHeight > 400 ? 'auto' : 'hidden'
+        }`;
     }
   }, [content]);
+
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -256,9 +251,11 @@ export const ChatInput = ({
     };
   }, []);
 
+  const maxLength = selectedConversation?.model.maxLength ?? 0;
+
   return (
     <div className="absolute bottom-0 left-0 w-full border-transparent bg-gradient-to-b from-transparent via-white to-white pt-6 dark:border-white/20 dark:via-[#343541] dark:to-[#343541] md:pt-2">
-      <div className="stretch mx-2 mt-4 flex flex-row gap-3 last:mb-2 md:mx-4 md:mt-[52px] md:last:mb-6 lg:mx-auto lg:max-w-3xl">
+      <div className="stretch mx-2 mt-4 flex flex-row gap-3 last:mb-2 md:mx-4 md:mt-[52px] md:last:mb-12 lg:mx-auto lg:max-w-3xl">
         {messageIsStreaming && (
           <button
             className="absolute top-0 left-0 right-0 mx-auto mb-3 flex w-fit items-center gap-3 rounded border border-neutral-200 bg-white py-2 px-4 text-black hover:opacity-50 dark:border-neutral-600 dark:bg-[#343541] dark:text-white md:mb-0 md:mt-2"
@@ -293,10 +290,10 @@ export const ChatInput = ({
               bottom: `${textareaRef?.current?.scrollHeight}px`,
               maxHeight: '400px',
               overflow: `${
-                textareaRef.current && textareaRef.current.scrollHeight > 400
-                  ? 'auto'
-                  : 'hidden'
-              }`,
+              textareaRef.current && textareaRef.current.scrollHeight > 400
+                ? 'auto'
+                : 'hidden'
+                }`,
             }}
             placeholder={
               t('Type a message ') || ''
@@ -358,7 +355,31 @@ export const ChatInput = ({
               onClose={() => setIsModalVisible(false)}
             />
           )}
+
+
+
+          {(promptCharacterLength <= maxLength && promptCharacterLength > maxLength * .75) && (
+            <div className="text-orange-500 m-4">
+              Warning: you are approaching the number of words this model is able to handle. Consider starting a new conversation. Characters left: {maxLength - promptCharacterLength}
+              
+              <span className="inline-block relative top-[2px] pl-1"
+                title="Once past the context limit, the conversation will no longer produce responses relevant to content before the limit">
+                <IconHelpCircleFilled stroke={2} size={16} />
+              </span>
+            </div>
+          )}
+
+          {promptCharacterLength > maxLength && (
+            <div className="text-red-500 m-4">
+              This prompt or conversation is too large for this model. Approximate number of characters over: {promptCharacterLength - maxLength}
+              <span className="inline-block relative top-[2px] pl-1"
+                title="Once past the context limit, the conversation will no longer produce responses relevant to content before the limit">
+                <IconHelpCircleFilled stroke={2} size={16} />
+              </span>
+            </div>
+          )}
         </div>
+
       </div>
     </div>
   );
