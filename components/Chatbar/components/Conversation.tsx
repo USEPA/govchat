@@ -133,7 +133,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
         </div>
       ) : (
         <button
-            className={`flex w-full cursor-pointer items-center gap-3 rounded-lg p-3 text-sm ${conversationColor}  transition-colors duration-200 hover:bg-gray-500/10 ${
+            className={`flex w-full cursor-pointer items-center gap-3 rounded-lg p-3 text-sm text-black transition-colors duration-200 hover:bg-gray-500/10 ${
             messageIsStreaming ? 'disabled:cursor-not-allowed' : ''
           } ${
             selectedConversation?.id === conversation.id
