@@ -1,8 +1,7 @@
 import { Message } from '@/types/chat';
 import { OpenAIModel } from '@/types/openai';
 
-import { AZURE_DEPLOYMENT_ID, OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION, AZURE_APIM, AZURE_SUBSCRIPTION_ID, AZURE_REGION } from '../app/const';
-
+import { AZURE_DEPLOYMENT_ID, OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION, AZURE_APIM } from '../app/const';
 
 import {
   ParsedEvent,
@@ -12,7 +11,6 @@ import {
 import { getAuthToken } from '../lib/azure';
 import { getEntraToken } from '../lib/azureEntra';
 import * as os from 'os';
-
 
 export class OpenAIError extends Error {
   type: string;
@@ -40,23 +38,19 @@ export const OpenAIStream = async (
   userName: string|null
 ) => {
 
-
-  console.log('calling openAIStream');
-
-
   var url = ``; 
   var header = {};
 
+  url = `${OPENAI_API_HOST}/v1/chat/completions`;
+  if (OPENAI_API_TYPE === 'azure') {
+    url = `${OPENAI_API_HOST}/openai/deployments/${AZURE_DEPLOYMENT_ID}/chat/completions?api-version=${OPENAI_API_VERSION}`;
+  }
 
   if (os.hostname() === "localhost") {
 
-    console.log('Using localhost');
     //url = `https://management.azure.com/subscriptions/${AZURE_SUBSCRIPTION_ID}/providers/Microsoft.CognitiveServices/locations/${AZURE_REGION}/models?api-version=${OPENAI_API_VERSION}`;
-    url = `${OPENAI_API_HOST}/openai/deployments/${AZURE_DEPLOYMENT_ID}/chat/completions?api-version=${OPENAI_API_VERSION}`;
 
     let entraToken = await getEntraToken();
-
-    console.log('got entraToken:' + entraToken);
 
     header = {
       'Content-Type': 'application/json',
@@ -65,12 +59,6 @@ export const OpenAIStream = async (
 
   }
   else {
-
-    console.log('Using STAGE/PROD/other');
-    url = `${OPENAI_API_HOST}/v1/chat/completions`;
-    if (OPENAI_API_TYPE === 'azure') {
-      url = `${OPENAI_API_HOST}/openai/deployments/${AZURE_DEPLOYMENT_ID}/chat/completions?api-version=${OPENAI_API_VERSION}`;
-    }
 
     let token = await getAuthToken();
 
@@ -117,10 +105,6 @@ export const OpenAIStream = async (
     temperature: temperature,
     stream: true,
   };
-
-
-
-
 
   const res = await fetch(url, {
     headers: header,

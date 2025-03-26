@@ -24,22 +24,19 @@ export const updateConversation = (
 
 export const saveConversation = (conversation: Conversation) => {
 
-  // perform tokenCount
   var allMessages = '';
-  conversation.tokenLength = 0;
+  conversation.characterLength = 0;
 
   for (let i = 0; i < conversation.messages.length; i++) {
     //console.log("SelectedConversation.message[" + i + "]: " + conversation.messages[i].content);
     allMessages += conversation.messages[i].content + ' ';
   }
 
-  conversation.tokenLength += getTokenLength(allMessages);
+  conversation.characterLength = allMessages.length;
 
-  console.log("SelectedConversation.tokenLength: " + conversation.tokenLength);
+  console.log("SelectedConversation.characterLength: " + conversation.characterLength);
 
   localStorage.setItem('selectedConversation', JSON.stringify(conversation));
-
-  //selectedConversation = conversation;
 
 };
 

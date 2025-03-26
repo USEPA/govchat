@@ -24,4 +24,5 @@ export interface Conversation {
   temperature: number;
   folderId: string | null;
   tokenLength: number;
+  characterLength: number;
 }
