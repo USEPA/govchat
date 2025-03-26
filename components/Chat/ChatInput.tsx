@@ -92,10 +92,7 @@ export const ChatInput = ({
     setContent(value);
 
     tmpCharacterCount += promptCharacterLength;
-
-    console.log(`character len: ${promptCharacterLength} / ${tmpCharacterCount} 
-        of model : ${selectedConversation.model.id}  with character limit: ${selectedConversation.model.maxLength} `); 
-
+    
     if (selectedConversation && tmpCharacterCount > selectedConversation.model.maxLength) {
       console.log('past character limit');
       setIsHighCharacterCount(false);
