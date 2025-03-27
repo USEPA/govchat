@@ -33,7 +33,7 @@ import { getTokenLength } from '@/utils/app/tokens';
 
 import { CHARACTERS_PER_TOKEN } from '@/utils/app/const';
 import { throttle } from 'lodash';
-
+import { FileUpload } from './FileUpload';
 
 interface Props {
   onSend: (message: Message, plugin: Plugin | null) => void;
@@ -374,6 +374,8 @@ export const ChatInput = ({
             aria-label="Chat input field"
             autoFocus
           />
+
+          <FileUpload />
 
           <button
             className="absolute right-2 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"

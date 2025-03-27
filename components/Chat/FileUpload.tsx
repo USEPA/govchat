@@ -5,6 +5,7 @@ import {
   IconPlayerStop,
   IconRepeat,
   IconSend,
+  IconFileUpload
 } from '@tabler/icons-react';
 import {
   KeyboardEvent,
@@ -32,49 +33,32 @@ import { VariableModal } from './VariableModal';
 
 
 interface Props {
-  onSend: (message: Message, plugin: Plugin | null) => void;
-  onRegenerate: () => void;
-  onScrollDownClick: () => void;
-  stopConversationRef: MutableRefObject<boolean>;
-  textareaRef: MutableRefObject<HTMLTextAreaElement | null>;
-  showScrollDownButton: boolean;
+  onFileSelect: () => void;
 }
 
 export const FileUpload = ({
-  onSend,
-  onRegenerate,
-  onScrollDownClick,
-  stopConversationRef,
-  textareaRef,
-  showScrollDownButton,
+  onFileSelect,
 }: Props) => {
-  const { t } = useTranslation('chat');
 
   const {
-    state: { selectedConversation, messageIsStreaming, prompts },
-
+    state: { fileIsSelected },
     dispatch: homeDispatch,
   } = useContext(HomeContext);
 
-  const [content, setContent] = useState<string>('');
-  const [isTyping, setIsTyping] = useState<boolean>(false);
-  const [showPromptList, setShowPromptList] = useState(false);
-
-
-  const chatSection = document.getElementById("chat-section");
   const uploadButton = document.getElementById("upload-button");
-  const chatInput = document.getElementById("chat-input");
-  const sendButton = document.getElementById("send-button");
 
-  //function handleFileSelection() {
+  const handleFileSelection = () => {
   //  const fileInput = document.getElementById("file-input");
   //  if (fileInput.files.length > 0) {
   //    uploadButton.style.display = "inline-block";
   //  } else {
   //    uploadButton.style.display = "none";
   //  }
-  //}
+  }
 
+
+  const handleFileUpload = () => {
+  }
   //async function uploadFile() {
   //  const fileInput = document.getElementById("file-input");
   //  const file = fileInput.files[0];
@@ -112,22 +96,61 @@ export const FileUpload = ({
   //  }
   //}
 
-  //function sendMessage() {
-  //  const message = chatInput.value.trim();
 
-  //  if (message) {
-  //    displayMessage(message, "user");
-  //    chatInput.value = "";
-  //  }
-  //}
+  const [files, setFiles] = useState([]);
+  const dropRef = useRef(null);
 
-  //function displayMessage(message, sender) {
-  //  const messageDiv = document.createElement("div");
-  //  messageDiv.classList.add("message", sender);
-  //  messageDiv.textContent = message;
-  //  chatSection.appendChild(messageDiv);
-  //  chatSection.scrollTop = chatSection.scrollHeight; // Scroll to the bottom
-  //}
+  const handleDragOver = (event) => {
+    event.preventDefault();
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    const newFiles = Array.from(event.dataTransfer.files);
+    setFiles([...files, ...newFiles]);
+  };
+
+  const handleFileSelect = (event) => {
+    const newFiles = Array.from(event.target.files);
+    setFiles([...files, ...newFiles]);
+  };
+
+  return (
+    <div
+      ref={dropRef}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      style={{ border: '2px dashed #ccc', padding: '20px', textAlign: 'center' }}
+    >
+      <p>Drag and drop files here or</p>
+      <input type="file" multiple onChange={handleFileSelect} />
+      {files.length > 0 && (
+        <ul>
+          {files.map((file, index) => (
+            <li key={index}>{file.name}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+
+
+  return (
+    <button
+      className="absolute right-8 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"
+      onClick={handleFileUpload}
+      title="Upload File"
+      aria-label='Upload File'
+    >
+      {
+        fileIsSelected ? (
+        <div className="h-4 w-4 rounded-full border-t-2 border-neutral-800 opacity-60 dark:border-neutral-100">FILE_NAME</div>
+      ) : (
+        <IconFileUpload size={20} />
+      )}
+    </button>
+
+  )
 
 
   /*
