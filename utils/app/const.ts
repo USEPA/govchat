@@ -22,6 +22,10 @@ export const OPENAI_ORGANIZATION =
 export const AZURE_DEPLOYMENT_ID =
   process.env.AZURE_DEPLOYMENT_ID || '';
 
+export const AZURE_SUBSCRIPTION_ID = process.env.AZURE_SUBSCRIPTION_ID || '';
+
+export const AZURE_REGION = process.env.AZURE_REGION || '';
+
 export const AZURE_APIM = process.env.AZURE_APIM_KEY || false;
 
 export const AZURE_USE_MANAGED_IDENTITY = process.env.AZURE_USE_MANAGED_IDENTITY || false;
