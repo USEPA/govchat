@@ -73,3 +73,16 @@ pre:has(div.codeblock) {
     margin-left: 10px;
     font-weight: bold;
 }
+
+.uploadFileName {
+    font-size: 14px;
+    color: #000000;
+    margin-left: 10px;
+    margin-top: 5px;
+}
+
+.fileDel {
+    color: red;
+    font-size: 14px;
+    font-weight: bold;
+}

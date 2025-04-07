@@ -115,25 +115,33 @@ export const FileUpload = ({
     setFiles([...files, ...newFiles]);
   };
 
+  const handleDeleteFile = (event, fileIndex) => {
+    console.log("delete file : " + fileIndex);
+    const newFiles = [...files];
+    newFiles.splice(fileIndex, 1);
+    setFiles(newFiles);
+  }
+
   return (
     <div
       ref={dropRef}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      style={{ border: '2px dashed #ccc', padding: '20px', textAlign: 'center' }}
+      style={{ border: '2px dashed #ccc', padding: '0px', textAlign: 'center' }}
     >
       <p>Drag and drop files here or</p>
       <input type="file" multiple onChange={handleFileSelect} />
       {files.length > 0 && (
         <ul>
           {files.map((file, index) => (
-            <li key={index}>{file.name}</li>
+            <li className="uploadFileName" key={index}>{file.name} <span className="fileDel" onClick={(e) => handleDeleteFile(e, index)}>X</span></li>
           ))}
         </ul>
       )}
     </div>
   );
 
+  /*
 
   return (
     <button
@@ -153,7 +161,6 @@ export const FileUpload = ({
   )
 
 
-  /*
 
 <div id="existing-file"></div>
 <div className="file-upload">
