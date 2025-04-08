@@ -1,8 +1,9 @@
+import { v4 as uuidv4 } from 'uuid';
+
 import { Message } from '@/types/chat';
 import { OpenAIModel } from '@/types/openai';
 
 import { AZURE_DEPLOYMENT_ID, OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION, AZURE_APIM } from '../app/const';
-
 
 import {
   ParsedEvent,
@@ -26,6 +27,46 @@ export class OpenAIError extends Error {
     this.code = code;
   }
 }
+
+
+const printLogLines = (
+  loggingObject: { 
+    messagesJSON: string; 
+    userName: string|null;
+    logID: string;
+    maxTokens: number;
+    temperature: number;
+    model: string|undefined;
+    page: number;
+    totalPages: number },
+    messages: {role: string; content: string}[],
+  result: String
+) => {
+  // Splunk supports up to 10,000 but because it's encoded JSON the quoted value may be up to 2x the unquoted
+  // Plus there's a field other fields in the logging object.
+  const maxCharacterCount = 5_000;
+  loggingObject.messagesJSON = JSON.stringify([
+      ...messages,
+      {
+        role: 'assistant',
+        content: result,
+      }
+    ]
+  )
+
+  const messagesLength = loggingObject.messagesJSON.length;
+  loggingObject.totalPages = Math.ceil(messagesLength / maxCharacterCount);
+
+  for (let i = 0; i < loggingObject.totalPages; i++) {
+    const start = i * maxCharacterCount;
+    const end = Math.min(start + maxCharacterCount, messagesLength);
+    loggingObject.page = i + 1;
+    console.log(JSON.stringify({
+      ...loggingObject,
+      messagesJSON: loggingObject.messagesJSON.substring(start, end)
+    }));
+  }
+};
 
 export const OpenAIStream = async (
   model: OpenAIModel,
@@ -115,10 +156,24 @@ export const OpenAIStream = async (
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
   const loggingObjectTempResult:string[] = [];
-  const loggingObject: { messages: any; userName: string|null; result: string } = { 
-    messages: body, 
-    userName: userName, 
-    result: ""
+  const loggingObject: { 
+      messagesJSON: string; 
+      userName: string|null;
+      logID: string;
+      maxTokens: number;
+      temperature: number;
+      model: string|undefined;
+      page: number;
+      totalPages: number } 
+    = { 
+    messagesJSON: "", 
+    userName: userName,
+    logID: uuidv4(),
+    maxTokens: body.max_tokens,
+    temperature: body.temperature,
+    model: body.model,
+    page: 1,
+    totalPages: 1
   };
 
   if (res.status !== 200) {
@@ -153,8 +208,7 @@ export const OpenAIStream = async (
             try {
               const json = JSON.parse(data);
               if (json.choices[0] && json.choices[0].finish_reason && json.choices[0].finish_reason != null) {
-                loggingObject.result = loggingObjectTempResult.join('');
-                console.log(JSON.stringify(loggingObject));
+                printLogLines(loggingObject, body.messages, loggingObjectTempResult.join(''))
                 controller.close();
                 return;
               }

@@ -101,18 +101,19 @@ export const ConversationComponent = ({ conversation }: Props) => {
     }
   }, [isRenaming, isDeleting]);
 
+  /*
   useEffect(() => {
     if (conversation.id == selectedConversation?.id) {
-      if (selectedConversation?.tokenLength > selectedConversation?.model.tokenLimit) {
+      if (selectedConversation?.characterLength > selectedConversation?.model.maxLength) {
         setConversationColor('text-red-500');
-      } else if (selectedConversation?.tokenLength > selectedConversation?.model.tokenLimit * .75) {
+      } else if (selectedConversation?.characterLength > selectedConversation?.model.maxLength * .75) {
         setConversationColor('text-orange-500');
       } else {
         setConversationColor('text-black');
       }
     }
   }, [selectedConversation]);
-
+  */
 
   return (
     <div className="relative flex items-center">
@@ -132,7 +133,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
         </div>
       ) : (
         <button
-            className={`flex w-full cursor-pointer items-center gap-3 rounded-lg p-3 text-sm ${conversationColor}  transition-colors duration-200 hover:bg-gray-500/10 ${
+            className={`flex w-full cursor-pointer items-center gap-3 rounded-lg p-3 text-sm text-black transition-colors duration-200 hover:bg-gray-500/10 ${
             messageIsStreaming ? 'disabled:cursor-not-allowed' : ''
           } ${
             selectedConversation?.id === conversation.id

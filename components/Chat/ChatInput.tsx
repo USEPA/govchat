@@ -5,6 +5,7 @@ import {
   IconPlayerStop,
   IconRepeat,
   IconSend,
+  IconHelpCircleFilled
 } from '@tabler/icons-react';
 import {
   KeyboardEvent,
@@ -12,7 +13,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -29,7 +29,6 @@ import { PluginSelect } from './PluginSelect';
 import { PromptList } from './PromptList';
 import { VariableModal } from './VariableModal';
 
-import { getTokenLength } from '@/utils/app/tokens';
 
 import { CHARACTERS_PER_TOKEN } from '@/utils/app/const';
 import { throttle } from 'lodash';
@@ -60,7 +59,7 @@ export const ChatInput = ({
     dispatch: homeDispatch,
   } = useContext(HomeContext);
 
-  const [content, setContent] = useState<string>('');
+  const [content, setContent] = useState<string>();
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const [showPromptList, setShowPromptList] = useState(false);
   const [activePromptIndex, setActivePromptIndex] = useState(0);
@@ -69,12 +68,8 @@ export const ChatInput = ({
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showPluginSelect, setShowPluginSelect] = useState(false);
   const [plugin, setPlugin] = useState<Plugin | null>(null);
-  const [promptTokenLength, setPromptTokenLength] = useState(0);
-  //const [contextTokenLength, setContextTokenLength] = useState(0);
-  const [isHighCharacterCount, setIsHighCharacterCount] = useState(false);
-  const [isPastCharacterCount, setIsPastCharacterCount] = useState(false);
-  const [tokenLength, setTokenLength] = useState(0);
-  const [tokenLimit, setTokenLimit] = useState(0);
+  const [promptCharacterLength, setPromptCharacterLength] = useState(0);
+  const [characterLength, setCharacterLength] = useState(0);
 
   const promptListRef = useRef<HTMLUListElement | null>(null);
 
@@ -82,48 +77,10 @@ export const ChatInput = ({
     prompt.name.toLowerCase().includes(promptInputValue.toLowerCase()),
   );
 
-  const throttledSetPromptTokenLength = useMemo(() =>
-    throttle((value: string) => {
-      console.log('throttledSetPromptTokenLength called');
-      setPromptTokenLength(getTokenLength(value));
-    }, 5000)
-  , []);
-
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
-
-    //console.log("selectedConversation: " + selectedConversation?.name + " | using model: " + selectedConversation.model.id);
-
-    var tmpTokenCount = 0;
-    if (selectedConversation) {
-      tmpTokenCount = selectedConversation.tokenLength !== null ? selectedConversation.tokenLength : 0;
-      setTokenLimit(selectedConversation.model.tokenLimit);
-      setTokenLength(selectedConversation.tokenLength);
-    }
+    setPromptCharacterLength((selectedConversation?.characterLength ?? 0) + value.length);
     setContent(value);
-
-    throttledSetPromptTokenLength(value);
-
-    tmpTokenCount += promptTokenLength;
-
-    //console.log(`token len: ${promptTokenLength} / ${tmpTokenCount} (from ${value.length} chars) `);
-        //of model : ${selectedConversation.model.id}  with token limit: ${selectedConversation.model.tokenLimit} |||| full model info: ${JSON.stringify(selectedConversation.model)} `); 
-
-    if (selectedConversation && tmpTokenCount > selectedConversation.model.tokenLimit) {
-      console.log('past token limit');
-      setIsHighCharacterCount(false);
-      setIsPastCharacterCount(true);
-    }
-    else if (selectedConversation && tmpTokenCount > (selectedConversation.model.tokenLimit * .75)) {
-      console.log('approaching token limit');
-      setIsHighCharacterCount(true);
-      setIsPastCharacterCount(false);
-    }
-    else {
-      setIsHighCharacterCount(false);
-      setIsPastCharacterCount(false);
-    }
-
     updatePromptListVisibility(value);
   };
 
@@ -140,7 +97,6 @@ export const ChatInput = ({
 
     onSend({ role: 'user', content }, plugin);
     setContent('');
-    setPromptTokenLength(0);
     setPlugin(null);
 
     if (window.innerWidth < 640 && textareaRef && textareaRef.current) {
@@ -179,7 +135,6 @@ export const ChatInput = ({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-
     if (showPromptList) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -211,7 +166,7 @@ export const ChatInput = ({
     } else if (e.key === '/' && e.metaKey) {
       e.preventDefault();
       setShowPluginSelect(!showPluginSelect);
-    } 
+    }
   };
 
   const parseVariables = (content: string) => {
@@ -266,10 +221,6 @@ export const ChatInput = ({
     }
   };
 
-  const showContextInfo = () => {
-
-  }
-
   useEffect(() => {
     if (promptListRef.current) {
       promptListRef.current.scrollTop = activePromptIndex * 30;
@@ -281,23 +232,13 @@ export const ChatInput = ({
       textareaRef.current.style.height = 'inherit';
       textareaRef.current.style.height = `${textareaRef.current?.scrollHeight}px`;
       textareaRef.current.style.overflow = `${
-        textareaRef?.current?.scrollHeight > 400 ? 'auto' : 'hidden'
-      }`;
+          textareaRef?.current?.scrollHeight > 400 ? 'auto' : 'hidden'
+        }`;
     }
   }, [content]);
 
-  // Create a synthetic event object to Manually trigger the handleChange function
-  const event = {
-    target: {
-      value: '',
-    },
-  } as React.ChangeEvent<HTMLTextAreaElement>;
-
 
   useEffect(() => {
-
-    handleChange(event);
-
     const handleOutsideClick = (e: MouseEvent) => {
       if (
         promptListRef.current &&
@@ -314,10 +255,7 @@ export const ChatInput = ({
     };
   }, []);
 
-  useEffect(() => {
-    handleChange(event);
-  }, [selectedConversation]);
-
+  const maxLength = selectedConversation?.model.maxLength ?? 0;
 
   return (
     <div className="absolute bottom-0 left-0 w-full border-transparent bg-gradient-to-b from-transparent via-white to-white pt-6 dark:border-white/20 dark:via-[#343541] dark:to-[#343541] md:pt-2">
@@ -356,10 +294,10 @@ export const ChatInput = ({
               bottom: `${textareaRef?.current?.scrollHeight}px`,
               maxHeight: '400px',
               overflow: `${
-                textareaRef.current && textareaRef.current.scrollHeight > 400
-                  ? 'auto'
-                  : 'hidden'
-              }`,
+              textareaRef.current && textareaRef.current.scrollHeight > 400
+                ? 'auto'
+                : 'hidden'
+                }`,
             }}
             placeholder={
               t('Type a message ') || ''
@@ -424,30 +362,27 @@ export const ChatInput = ({
             />
           )}
 
-        </div>
 
-        <div className="charLimitDisp">
-          {isHighCharacterCount && (
 
-            /*if(selectedConversation && content){*/
-            /*  (selectedConversation?.model.tokenLimit * CHARACTERS_PER_TOKEN) - ((selectedConversation?.tokenLength * CHARACTERS_PER_TOKEN) + content?.length)*/
-            /*}*/
-
-            <span className="text-orange-500">
-              Warning: you are approaching the maximum number of words this model is able to keep in context. Consider starting a new conversation. Characters left:
-              {(tokenLimit * CHARACTERS_PER_TOKEN) - ((tokenLength * CHARACTERS_PER_TOKEN) + content.length) }
-            </span>
+          {(promptCharacterLength <= maxLength && promptCharacterLength > maxLength * .75) && (
+            <div className="text-orange-500 m-4">
+              Warning: you are approaching the number of words this model is able to handle. Consider starting a new conversation. Characters left: {maxLength - promptCharacterLength}
+              
+              <span className="inline-block relative top-[2px] pl-1"
+                title="Once past the context limit, the conversation will no longer produce responses relevant to content before the limit">
+                <IconHelpCircleFilled stroke={2} size={16} />
+              </span>
+            </div>
           )}
 
-          {isPastCharacterCount && (
-            <span className="text-red-500">
-              this conversation is past the context limit. approx. characters over:
-              {((tokenLength * CHARACTERS_PER_TOKEN) + content.length) - (tokenLimit * CHARACTERS_PER_TOKEN)}
-            </span>
-          )}
-
-          { (isPastCharacterCount || isHighCharacterCount) && (
-            <span className="helpCircle" title="Once past the context limit, the conversation will no longer produce responses relevant to content before the limit">&nbsp;&nbsp;?&nbsp;&nbsp;</span>
+          {promptCharacterLength > maxLength && (
+            <div className="text-red-500 m-4">
+              This prompt or conversation is too large for this model. Approximate number of characters over: {promptCharacterLength - maxLength}
+              <span className="inline-block relative top-[2px] pl-1"
+                title="Once past the context limit, the conversation will no longer produce responses relevant to content before the limit">
+                <IconHelpCircleFilled stroke={2} size={16} />
+              </span>
+            </div>
           )}
         </div>
 
