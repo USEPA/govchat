@@ -321,13 +321,15 @@ const downloadTextFile = (filename: string, text: string) => {
 const onDownload = () => {
     const messages = selectedConversation?.messages;
     if (!messages?.length) return;
-
     const text = messages
-      .map(({ role, content }) => `[${role}]\n${content}\n`)
+      .map(({ role, content, timestamp }) => {
+        const time = timestamp ? `(${timestamp})` : '';
+        return `[${role}] ${time}\n${content}\n`;
+      })
       .join('\n');
 
     downloadTextFile(`conversation_${selectedConversation?.id}.txt`, text);
-}
+};
 
 const onDownloadFolder = () => {
   const sameFolderConversations = conversations.filter(
@@ -336,7 +338,10 @@ const onDownloadFolder = () => {
   const text = sameFolderConversations
     .map((conv, index) => {
       const messagesText = conv.messages
-        ?.map(({ role, content }) => `[${role}]\n${content}\n`)
+        ?.map(({ role, content, timestamp }) => {
+          const time = timestamp ? `(${timestamp})` : '';
+          return `[${role}] ${time}\n${content}\n`;
+        })
         .join('\n') || '';
       return `=== ${conv.id} ===\n${messagesText}`;
     })
