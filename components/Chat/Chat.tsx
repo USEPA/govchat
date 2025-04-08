@@ -21,7 +21,7 @@ import {
 } from '@/utils/app/conversation';
 import { throttle } from '@/utils/data/throttle';
 
-import { ChatBody, Conversation, Message } from '@/types/chat';
+import { ChatBody, Conversation, Message, makeTimestamp } from '@/types/chat';
 import { Plugin } from '@/types/plugin';
 
 import HomeContext from '@/utils/home/home.context';
@@ -99,7 +99,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         homeDispatch({ field: 'messageIsStreaming', value: true });
         const chatBody: ChatBody = {
           model: updatedConversation.model,
-          messages: updatedConversation.messages,
+          messages: updatedConversation.messages.map(({ role, content }) => ({role, content })),
           key: apiKey,
           prompt: updatedConversation.prompt,
           temperature: updatedConversation.temperature,
@@ -170,7 +170,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
               isFirst = false;
               const updatedMessages: Message[] = [
                 ...updatedConversation.messages,
-                { role: 'assistant', content: chunkValue },
+                { role: 'assistant', content: chunkValue, timestamp: makeTimestamp() },
               ];
               updatedConversation = {
                 ...updatedConversation,
@@ -220,7 +220,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           const { answer } = await response.json();
           const updatedMessages: Message[] = [
             ...updatedConversation.messages,
-            { role: 'assistant', content: answer },
+            { role: 'assistant', content: answer, timestamp: makeTimestamp() },
           ];
           updatedConversation = {
             ...updatedConversation,

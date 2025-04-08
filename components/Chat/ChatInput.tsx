@@ -19,7 +19,7 @@ import {
 
 import { useTranslation } from 'next-i18next';
 
-import { Message, Conversation } from '@/types/chat';
+import { Message, Conversation, makeTimestamp } from '@/types/chat';
 import { Plugin } from '@/types/plugin';
 import { Prompt } from '@/types/prompt';
 
@@ -91,7 +91,7 @@ export const ChatInput = ({
       return;
     }
 
-    onSend({ role: 'user', content }, plugin);
+    onSend({ role: 'user', content, timestamp: makeTimestamp() }, plugin);
     setContent('');
     setPlugin(null);
 
