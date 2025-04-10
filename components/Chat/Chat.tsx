@@ -343,7 +343,7 @@ const onDownloadFolder = () => {
           return `[${role}] ${time}\n${content}\n`;
         })
         .join('\n') || '';
-      return `=== ${conv.id} ===\n${messagesText}`;
+      return `=== ${conv.name} ===\n${messagesText}`;
     })
     .join('\n\n');
 
@@ -484,17 +484,15 @@ const onDownloadFolder = () => {
             ) : (
               <>
                 <div className="sticky top-0 z-10 flex justify-center border border-b-neutral-300 bg-neutral-100 py-2 text-sm text-neutral-700 dark:border-none dark:bg-[#444654] dark:text-neutral-200">
-                  {t('Temp')}
-                  : {selectedConversation?.temperature} |
-                  
-                  <button
-                    className="ml-2 cursor-pointer hover:opacity-50"
+                <button
+                    className="mr-2 cursor-pointer hover:opacity-50"
                     onClick={onClearAll}
                     title="Clear all messages"
                     aria-label='Clear all messages'
                   >
                     <IconClearAll size={18} />
                   </button>
+                  {t('Temp')} : {selectedConversation?.temperature}
 
                   <button
                     className="ml-2 cursor-pointer hover:opacity-50"
