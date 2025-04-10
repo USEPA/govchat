@@ -12,7 +12,7 @@ import { useTranslation } from 'next-i18next';
 
 import { updateConversation } from '@/utils/app/conversation';
 
-import { Message } from '@/types/chat';
+import { Message, makeTimestamp } from '@/types/chat';
 
 import HomeContext from '@/utils/home/home.context';
 
@@ -59,7 +59,7 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex, onEdit }) =
   const handleEditMessage = () => {
     if (message.content != messageContent) {
       if (selectedConversation && onEdit) {
-        onEdit({ ...message, content: messageContent });
+        onEdit({ ...message, content: messageContent, timestamp: makeTimestamp()});
       }
     }
     setIsEditing(false);

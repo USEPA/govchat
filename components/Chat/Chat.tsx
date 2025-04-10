@@ -1,4 +1,4 @@
-import { IconClearAll, IconSettings } from '@tabler/icons-react';
+import { IconClearAll, IconSettings, IconDownload, IconFolderDown } from '@tabler/icons-react';
 import {
   MutableRefObject,
   memo,
@@ -21,7 +21,7 @@ import {
 } from '@/utils/app/conversation';
 import { throttle } from '@/utils/data/throttle';
 
-import { ChatBody, Conversation, Message } from '@/types/chat';
+import { ChatBody, Conversation, Message, makeTimestamp } from '@/types/chat';
 import { Plugin } from '@/types/plugin';
 
 import HomeContext from '@/utils/home/home.context';
@@ -99,7 +99,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         homeDispatch({ field: 'messageIsStreaming', value: true });
         const chatBody: ChatBody = {
           model: updatedConversation.model,
-          messages: updatedConversation.messages,
+          messages: updatedConversation.messages.map(({ role, content }) => ({role, content })),
           key: apiKey,
           prompt: updatedConversation.prompt,
           temperature: updatedConversation.temperature,
@@ -170,7 +170,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
               isFirst = false;
               const updatedMessages: Message[] = [
                 ...updatedConversation.messages,
-                { role: 'assistant', content: chunkValue },
+                { role: 'assistant', content: chunkValue, timestamp: makeTimestamp() },
               ];
               updatedConversation = {
                 ...updatedConversation,
@@ -220,7 +220,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           const { answer } = await response.json();
           const updatedMessages: Message[] = [
             ...updatedConversation.messages,
-            { role: 'assistant', content: answer },
+            { role: 'assistant', content: answer, timestamp: makeTimestamp() },
           ];
           updatedConversation = {
             ...updatedConversation,
@@ -305,6 +305,51 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
       });
     }
   };
+
+const downloadTextFile = (filename: string, text: string) => {
+  const link = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([text], { type: 'text/plain' })),
+    download: filename,
+  });
+
+  document.body.append(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+};
+
+const onDownload = () => {
+    const messages = selectedConversation?.messages;
+    if (!messages?.length) return;
+    const text = messages
+      .map(({ role, content, timestamp }) => {
+        const time = timestamp ? `(${timestamp})` : '';
+        return `[${role}] ${time}\n${content}\n`;
+      })
+      .join('\n');
+
+    downloadTextFile(`conversation_${selectedConversation?.id}.txt`, text);
+};
+
+const onDownloadFolder = () => {
+  const sameFolderConversations = conversations.filter(
+    (conv) => conv.folderId === selectedConversation?.folderId
+  );
+  const text = sameFolderConversations
+    .map((conv, index) => {
+      const messagesText = conv.messages
+        ?.map(({ role, content, timestamp }) => {
+          const time = timestamp ? `(${timestamp})` : '';
+          return `[${role}] ${time}\n${content}\n`;
+        })
+        .join('\n') || '';
+      return `=== ${conv.id} ===\n${messagesText}`;
+    })
+    .join('\n\n');
+
+  downloadTextFile('folder_conversations.txt', text);
+};
+
 
   const scrollDown = () => {
     if (autoScrollEnabled) {
@@ -450,6 +495,26 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                   >
                     <IconClearAll size={18} />
                   </button>
+
+                  <button
+                    className="ml-2 cursor-pointer hover:opacity-50"
+                    onClick={onDownload}
+                    title="Download conversation"
+                    aria-label="Download conversation"
+                  >
+                    <IconDownload size={18} />
+                  </button>
+
+                  {selectedConversation?.folderId !== "0" && selectedConversation?.folderId && (
+                    <button
+                      className="ml-2 cursor-pointer hover:opacity-50"
+                      onClick={onDownloadFolder}
+                      title="Download all conversations in this folder"
+                      aria-label="Download all conversations in this folder"
+                    >
+                      <IconFolderDown size={18} />
+                    </button>
+                  )}
                 </div>
                 {false && showSettings && (
                   <div className="flex flex-col space-y-10 md:mx-auto md:max-w-xl md:gap-6 md:py-3 md:pt-6 lg:max-w-2xl lg:px-0 xl:max-w-3xl">

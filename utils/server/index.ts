@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 
-import { Message } from '@/types/chat';
+import { Message, OpenAIMessage, makeTimestamp } from '@/types/chat';
 import { OpenAIModel } from '@/types/openai';
 
 import { AZURE_DEPLOYMENT_ID, OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION, AZURE_APIM } from '../app/const';
@@ -48,6 +48,7 @@ const printLogLines = (
       {
         role: 'assistant',
         content: result,
+        timestamp: makeTimestamp()
       }
     ]
   )
@@ -71,7 +72,7 @@ export const OpenAIStream = async (
   systemPrompt: string,
   temperature : number,
   key: string,
-  messages: Message[],
+  messages: OpenAIMessage[],
   principalName: string|null,
   bearer: string|null,
   bearerAuth: string|null,
