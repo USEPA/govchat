@@ -74,6 +74,8 @@ export const ChatInput = ({
   const [characterLength, setCharacterLength] = useState(0);
 
   const promptListRef = useRef<HTMLUListElement | null>(null);
+  
+  const [files, setFiles] = useState([]);
 
   const filteredPrompts = prompts.filter((prompt) =>
     prompt.name.toLowerCase().includes(promptInputValue.toLowerCase()),
@@ -88,6 +90,9 @@ export const ChatInput = ({
 
 
   const handleSend = () => {
+
+    console.log('handleSend triggered ');
+
     if (messageIsStreaming) {
       return;
     }
@@ -97,9 +102,44 @@ export const ChatInput = ({
       return;
     }
 
-    onSend({ role: 'user', content }, plugin);
+    if(files && files.length > 0){
+/*
+content: [
+            {
+                type: "text",
+                text: "What is the first dragon in the book?",
+            },
+            {
+                type: "file",
+                file: {
+                    filename: "draconomicon.pdf",
+                    file_data: `data:application/pdf;base64,${base64String}`
+                }
+            },
+        ],
+*/
+
+      console.log('files attached: ' + files.length);
+
+      let tmpContent = '[{type: "text",text: "' + content + '",},';
+      for (const file of files) {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+          const base64String = reader.result;
+          tmpContent += `,{type: "file",file:{filename: "${file.name}",file_data: ${base64String}}}`;
+        };
+      }
+
+      setContent(tmpContent);
+
+    }
+
+
+    onSend({ role: 'user', content }, plugin, files);
     setContent('');
     setPlugin(null);
+    setFiles(null);
 
     if (window.innerWidth < 640 && textareaRef && textareaRef.current) {
       textareaRef.current.blur();
@@ -170,6 +210,10 @@ export const ChatInput = ({
       setShowPluginSelect(!showPluginSelect);
     }
   };
+
+  const handleFileSelect = (selectedFiles: File[]) => {
+    setFiles(selectedFiles);
+  }
 
   const parseVariables = (content: string) => {
     const regex = /{{(.*?)}}/g;
@@ -316,7 +360,7 @@ export const ChatInput = ({
             autoFocus
           />
 
-          <FileUpload />
+          <FileUpload onFileSelect={handleFileSelect} />
 
           <button
             className="absolute right-2 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"
