@@ -86,3 +86,7 @@ pre:has(div.codeblock) {
     font-size: 14px;
     font-weight: bold;
 }
+
+.fileDel:hover {
+    cursor: pointer;
+}

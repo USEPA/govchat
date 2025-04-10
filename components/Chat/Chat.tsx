@@ -71,6 +71,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const chatInputRef = useRef<HTMLDivElement>(null);
 
   const handleSend = useCallback(
     async (message: Message, deleteCount = 0, plugin: Plugin | null = null) => {
@@ -352,7 +353,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         observer.unobserve(messagesEndElement);
       }
     };
-  }, [messagesEndRef]);
+  }, [messagesEndRef, chatInputRef] );
 
   return (
     <div className="relative flex-1 overflow-hidden bg-white dark:bg-[#343541]">
