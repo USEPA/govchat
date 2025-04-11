@@ -75,7 +75,7 @@ export const ChatInput = ({
 
   const promptListRef = useRef<HTMLUListElement | null>(null);
   
-  const [files, setFiles] = useState([]);
+  const [uploadFiles, setUploadFiles] = useState([]);
 
   const filteredPrompts = prompts.filter((prompt) =>
     prompt.name.toLowerCase().includes(promptInputValue.toLowerCase()),
@@ -94,6 +94,7 @@ export const ChatInput = ({
     console.log('handleSend triggered ');
 
     if (messageIsStreaming) {
+      console.log('handleSend messageIsStreaming');
       return;
     }
 
@@ -102,48 +103,112 @@ export const ChatInput = ({
       return;
     }
 
-    if(files && files.length > 0){
-/*
-content: [
-            {
-                type: "text",
-                text: "What is the first dragon in the book?",
-            },
-            {
-                type: "file",
-                file: {
-                    filename: "draconomicon.pdf",
-                    file_data: `data:application/pdf;base64,${base64String}`
-                }
-            },
-        ],
-*/
+    getFilesForContent(content, uploadFiles).then(newContent => {
+      
+      setContent(newContent);
+      
+      console.log('new content: ' + content);
 
-      console.log('files attached: ' + files.length);
+      onSend({ role: 'user', content }, plugin);   //, uploadFiles
+      setContent('');
+      setPlugin(null);
+      setUploadFiles(null);
 
-      let tmpContent = '[{type: "text",text: "' + content + '",},';
-      for (const file of files) {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => {
-          const base64String = reader.result;
-          tmpContent += `,{type: "file",file:{filename: "${file.name}",file_data: ${base64String}}}`;
-        };
+      if (window.innerWidth < 640 && textareaRef && textareaRef.current) {
+        textareaRef.current.blur();
       }
+    
+    })
+    .catch(error => {
+      //do nothing
+    })
 
-      setContent(tmpContent);
+  };
 
-    }
+  /*
+    isImageCorrupt(file): Promise<boolean> {
+      return new Promise<boolean>((resolve,reject)=>{
+        var reader = new FileReader();
+      
+        reader.readAsDataURL(file);
+        reader.onload = ()=>{
+          var img = new Image();
+          img.src = reader.result;
+          img.onload = function () {
+              resolve(false);
+          };
+          img.onerror = function () {
+              resolve(true);
+          };
+            
+        }
+
+        reader.onerror=()=>{reject(true)}
+      });
+    };
 
 
-    onSend({ role: 'user', content }, plugin, files);
-    setContent('');
-    setPlugin(null);
-    setFiles(null);
+    USAGE:
+      isImageCorrupt(yourFile).then((result)=>{[HERE USE RESULT]},(error)=>{HERE USE ERROR RESULT})  
+  */
 
-    if (window.innerWidth < 640 && textareaRef && textareaRef.current) {
-      textareaRef.current.blur();
-    }
+
+
+  const getFilesForContent = (content: string, files: File[]): Promise<String> => {
+
+
+    return new Promise((resolve, reject) => {
+    
+      if(uploadFiles && uploadFiles.length > 0){
+        console.log('files attached: ' + files.length);
+
+        /*
+        change content to format:
+        content: [
+                    {
+                        type: "text",
+                        text: "What is the first dragon in the book?",
+                    },
+                    {
+                        type: "file",
+                        file: {
+                            filename: "draconomicon.pdf",
+                            file_data: `data:application/pdf;base64,${base64String}`
+                        }
+                    },
+                ],
+        */
+
+        var tmpContent = `[{type: "text",text: "${content}",},`;
+      
+        for (const file of files) {
+          console.log('--file: ' + file.name);
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onerror = (event) => {
+            console.error("Error reading file:", event);
+          };
+          reader.onload = () => {
+            const base64String = reader.result;
+            console.log('--file content: ' + base64String);
+            tmpContent += `{type: "file",file:{filename: "${file.name}",file_data: ${base64String}}},`;
+          };
+        }
+
+        tmpContent += `]`;
+
+        console.log('tmpContent: ' + tmpContent);
+
+        resolve(tmpContent);
+
+      }
+      else { 
+        console.log('no files attached');
+        resolve(content);
+      }
+    
+    })
+
   };
 
   const handleStopConversation = () => {
@@ -211,8 +276,8 @@ content: [
     }
   };
 
-  const handleFileSelect = (selectedFiles: File[]) => {
-    setFiles(selectedFiles);
+  const handleFileSelect = (uploadFiles: File[]) => {
+    setUploadFiles([...uploadFiles]);
   }
 
   const parseVariables = (content: string) => {

@@ -31,7 +31,6 @@ import { PromptList } from './PromptList';
 import { VariableModal } from './VariableModal';
 
 
-
 interface Props {
   onFileSelect: () => void;
 }
@@ -47,7 +46,7 @@ export const FileUpload = ({
 
   const uploadButton = document.getElementById("upload-button");
 
-  const [files, setFiles] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const dropRef = useRef(null);
 
   const handleDragOver = (event) => {
@@ -56,23 +55,38 @@ export const FileUpload = ({
 
   const handleDrop = (event) => {
     event.preventDefault();
-    const newFiles = Array.from(event.dataTransfer.files);
-    setFiles([...files, ...newFiles]);
+    const newSelectedFiles = Array.from(event.dataTransfer.selectedFiles);
+    setSelectedFiles([...selectedFiles, ...newSelectedFiles]);
   };
 
   const handleFileSelect = (event) => {
-    const newFiles = Array.from(event.target.files);
-    setFiles([...files, ...newFiles]);
+    const newSelectedFiles = Array.from(event.target.files);
+    //setSelectedFiles([...selectedFiles, ...newSelectedFiles]);
+    setSelectedFiles([...newSelectedFiles]);
 
-    onFileSelect(files);
 
+    console.log('newSelectedFiles:');
+    for (const file of newSelectedFiles) {
+      console.log('----Filename:', file.name);
+    }
+
+    console.log('selectedFiles:');
+    for (const file of selectedFiles) {
+      console.log('----Filename:', file.name);
+    }
+
+    //console.log("new files selected. old list: " + newSelectedFiles);
+    //console.log("new list: " + selectedFiles);
+
+
+    onFileSelect([...newSelectedFiles]);
   };
 
   const handleDeleteFile = (event, fileIndex) => {
     console.log("delete file : " + fileIndex);
-    const newFiles = [...files];
-    newFiles.splice(fileIndex, 1);
-    setFiles(newFiles);
+    const newSelectedFiles = [...selectedFiles];
+    newSelectedFiles.splice(fileIndex, 1);
+    setSelectedFiles(newSelectedFiles);
   }
 
   return (
@@ -84,9 +98,9 @@ export const FileUpload = ({
     >
       <p>Drag and drop pdf files here or</p>
       <input type="file" accept=".pdf" multiple onChange={handleFileSelect} />
-      {files.length > 0 && (
+      {selectedFiles.length > 0 && (
         <ul>
-          {files.map((file, index) => (
+          {selectedFiles.map((file, index) => (
             <li className="uploadFileName" key={index}>{file.name} <span className="fileDel" onClick={(e) => handleDeleteFile(e, index)}>X</span></li>
           ))}
         </ul>
