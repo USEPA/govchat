@@ -61,7 +61,7 @@ export const ChatInput = ({
     dispatch: homeDispatch,
   } = useContext(HomeContext);
 
-  const [content, setContent] = useState<string>();
+  const [content, setContent] = useState<string>('');
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const [showPromptList, setShowPromptList] = useState(false);
   const [activePromptIndex, setActivePromptIndex] = useState(0);
@@ -103,112 +103,104 @@ export const ChatInput = ({
       return;
     }
 
-    getFilesForContent(content, uploadFiles).then(newContent => {
-      
-      setContent(newContent);
-      
-      console.log('new content: ' + content);
+    if (uploadFiles && uploadFiles.length > 0) {
+      console.log('files attached: ' + uploadFiles.length);
 
-      onSend({ role: 'user', content }, plugin);   //, uploadFiles
+      getContentForFiles(content, uploadFiles).then(fileContent => {
+
+        console.log('new content from async func: ');
+        console.log(fileContent);
+        //let fileContentJSON;  
+        //try {
+        //  fileContentJSON = JSON.parse(fileContent);
+        //}
+        //catch (err) {
+        //  console.log('Error parsing file content: ' + err);
+        //}
+
+        var newContent = `[{type: "text",text: "${content}",},${fileContent}]`;
+
+        //setContent(tmpContent);
+
+        //console.log('new set content: ' + content);
+
+        onSend({ role: 'user', content: newContent }, plugin);
+        setContent('');
+        setPlugin(null);
+        setUploadFiles([]);
+      })
+      .catch(error => {
+        //do nothing
+      })
+    }
+    else {
+      console.log('no files attached');
+
+      onSend({ role: 'user', content }, plugin);
       setContent('');
       setPlugin(null);
-      setUploadFiles(null);
+      setUploadFiles([]);
+    }
 
-      if (window.innerWidth < 640 && textareaRef && textareaRef.current) {
-        textareaRef.current.blur();
-      }
-    
-    })
-    .catch(error => {
-      //do nothing
-    })
+    if (window.innerWidth < 640 && textareaRef && textareaRef.current) {
+      textareaRef.current.blur();
+    }
 
   };
 
-  /*
-    isImageCorrupt(file): Promise<boolean> {
-      return new Promise<boolean>((resolve,reject)=>{
-        var reader = new FileReader();
-      
-        reader.readAsDataURL(file);
-        reader.onload = ()=>{
-          var img = new Image();
-          img.src = reader.result;
-          img.onload = function () {
-              resolve(false);
-          };
-          img.onerror = function () {
-              resolve(true);
-          };
-            
-        }
+  const getContentForFiles = async (content: string, files: File[]) => {
 
-        reader.onerror=()=>{reject(true)}
-      });
-    };
-
-
-    USAGE:
-      isImageCorrupt(yourFile).then((result)=>{[HERE USE RESULT]},(error)=>{HERE USE ERROR RESULT})  
-  */
-
-
-
-  const getFilesForContent = (content: string, files: File[]): Promise<String> => {
-
-
-    return new Promise((resolve, reject) => {
-    
-      if(uploadFiles && uploadFiles.length > 0){
-        console.log('files attached: ' + files.length);
-
-        /*
-        change content to format:
-        content: [
-                    {
-                        type: "text",
-                        text: "What is the first dragon in the book?",
-                    },
-                    {
-                        type: "file",
-                        file: {
-                            filename: "draconomicon.pdf",
+    /*
+    change content to format:
+    content: [
+                {
+                    type: "text",
+                    text: "What is the first dragon in the book?",
+                },
+                {
+                    type: "file",
+                    file: { filename: "draconomicon.pdf",
                             file_data: `data:application/pdf;base64,${base64String}`
-                        }
-                    },
-                ],
-        */
+                    }
+                },
+            ],
+    */
 
-        var tmpContent = `[{type: "text",text: "${content}",},`;
-      
-        for (const file of files) {
-          console.log('--file: ' + file.name);
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onerror = (event) => {
-            console.error("Error reading file:", event);
-          };
-          reader.onload = () => {
+    let tmpContent = "";
+
+    const filePromises = files.map((file) => {
+      // Return a promise per file
+      return new Promise((resolve, reject) => {
+        console.log('--file: ' + file.name);
+        const reader = new FileReader();
+
+        reader.onload = async () => {
+          try {
             const base64String = reader.result;
-            console.log('--file content: ' + base64String);
-            tmpContent += `{type: "file",file:{filename: "${file.name}",file_data: ${base64String}}},`;
-          };
-        }
+            //console.log('--file content: ' + base64String);
 
-        tmpContent += `]`;
+            tmpContent += '{"type": "file","file":{"filename": "' + file.name + '","file_data": "`' + base64String + '`"}},';
 
-        console.log('tmpContent: ' + tmpContent);
+            // Resolve the promise with the response value
+            resolve(tmpContent);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        reader.onerror = (error) => {
+          console.error("Error reading file:", file.name);
+          reject(error);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
 
-        resolve(tmpContent);
+    // Wait for all promises to be resolved
+    const resultStr = await Promise.all(filePromises);
 
-      }
-      else { 
-        console.log('no files attached');
-        resolve(content);
-      }
-    
-    })
+    console.log('COMPLETED');
 
+    return tmpContent.substring(0, tmpContent.length - 1);
   };
 
   const handleStopConversation = () => {
