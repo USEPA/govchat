@@ -223,8 +223,8 @@ href="https://www.epa.gov/system/files/documents/2023-04/environmental_informati
 2105.4 EPA Environmental Information Quality Policy April 10,
 2023</a></p></li>
 <li><p><a
-href="https://www.epa.gov/system/files/documents/2025-01/us-epa-scientific-integrity-policy.pdf">EPA
-Scientific Integrity Policy 2025</a></p></li>
+href="https://www.epa.gov/system/files/documents/2023-12/scientific_integrity_policy_2012_accessible.pdf">EPA
+Scientific Integrity Policy 2012</a></p></li>
 <li><p><a
 href="https://www.cio.gov/policies-and-priorities/circular-a-130/">OMB
 Circular No. A-130 - Managing Information as a Strategic Resource July
