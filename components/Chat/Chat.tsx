@@ -542,7 +542,7 @@ const onDownloadFolder = () => {
                 {loading && <ChatLoader />}
 
                 <div
-                  className="h-[162px] bg-white dark:bg-[#343541]"
+                  className="h-[230px] bg-white dark:bg-[#343541]"
                   ref={messagesEndRef}
                 />
               </>

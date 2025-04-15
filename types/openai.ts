@@ -18,7 +18,7 @@ export const OpenAIModels: Record<OpenAIModelID, OpenAIModel> = {
   [OpenAIModelID.GPT_4]: {
     id: OpenAIModelID.GPT_4,
     name: 'GPT-4',
-    maxLength: 128_000 * 4,
+    maxLength: 128_000 * 3.5, // *3.5 was the tested limit using some trial and error
     tokenLimit: 128_000,
   }
 };
