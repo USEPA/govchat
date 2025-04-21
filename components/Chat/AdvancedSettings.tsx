@@ -4,6 +4,7 @@ import { SystemPrompt } from './SystemPrompt';
 import { Conversation } from '@/types/chat';
 import { KeyValuePair } from '@/types/data';
 import { Prompt } from '@/types/prompt';
+import { ModelSelect } from './ModelSelect';
 
 interface Props {
     selectedConversation: Conversation,
@@ -67,6 +68,7 @@ export const AdvancedSettings: FC<Props> = ({ selectedConversation, prompts, han
               })
             }
           />
+          <ModelSelect />
         </div>
       )}
     </div>
