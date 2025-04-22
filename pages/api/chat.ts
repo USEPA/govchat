@@ -9,7 +9,7 @@ import { Tiktoken } from '@dqbd/tiktoken';
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '2mb'
+      sizeLimit: '10mb'
     }
   }
 }

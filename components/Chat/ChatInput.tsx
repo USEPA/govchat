@@ -110,19 +110,8 @@ export const ChatInput = ({
 
         console.log('new content from async func: ');
         console.log(fileContent);
-        //let fileContentJSON;  
-        //try {
-        //  fileContentJSON = JSON.parse(fileContent);
-        //}
-        //catch (err) {
-        //  console.log('Error parsing file content: ' + err);
-        //}
 
         var newContent = `[{type: "text",text: "${content}",},${fileContent}]`;
-
-        //setContent(tmpContent);
-
-        //console.log('new set content: ' + content);
 
         onSend({ role: 'user', content: newContent }, plugin);
         setContent('');
