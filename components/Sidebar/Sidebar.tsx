@@ -60,15 +60,10 @@ const Sidebar = <T,>({
       <div
         className={`fixed top-0 ${side}-0 z-40 flex h-full w-[260px] flex-none flex-col space-y-2 bg-white p-2 text-[14px] border border-neutral-200 transition-all sm:relative sm:top-0`}
       >
-        <a aria-label="Skip to Text Prompt Input" href="#ChatInput" className="w-full bg-white flex justify-center my-2">
-            <Logo />
-        </a>
         <div className="text-black text-[8pt]">
             <span className="mb-1 font-bold">Information About: </span>
             <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-basic-information">AI</a> |&nbsp;
-            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-generative-ai">Generative AI</a> |&nbsp;
-            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-govchat">GovChat</a>
-            
+            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-generative-ai">Generative AI</a>
         </div>
 
         <div className="text-black text-[8pt]">
