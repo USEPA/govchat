@@ -16,7 +16,7 @@ export const config = {
 
 const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
   try {
-    const { model, messages, key, prompt, temperature } = req.body as ChatBody;
+    const { conversationId, model, messages, key, prompt, temperature } = req.body as ChatBody;
     const encoding = new Tiktoken(
       tiktokenModel.bpe_ranks,
       tiktokenModel.special_tokens,
@@ -49,6 +49,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
     encoding.free();
 
     const stream = await OpenAIStream(
+      conversationId,
       model,
       promptToSend,
       temperatureToUse,

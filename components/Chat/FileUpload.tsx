@@ -9,6 +9,7 @@ import {
 } from '@tabler/icons-react';
 import {
   KeyboardEvent,
+  MouseEvent,
   MutableRefObject,
   useCallback,
   useContext,
@@ -49,17 +50,17 @@ export const FileUpload = ({
   const [selectedFiles, setSelectedFiles] = useState([]);
   const dropRef = useRef(null);
 
-  const handleDragOver = (event) => {
+  const handleDragOver = (event: { preventDefault: () => void; }) => {
     event.preventDefault();
   };
 
-  const handleDrop = (event) => {
+  const handleDrop = (event: { preventDefault: () => void; dataTransfer: { selectedFiles: Iterable<unknown> | ArrayLike<unknown>; }; }) => {
     event.preventDefault();
     const newSelectedFiles = Array.from(event.dataTransfer.selectedFiles);
     setSelectedFiles([...selectedFiles, ...newSelectedFiles]);
   };
 
-  const handleFileSelect = (event) => {
+  const handleFileSelect = (event: { target: { files: Iterable<unknown> | ArrayLike<unknown>; }; }) => {
     const newSelectedFiles = Array.from(event.target.files);
     //setSelectedFiles([...selectedFiles, ...newSelectedFiles]);
     setSelectedFiles([...newSelectedFiles]);
@@ -82,7 +83,7 @@ export const FileUpload = ({
     onFileSelect([...newSelectedFiles]);
   };
 
-  const handleDeleteFile = (event, fileIndex) => {
+  const handleDeleteFile = (event: MouseEvent<HTMLSpanElement, MouseEvent>, fileIndex: string | number) => {
     console.log("delete file : " + fileIndex);
     const newSelectedFiles = [...selectedFiles];
     newSelectedFiles.splice(fileIndex, 1);
