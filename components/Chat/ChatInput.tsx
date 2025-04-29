@@ -111,7 +111,7 @@ export const ChatInput = ({
         console.log('new content from async func: ');
         console.log(fileContent);
 
-        var newContent = `[{type: "text",text: "${content}",},${fileContent}]`;
+        var newContent = `[{type: "text",text: "${content}",},${fileContent}]`; 
 
         onSend({ role: 'user', content: newContent }, plugin);
         setContent('');
@@ -166,7 +166,6 @@ export const ChatInput = ({
         reader.onload = async () => {
           try {
             const base64String = reader.result;
-            //console.log('--file content: ' + base64String);
 
             tmpContent += '{"type": "file","file":{"filename": "' + file.name + '","file_data": "`' + base64String + '`"}},';
 
