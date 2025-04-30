@@ -486,6 +486,7 @@ const onDownloadFolder = () => {
                   >
                     <IconClearAll size={18} />
                   </button>
+                  {(selectedConversation?.model.name != "GPT-4") ? "Model: " + (selectedConversation?.model.name) + " | " : ""}
                   {t('Temp')} : {selectedConversation?.temperature}
 
                   <button
