@@ -13,7 +13,7 @@ export const Notice: FC = () => {
                 <ul>
                     <li>
                         <span>
-                            If you are a litigation hold custodian, <b>do not input any information relating to a subject matter addressed in a litigation hold into the GovChat tool</b>. 
+                            If you are a litigation hold custodian, <b>do not input any information relating to a subject matter addressed in a litigation hold into this tool</b>. 
                             To determine if you are a litigation hold custodian and to review your litigation holds, access your personal Relativity Legal Hold (RLH) custodian portal by locating the most recent email
                             from <a href="mailto:EPA_Legal_Hold@epa.gov" title="mailto:EPA_Legal_Hold@epa.gov" className="underline">EPA_Legal_Hold@epa.gov</a> with
                             the subject line “Global Notice – Relativity Legal Hold Reminder” sent to you within the past 90 days. 
@@ -21,7 +21,7 @@ export const Notice: FC = () => {
                             send an email to <a href="mailto:EPA_Legal_Hold@epa.gov" title="mailto:EPA_Legal_Hold@epa.gov" className="underline">EPA_Legal_Hold@epa.gov</a>.
                         </span>
                         <br /><br />
-                        Additionally, the GovChat inputs and outputs may be considered Federal records that require retention according to the <a href="https://www.archives.gov/news/topics/federal-records-act" className="underline">Federal Records Act</a>.
+                        Additionally, the inputs and outputs of this tool may be considered Federal records that require retention according to the <a href="https://www.archives.gov/news/topics/federal-records-act" className="underline">Federal Records Act</a>.
 Please follow the EPA Records Management Policy, <a href="https://www.epa.gov/system/files/documents/2021-08/records_management_policy.pdf" className="underline">CIO 2155.5</a> and the <a
 href="https://patt.epa.gov/app/mu-plugins/pattracking/includes/admin/pages/record_schedule/" className="underline">EPA records schedules</a> for more guidance. 
 If you have questions, please feel free to reach out to <a href="mailto:records@epa.gov" title="mailto:records@epa.gov" className="underline">records@epa.gov</a>.
