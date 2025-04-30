@@ -6,6 +6,10 @@ import { KeyValuePair } from '@/types/data';
 import { Prompt } from '@/types/prompt';
 import { ModelSelect } from './ModelSelect';
 
+const SUPPORTS_TEMPERATURE = [
+  "GPT-4"
+]
+
 interface Props {
     selectedConversation: Conversation,
     prompts: Prompt[],
@@ -58,7 +62,6 @@ export const AdvancedSettings: FC<Props> = ({ selectedConversation, prompts, han
               })
             }
           />
-
           {/* TemperatureSlider component */}
           <TemperatureSlider
             label={t('Temperature')}
@@ -68,6 +71,7 @@ export const AdvancedSettings: FC<Props> = ({ selectedConversation, prompts, han
                 value: temperature,
               })
             }
+            disabled={!SUPPORTS_TEMPERATURE.includes(selectedConversation?.model.name || '')}
           />
         </div>
       )}
