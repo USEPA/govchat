@@ -47,6 +47,7 @@ export const AdvancedSettings: FC<Props> = ({ selectedConversation, prompts, han
       {showAdvanced && (
         <div className="mt-4 space-y-4">
           {/* SystemPrompt component */}
+          <ModelSelect />
           <SystemPrompt
             conversation={selectedConversation}
             prompts={prompts}
@@ -68,7 +69,6 @@ export const AdvancedSettings: FC<Props> = ({ selectedConversation, prompts, han
               })
             }
           />
-          <ModelSelect />
         </div>
       )}
     </div>
