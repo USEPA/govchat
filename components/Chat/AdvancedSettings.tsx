@@ -4,6 +4,11 @@ import { SystemPrompt } from './SystemPrompt';
 import { Conversation } from '@/types/chat';
 import { KeyValuePair } from '@/types/data';
 import { Prompt } from '@/types/prompt';
+import { ModelSelect } from './ModelSelect';
+
+const SUPPORTS_TEMPERATURE = [
+  "GPT-4"
+]
 
 interface Props {
     selectedConversation: Conversation,
@@ -46,6 +51,7 @@ export const AdvancedSettings: FC<Props> = ({ selectedConversation, prompts, han
       {showAdvanced && (
         <div className="mt-4 space-y-4">
           {/* SystemPrompt component */}
+          <ModelSelect />
           <SystemPrompt
             conversation={selectedConversation}
             prompts={prompts}
@@ -56,7 +62,6 @@ export const AdvancedSettings: FC<Props> = ({ selectedConversation, prompts, han
               })
             }
           />
-
           {/* TemperatureSlider component */}
           <TemperatureSlider
             label={t('Temperature')}
@@ -66,6 +71,7 @@ export const AdvancedSettings: FC<Props> = ({ selectedConversation, prompts, han
                 value: temperature,
               })
             }
+            disabled={!SUPPORTS_TEMPERATURE.includes(selectedConversation?.model.name || '')}
           />
         </div>
       )}
