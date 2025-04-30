@@ -12,8 +12,13 @@ import {
 } from 'eventsource-parser';
 import { getAuthToken } from '../lib/azure';
 import { getEntraToken } from '../lib/azureEntra';
-import { AzureOpenAI } from 'openai';
+import { AzureOpenAI, toFile } from 'openai';
 import * as os from 'os';
+import * as fs from 'fs';
+import path from 'path';
+import { Readable } from 'stream';
+import { Uploadable } from 'openai/core';
+
 
 export class OpenAIError extends Error {
   type: string;
@@ -283,40 +288,56 @@ export const getFileChatBody = async (
 
   var url = `${OPENAI_API_HOST}/openai/assistants`;
 
-
   const decoder = new TextDecoder();
 
-  const client = new AzureOpenAI();
+  const openAI = new AzureOpenAI();
 
+  // create assistant
+  const assistant = openAI.beta.assistants.create(
+    {
+      model: model.id,
+      name: "GovChat File Upload Assistant " + conversationId,
+      instructions: systemPrompt,
+      tools: [{ type: "file_search" }],
+      tool_resources: {
+        file_search: {
+          vector_store_ids: [],
+        },
+      },
+    },
+  );
+
+  // Create a vector store to hold the files
+  const vectorStore = await openAI.beta.vectorStores.create({ name: "Files for Assistant " + conversationId });
+
+  // get the array of base64String files data
+  const messageFiles: string[] = JSON.parse(messages[messages.length].content)
+                        .any((part: { type: string; }) => part.type === 'file')
+                        .file.file_data;
+
+  //content = `[{type: "text",text: "${content}",}, {"type": "file","file":{"filename": "file_name1","file_data": "`base64String`"}}
+
+  // convert base64 to fs.readstream
+
+  const files = await Promise.all(messageFiles
+    .map(messageFile => base64ToReadStream(messageFile)));
+
+  //Use the upload and poll SDK helper to upload the files, add them to the vector store,
+  //and poll the status of the file batch for completion.
+  const fileBatch = await openAI.beta.vectorStores.fileBatches.uploadAndPoll(vectorStore.id, { files });
+
+
+  console.log(fileBatch.status)
+  console.log(fileBatch.file_counts)
 
 
   /*
 
-// create assistant
-assistant = client.beta.assistants.create(
-  name="Financial Analyst Assistant",
-  instructions="You are an expert financial analyst. Use your knowledge base to answer questions about audited financial statements.",
-  model="gpt-4-turbo",
-  tools=[{"type": "file_search"}],
-)
-
-
-// Create a vector store to hold the files
-vector_store = client.beta.vector_stores.create(name="Financial Statements")
  
 //Ready the files for upload to OpenAI
 file_paths = ["mydirectory/myfile1.pdf", "mydirectory/myfile2.txt"]
 file_streams = [open(path, "rb") for path in file_paths]
  
-//Use the upload and poll SDK helper to upload the files, add them to the vector store,
-//and poll the status of the file batch for completion.
-file_batch = client.beta.vector_stores.file_batches.upload_and_poll(
-  vector_store_id=vector_store.id, files=file_streams
-)
- 
-
-console.log(file_batch.status)
-console.log(file_batch.file_counts)
 
 assistant = client.beta.assistants.update(
   assistant_id=assistant.id,
@@ -368,12 +389,7 @@ with client.beta.threads.runs.stream(
 
 
 
-  const createAssistantBody = {
-    name: "GovChat File Upload Assistant " + conversationId,
-    instructions: systemPrompt,
-    tools: [{ "type": "file_search" }],
-    model: model.id,
-  };
+
 
   const createAssistantRes = await fetch(url, {
     headers: header,
@@ -421,3 +437,19 @@ with client.beta.threads.runs.stream(
 
   return body;
 };
+
+
+
+function base64ToReadStream(base64String: string): Uploadable {
+  const buffer = Buffer.from(base64String, 'base64');
+
+  //const stream = new Readable();
+
+  //stream.push(buffer);
+  //stream.push(null); // Signals the end of the stream
+
+  return buffer;
+}
+
+
+
