@@ -18,6 +18,7 @@ import * as fs from 'fs';
 import path from 'path';
 import { Readable } from 'stream';
 import { Uploadable } from 'openai/core';
+import { Assistant } from 'openai/resources/beta/assistants';
 
 
 export class OpenAIError extends Error {
@@ -157,7 +158,7 @@ export const OpenAIStream = async (
   const newMessageContent = JSON.parse(messages[messages.length].content);
 
   //content = `[{type: "text",text: "${content}",}, {"type": "file","file":{"filename": "file_name1","file_data": "`base64String`"}}
-  if (newMessageContent.some((part: { type: string; }) => part.type === 'file')) {
+  if (newMessageContent.some((content: { type: string; }) => content.type === 'file')) {
 
     // change body
     body = getFileChatBody(
@@ -166,7 +167,7 @@ export const OpenAIStream = async (
       systemPrompt,
       temperature,
       key,
-      messages,
+      newMessageContent,
       principalName,
       bearer,
       bearerAuth,
@@ -292,18 +293,19 @@ export const getFileChatBody = async (
 
   const openAI = new AzureOpenAI();
 
-  // create assistant
-  const assistant = openAI.beta.assistants.create(
+  // create assistant.
+  // TODO - pull this out to create only one per conversation or for the entire app???????????. store it in the conversation local_data????
+  var assistant = await openAI.beta.assistants.create(
     {
       model: model.id,
       name: "GovChat File Upload Assistant " + conversationId,
       instructions: systemPrompt,
       tools: [{ type: "file_search" }],
-      tool_resources: {
-        file_search: {
-          vector_store_ids: [],
-        },
-      },
+      //tool_resources: {
+      //  file_search: {
+      //    vector_store_ids: [],
+      //  },
+      //},
     },
   );
 
@@ -311,11 +313,17 @@ export const getFileChatBody = async (
   const vectorStore = await openAI.beta.vectorStores.create({ name: "Files for Assistant " + conversationId });
 
   // get the array of base64String files data
-  const messageFiles: string[] = JSON.parse(messages[messages.length].content)
-                        .any((part: { type: string; }) => part.type === 'file')
-                        .file.file_data;
+  //const messageFiles: string[] = JSON.parse(messages[messages.length].content)
+  //                      .any((part: { type: string; }) => part.type === 'file')
+  //                      .file.file_data;
+
 
   //content = `[{type: "text",text: "${content}",}, {"type": "file","file":{"filename": "file_name1","file_data": "`base64String`"}}
+  const messageFiles: string[] = JSON.parse(messages[messages.length].content)
+                        .any((part: { type: string; }) => part.type === 'file')
+                        .file; //.file_data;
+
+
 
   // convert base64 to fs.readstream
 
@@ -331,27 +339,61 @@ export const getFileChatBody = async (
   console.log(fileBatch.file_counts)
 
 
+  assistant = openAI.beta.assistants.update(
+    assistant: assistant.id,
+    toolResources = { "file_search": { "vector_store_ids": [vectorStore.id] } },
+  );
+
+
+//convert python to js
+  with client.beta.threads.runs.stream(
+      thread_id=thread.id,
+      assistant_id=assistant.id,
+      instructions="Please address the user as Jane Doe. The user has a premium account.",
+      event_handler=EventHandler(),
+  ) as stream:
+      stream.until_done()
+
   /*
 
- 
-//Ready the files for upload to OpenAI
-file_paths = ["mydirectory/myfile1.pdf", "mydirectory/myfile2.txt"]
-file_streams = [open(path, "rb") for path in file_paths]
- 
 
-assistant = client.beta.assistants.update(
-  assistant_id=assistant.id,
-  tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}},
-)
+  "data_sources": [
+  {
+   "type": "azure_search",
+   "parameters": {
+    "endpoint": "https://your-search-endpoint.search.windows.net/",
+    "authentication": {
+     "type": "user_assigned_managed_identity",
+     "managed_identity_resource_id": "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{resource-name}"
+    },
+    "index_name": "{index name}",
+    "query_type": "vector",
+    "embedding_dependency": {
+     "type": "deployment_name",
+     "deployment_name": "{embedding deployment name}"
+    },
+    "in_scope": true,
+    "top_n_documents": 5,
+    "strictness": 3,
+    "role_information": "You are an AI assistant that helps people find information.",
+    "fields_mapping": {
+     "content_fields_separator": "\\n",
+     "content_fields": [
+      "content"
+     ],
+     "filepath_field": "filepath",
+     "title_field": "title",
+     "url_field": "url",
+     "vector_fields": [
+      "contentvector"
+     ]
+    }
+   }
+  }
+ ]
 
 
-with client.beta.threads.runs.stream(
-    thread_id=thread.id,
-    assistant_id=assistant.id,
-    instructions="Please address the user as Jane Doe. The user has a premium account.",
-    event_handler=EventHandler(),
-) as stream:
-    stream.until_done()
+
 
 
 
@@ -440,15 +482,15 @@ with client.beta.threads.runs.stream(
 
 
 
-function base64ToReadStream(base64String: string): Uploadable {
+function base64ToReadStream(base64String: string) {
   const buffer = Buffer.from(base64String, 'base64');
 
-  //const stream = new Readable();
+  const stream = new Readable();
 
-  //stream.push(buffer);
-  //stream.push(null); // Signals the end of the stream
+  stream.push(buffer);
+  stream.push(null); // Signals the end of the stream
 
-  return buffer;
+  return stream;
 }
 
 
