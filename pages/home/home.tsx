@@ -368,8 +368,8 @@ const Home = ({
       }}
     >
       <Head>
-        <title>Gov Chat: EPA Generative AI Chatbot</title>
-        <meta name="description" content="Gov Chat is EPA's Generative AI Chatbot tool" />
+        <title>An Internal GenAI Tool</title>
+        <meta name="description" content="EPA's Internal GenAI Tool" />
         <meta
           name="viewport"
           content="height=device-height ,width=device-width, initial-scale=1"

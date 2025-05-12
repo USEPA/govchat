@@ -1,6 +1,5 @@
-# Govchat
 
-Govchat is an open source chat UI for AI models. It is based on an old version of Chatbot-ui.
+An open source chat UI for AI models. It is based on an old version of Chatbot-ui.
 
 ![Chatbot UI](./public/screenshots/screenshot-0402023.jpg)
 
