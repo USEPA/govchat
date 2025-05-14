@@ -128,7 +128,13 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         if (!response.ok) {
           homeDispatch({ field: 'loading', value: false });
           homeDispatch({ field: 'messageIsStreaming', value: false });
-          toast.error(response.statusText);
+          const errorMsg = await response.text();
+          if (errorMsg.includes('have exceeded call rate limit')) {
+            toast.error("This model is currently overloaded. Please try again in a few minutes.");
+          } else {
+             toast.error(response.statusText);
+          }
+          
           return;
         }
         const data = response.body;
