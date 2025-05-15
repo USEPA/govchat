@@ -25,6 +25,14 @@ export const AdvancedSettings: FC<Props> = ({ selectedConversation, prompts, han
   // State to manage visibility of the advanced settings
   const [showAdvanced, setShowAdvanced] = useState(false);
 
+  let prodFlag = false;
+  let stagingFlag = false;
+  if (typeof window !== 'undefined' && window.__MODEL_SELECT_FLAGS__) {
+    prodFlag = window.__MODEL_SELECT_FLAGS__.prod;
+    stagingFlag = window.__MODEL_SELECT_FLAGS__.stage;
+  }
+  const showModelSelect = prodFlag || (stagingFlag && window.location.hostname === 'govchat-web-app.govchat-stg-asev3.appserviceenvironment.net');
+
   const toggleAdvancedSettings = () => {
     const newShowAdvanced = !showAdvanced;
     setShowAdvanced(newShowAdvanced);
@@ -51,7 +59,7 @@ export const AdvancedSettings: FC<Props> = ({ selectedConversation, prompts, han
       {showAdvanced && (
         <div className="mt-4 space-y-4">
           {/* SystemPrompt component */}
-          <ModelSelect />
+          {showModelSelect && <ModelSelect />}
           <SystemPrompt
             conversation={selectedConversation}
             prompts={prompts}
