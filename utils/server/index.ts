@@ -33,7 +33,7 @@ const printLogLines = (
     userName: string|null;
     logID: string;
     maxTokens: number;
-    temperature: number;
+    temperature: number|undefined;
     model: string|undefined;
     page: number;
     totalPages: number },
