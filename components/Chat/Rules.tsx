@@ -16,14 +16,14 @@ return (
           isAdvancedOpen ? 'max-h-[200px]' : 'max-h-[500px]'
         }`}
       >
-<h1 className="text-xs text-black/80">GenAI Rules dated September 2024</h1>
+<h1 className="text-xs text-black/80">GenAI Rules dated May 2025</h1>
 <p>These rules of behavior apply to EPA employees, contractors,
 subcontractors, grantees, and volunteers in the safe, secure, and
-ethical use of EPA authorized GenAI technologies on EPA provided devices
-and in the performance of their official duties. While these rules of
+ethical use of EPA authorized technologies on EPA provided devices
+or in the performance of official duties. While these rules of
 behavior highlight some areas of special concern, all EPA policies that
 govern your work and work products apply to work products produced with
-the assistance of GenAI.</p>
+the assistance of GenAI. Outputs from this tool do not reflect the opinions or positions of EPA.</p>
 <p><strong><h2 className="underline text-center">Definitions</h2></strong></p>
 <p><strong>Generative Artificial Intelligence (GenAI)</strong> is an
 artificial intelligence technology that allows users to create new
