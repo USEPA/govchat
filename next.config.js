@@ -32,6 +32,22 @@ const nextConfig = {
       },
     ];
   },
+
+  async redirects() {
+    return [
+      {
+        source: '/',
+        has: [
+          {
+            type: 'host',
+            value: 'govchat.epa.gov',
+          },
+        ],
+        destination: 'https://ai-work.epa.gov',
+        permanent: false,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
