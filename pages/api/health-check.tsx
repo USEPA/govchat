@@ -19,7 +19,7 @@ export default async function healthCheck(req: NextApiRequest, res: NextApiRespo
         },
       ],
       key: '',
-      prompt: "You are Gov Chat an AI Assistant using Azure OpenAI. Follow the user's instructions carefully. Respond using markdown.",
+      prompt: "You are an AI Assistant that uses Azure OpenAI. Follow the user's instructions carefully. Respond using markdown.",
       temperature: 0.5,
     };
     await handler(req, res);

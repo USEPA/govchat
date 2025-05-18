@@ -189,7 +189,7 @@ const Home = ({
       id: uuidv4(),
       name: t('New Conversation'),
       messages: [],
-      model: lastConversation?.model || {
+      model: {
         id: OpenAIModels[defaultModelId].id,
         name: OpenAIModels[defaultModelId].name,
         maxLength: OpenAIModels[defaultModelId].maxLength,
@@ -199,6 +199,7 @@ const Home = ({
       temperature: lastConversation?.temperature ?? DEFAULT_TEMPERATURE,
       folderId: null,
       tokenLength: 0,
+      characterLength: 0
     };
 
     const updatedConversations = [...conversations, newConversation];
@@ -367,8 +368,8 @@ const Home = ({
       }}
     >
       <Head>
-        <title>Gov Chat: EPA Generative AI Chatbot</title>
-        <meta name="description" content="Gov Chat is EPA's Generative AI Chatbot tool" />
+        <title>Internal GenAI Tool</title>
+        <meta name="description" content="An internal Generative Artificial Intelligence (GenAI) tool which uses AI language models designed and trained to understand and generate human-like language responses, using knowledge pulled from various models" />
         <meta
           name="viewport"
           content="height=device-height ,width=device-width, initial-scale=1"

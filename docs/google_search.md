@@ -1,6 +1,6 @@
 # Google Search Tool
 
-Use the Google Search API to search the web in Gov Chat.
+Use the Google Search API to search the web.
 
 ## How To Enable
 

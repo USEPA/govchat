@@ -19,7 +19,7 @@ import {
 
 import { useTranslation } from 'next-i18next';
 
-import { Message, Conversation } from '@/types/chat';
+import { Message, Conversation, makeTimestamp } from '@/types/chat';
 import { Plugin } from '@/types/plugin';
 import { Prompt } from '@/types/prompt';
 
@@ -30,17 +30,12 @@ import { PromptList } from './PromptList';
 import { VariableModal } from './VariableModal';
 
 
-import { CHARACTERS_PER_TOKEN } from '@/utils/app/const';
-import { throttle } from 'lodash';
-import { FileUpload } from './FileUpload';
-
 interface Props {
   onSend: (message: Message, plugin: Plugin | null) => void;
   onRegenerate: () => void;
   onScrollDownClick: () => void;
   stopConversationRef: MutableRefObject<boolean>;
   textareaRef: MutableRefObject<HTMLTextAreaElement | null>;
-  chatInputRef: MutableRefObject<HTMLDivElement | null>;
   showScrollDownButton: boolean;
 }
 
@@ -50,7 +45,6 @@ export const ChatInput = ({
   onScrollDownClick,
   stopConversationRef,
   textareaRef,
-  chatInputRef, 
   showScrollDownButton,
 }: Props) => {
   const { t } = useTranslation('chat');
@@ -61,7 +55,7 @@ export const ChatInput = ({
     dispatch: homeDispatch,
   } = useContext(HomeContext);
 
-  const [content, setContent] = useState<string>('');
+  const [content, setContent] = useState<string>();
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const [showPromptList, setShowPromptList] = useState(false);
   const [activePromptIndex, setActivePromptIndex] = useState(0);
@@ -74,8 +68,6 @@ export const ChatInput = ({
   const [characterLength, setCharacterLength] = useState(0);
 
   const promptListRef = useRef<HTMLUListElement | null>(null);
-  
-  const [uploadFiles, setUploadFiles] = useState([]);
 
   const filteredPrompts = prompts.filter((prompt) =>
     prompt.name.toLowerCase().includes(promptInputValue.toLowerCase()),
@@ -90,11 +82,7 @@ export const ChatInput = ({
 
 
   const handleSend = () => {
-
-    console.log('handleSend triggered ');
-
     if (messageIsStreaming) {
-      console.log('handleSend messageIsStreaming');
       return;
     }
 
@@ -103,92 +91,13 @@ export const ChatInput = ({
       return;
     }
 
-    if (uploadFiles && uploadFiles.length > 0) {
-      console.log('files attached: ' + uploadFiles.length);
-
-      getContentForFiles(content, uploadFiles).then(fileContent => {
-
-        console.log('new content from async func: ');
-        console.log(fileContent);
-
-        var newContent = `[{type: "text",text: "${content}",},${fileContent}]`; 
-
-        onSend({ role: 'user', content: newContent }, plugin);
-        setContent('');
-        setPlugin(null);
-        setUploadFiles([]);
-      })
-      .catch(error => {
-        //do nothing
-      })
-    }
-    else {
-      console.log('no files attached');
-
-      onSend({ role: 'user', content }, plugin);
-      setContent('');
-      setPlugin(null);
-      setUploadFiles([]);
-    }
+    onSend({ role: 'user', content, timestamp: makeTimestamp() }, plugin);
+    setContent('');
+    setPlugin(null);
 
     if (window.innerWidth < 640 && textareaRef && textareaRef.current) {
       textareaRef.current.blur();
     }
-
-  };
-
-  const getContentForFiles = async (content: string, files: File[]) => {
-
-    /*
-    change content to format:
-    content: [
-                {
-                    type: "text",
-                    text: "What is the first dragon in the book?",
-                },
-                {
-                    type: "file",
-                    file: { filename: "draconomicon.pdf",
-                            file_data: `data:application/pdf;base64,${base64String}`
-                    }
-                },
-            ],
-    */
-
-    let tmpContent = "";
-
-    const filePromises = files.map((file) => {
-      // Return a promise per file
-      return new Promise((resolve, reject) => {
-        console.log('--file: ' + file.name);
-        const reader = new FileReader();
-
-        reader.onload = async () => {
-          try {
-            const base64String = reader.result;
-
-            tmpContent += '{"type": "file","file":{"filename": "' + file.name + '","file_data": "`' + base64String + '`"}},';
-
-            // Resolve the promise with the response value
-            resolve(tmpContent);
-          } catch (err) {
-            reject(err);
-          }
-        };
-        reader.onerror = (error) => {
-          console.error("Error reading file:", file.name);
-          reject(error);
-        };
-        reader.readAsDataURL(file);
-      });
-    });
-
-    // Wait for all promises to be resolved
-    const resultStr = await Promise.all(filePromises);
-
-    console.log('COMPLETED');
-
-    return tmpContent.substring(0, tmpContent.length - 1);
   };
 
   const handleStopConversation = () => {
@@ -255,10 +164,6 @@ export const ChatInput = ({
       setShowPluginSelect(!showPluginSelect);
     }
   };
-
-  const handleFileSelect = (uploadFiles: File[]) => {
-    setUploadFiles([...uploadFiles]);
-  }
 
   const parseVariables = (content: string) => {
     const regex = /{{(.*?)}}/g;
@@ -349,8 +254,7 @@ export const ChatInput = ({
   const maxLength = selectedConversation?.model.maxLength ?? 0;
 
   return (
-    <div ref={chatInputRef}
-        className="absolute bottom-0 left-0 w-full border-transparent bg-gradient-to-b from-transparent via-white to-white pt-6 dark:border-white/20 dark:via-[#343541] dark:to-[#343541] md:pt-2">
+    <div className="absolute bottom-0 left-0 w-full border-transparent bg-gradient-to-b from-transparent via-white to-white pt-6 dark:border-white/20 dark:via-[#343541] dark:to-[#343541] md:pt-2">
       <div className="stretch mx-2 mt-4 flex flex-row gap-3 last:mb-2 md:mx-4 md:mt-[52px] md:last:mb-12 lg:mx-auto lg:max-w-3xl">
         {messageIsStreaming && (
           <button
@@ -404,8 +308,6 @@ export const ChatInput = ({
             aria-label="Chat input field"
             autoFocus
           />
-
-          <FileUpload onFileSelect={handleFileSelect} />
 
           <button
             className="absolute right-2 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"

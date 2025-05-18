@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 
-import { Message } from '@/types/chat';
-import { OpenAIModel } from '@/types/openai';
+import { Message, OpenAIMessage, makeTimestamp } from '@/types/chat';
+import { OpenAIModel, OpenAIModels } from '@/types/openai';
 
 import { AZURE_DEPLOYMENT_ID, OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION, AZURE_APIM } from '../app/const';
 
@@ -42,7 +42,7 @@ const printLogLines = (
     userName: string|null;
     logID: string;
     maxTokens: number;
-    temperature: number;
+    temperature: number|undefined;
     model: string|undefined;
     page: number;
     totalPages: number },
@@ -57,6 +57,7 @@ const printLogLines = (
       {
         role: 'assistant',
         content: result,
+        timestamp: makeTimestamp()
       }
     ]
   )
@@ -79,9 +80,9 @@ export const OpenAIStream = async (
   conversationId: string,
   model: OpenAIModel,
   systemPrompt: string,
-  temperature : number,
+  temperature : number|undefined,
   key: string,
-  messages: Message[],
+  messages: OpenAIMessage[],
   principalName: string|null,
   bearer: string|null,
   bearerAuth: string|null,
@@ -92,9 +93,10 @@ export const OpenAIStream = async (
   var header = {};
   
   if (OPENAI_API_TYPE === 'azure') {
-    url = `${OPENAI_API_HOST}/openai/deployments/${AZURE_DEPLOYMENT_ID}/chat/completions?api-version=${OPENAI_API_VERSION}`;
+    url = `${OPENAI_API_HOST}/openai/deployments/${model.id}/chat/completions?api-version=${OPENAI_API_VERSION}`;
   }
 
+<<<<<<< HEAD
   if (os.hostname() === "localhost") {
 
     //url = `https://management.azure.com/subscriptions/${AZURE_SUBSCRIPTION_ID}/providers/Microsoft.CognitiveServices/locations/${AZURE_REGION}/models?api-version=${OPENAI_API_VERSION}`;
@@ -143,6 +145,37 @@ export const OpenAIStream = async (
 
   var body = {
     ...(OPENAI_API_TYPE === 'openai' && { model: model.id }),
+=======
+  const header = {
+    'Content-Type': 'application/json',
+    ...(OPENAI_API_TYPE === 'openai' && {
+      Authorization: `Bearer ${key ? key : process.env.OPENAI_API_KEY}`
+    }),
+    ...(OPENAI_API_TYPE === 'azure' && process.env.AZURE_USE_MANAGED_IDENTITY=="false" && {
+      'api-key': `${key ? key : process.env.OPENAI_API_KEY}`
+    }),
+    ...(OPENAI_API_TYPE === 'azure' && process.env.AZURE_USE_MANAGED_IDENTITY=="true" && {
+      Authorization: `Bearer ${token.token}`
+    }),
+    ...((OPENAI_API_TYPE === 'openai' && OPENAI_ORGANIZATION) && {
+      'OpenAI-Organization': OPENAI_ORGANIZATION,
+    }),
+    ...((AZURE_APIM) && {
+      'Ocp-Apim-Subscription-Key': process.env.AZURE_APIM_KEY
+    }),
+    ...((principalName) && {
+      'x-ms-client-principal-name': principalName
+    }),
+    ...((bearer) && { 
+      'x-ms-client-principal': bearer
+    }),
+    ...((bearerAuth) && { 
+      'x-ms-client-principal-id': bearerAuth
+    })
+  };
+  var body = {
+    ...(OPENAI_API_TYPE === 'openai' && {model: model.id}),
+>>>>>>> main
     messages: [
       {
         role: 'system',
@@ -150,10 +183,12 @@ export const OpenAIStream = async (
       },
       ...messages,
     ],
-    max_tokens: 1000,
     temperature: temperature,
-    stream: true,
+    stream: true
   };
+  if (model.id == "o3-mini" || model.id == "o1") {
+    delete body.temperature;
+  }
 
   const newMessageContent = JSON.parse(messages[messages.length].content);
 
@@ -196,7 +231,7 @@ export const OpenAIStream = async (
       userName: string|null;
       logID: string;
       maxTokens: number;
-      temperature: number;
+      temperature: number|undefined;
       model: string|undefined;
       page: number;
       totalPages: number } 
@@ -204,7 +239,7 @@ export const OpenAIStream = async (
     messagesJSON: "", 
     userName: userName,
     logID: uuidv4(),
-    maxTokens: body.max_tokens,
+    maxTokens: 0,
     temperature: body.temperature,
     model: body.model,
     page: 1,

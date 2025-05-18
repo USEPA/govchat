@@ -14,7 +14,17 @@ export default function Document(props: Props) {
     <Html lang={currentLocale}>
       <Head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-title" content="Gov Chat"></meta>
+        <meta name="apple-mobile-web-app-title" content="Chat"></meta>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.__MODEL_SELECT_FLAGS__ = {
+                  prod: ${process.env.MODEL_SELECT_PROD_FLAG === 'true'},
+                  stage: ${process.env.MODEL_SELECT_STAGE_FLAG === 'true'}
+                };
+              `,
+            }}
+          />
       </Head>
       <body>
         <Main />

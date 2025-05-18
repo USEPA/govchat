@@ -1,4 +1,4 @@
-import { IconClearAll, IconSettings } from '@tabler/icons-react';
+import { IconClearAll, IconSettings, IconDownload, IconFolderDown } from '@tabler/icons-react';
 import {
   MutableRefObject,
   memo,
@@ -21,7 +21,7 @@ import {
 } from '@/utils/app/conversation';
 import { throttle } from '@/utils/data/throttle';
 
-import { ChatBody, Conversation, Message } from '@/types/chat';
+import { ChatBody, Conversation, Message, makeTimestamp } from '@/types/chat';
 import { Plugin } from '@/types/plugin';
 
 import HomeContext from '@/utils/home/home.context';
@@ -30,9 +30,6 @@ import Spinner from '../Spinner';
 import { ChatInput } from './ChatInput';
 import { ChatLoader } from './ChatLoader';
 import { ErrorMessageDiv } from './ErrorMessageDiv';
-//import { ModelSelect } from './ModelSelect';
-import { SystemPrompt } from './SystemPrompt';
-import { TemperatureSlider } from './Temperature';
 import { Rules } from './Rules';
 import { Notice } from './Notice';
 import { MemoizedChatMessage } from './MemoizedChatMessage';
@@ -71,7 +68,6 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const chatInputRef = useRef<HTMLDivElement>(null);
 
   const handleSend = useCallback(
     async (message: Message, deleteCount = 0, plugin: Plugin | null = null) => {
@@ -99,9 +95,8 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         homeDispatch({ field: 'loading', value: true });
         homeDispatch({ field: 'messageIsStreaming', value: true });
         const chatBody: ChatBody = {
-          conversationId: updatedConversation.id,
           model: updatedConversation.model,
-          messages: updatedConversation.messages,
+          messages: updatedConversation.messages.map(({ role, content }) => ({role, content })),
           key: apiKey,
           prompt: updatedConversation.prompt,
           temperature: updatedConversation.temperature,
@@ -133,7 +128,13 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         if (!response.ok) {
           homeDispatch({ field: 'loading', value: false });
           homeDispatch({ field: 'messageIsStreaming', value: false });
-          toast.error(response.statusText);
+          const errorMsg = await response.text();
+          if (errorMsg.includes('have exceeded call rate limit')) {
+            toast.error("This model is currently overloaded. Please try again in a few minutes.");
+          } else {
+             toast.error(response.statusText);
+          }
+          
           return;
         }
         const data = response.body;
@@ -172,7 +173,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
               isFirst = false;
               const updatedMessages: Message[] = [
                 ...updatedConversation.messages,
-                { role: 'assistant', content: chunkValue },
+                { role: 'assistant', content: chunkValue, timestamp: makeTimestamp() },
               ];
               updatedConversation = {
                 ...updatedConversation,
@@ -222,7 +223,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           const { answer } = await response.json();
           const updatedMessages: Message[] = [
             ...updatedConversation.messages,
-            { role: 'assistant', content: answer },
+            { role: 'assistant', content: answer, timestamp: makeTimestamp() },
           ];
           updatedConversation = {
             ...updatedConversation,
@@ -308,6 +309,51 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
     }
   };
 
+const downloadTextFile = (filename: string, text: string) => {
+  const link = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([text], { type: 'text/plain' })),
+    download: filename,
+  });
+
+  document.body.append(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+};
+
+const onDownload = () => {
+    const messages = selectedConversation?.messages;
+    if (!messages?.length) return;
+    const text = messages
+      .map(({ role, content, timestamp }) => {
+        const time = timestamp ? `(${timestamp})` : '';
+        return `[${role}] ${time}\n${content}\n`;
+      })
+      .join('\n');
+
+    downloadTextFile(`conversation_${selectedConversation?.id}.txt`, text);
+};
+
+const onDownloadFolder = () => {
+  const sameFolderConversations = conversations.filter(
+    (conv) => conv.folderId === selectedConversation?.folderId
+  );
+  const text = sameFolderConversations
+    .map((conv, index) => {
+      const messagesText = conv.messages
+        ?.map(({ role, content, timestamp }) => {
+          const time = timestamp ? `(${timestamp})` : '';
+          return `[${role}] ${time}\n${content}\n`;
+        })
+        .join('\n') || '';
+      return `=== ${conv.name} ===\n${messagesText}`;
+    })
+    .join('\n\n');
+
+  downloadTextFile('folder_conversations.txt', text);
+};
+
+
   const scrollDown = () => {
     if (autoScrollEnabled) {
       messagesEndRef.current?.scrollIntoView(true);
@@ -354,21 +400,21 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         observer.unobserve(messagesEndElement);
       }
     };
-  }, [messagesEndRef, chatInputRef] );
+  }, [messagesEndRef]);
 
   return (
     <div className="relative flex-1 overflow-hidden bg-white dark:bg-[#343541]">
       {!(apiKey || serverSideApiKeyIsSet) ? (
         <div className="mx-auto flex h-full w-[300px] flex-col justify-center space-y-6 sm:w-[600px]">
           <div className="text-center text-4xl font-bold text-black dark:text-white">
-            Welcome to Gov Chat
+            Welcome
           </div>
           <div className="text-center text-lg text-black dark:text-white">
-            <div className="mb-8">{`Gov Chat is an open source clone of OpenAI's ChatGPT UI.`}</div>
+            <div className="mb-8">{`Open source clone of OpenAI's ChatGPT UI.`}</div>
           </div>
           <div className="text-center text-gray-500 dark:text-gray-400">
             <div className="mb-2">
-              Gov Chat allows you to plug in your API key to use this UI with
+              You can to plug in your API key to use this UI with
               Azure OpenAI. No warranty is provided.
             </div>
             <div className="mb-2">
@@ -423,9 +469,6 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                       alt="Decorative image of a robot hand holding a transparent globe." 
                       className="w-full h-[200px] object-cover rounded-lg object-bottom"
                     />
-                      {
-                        //<ModelSelect />
-                      }
                         <Notice />
                         <Rules isAdvancedOpen={showAdvanced} />
                         <AdvancedSettings 
@@ -441,26 +484,37 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             ) : (
               <>
                 <div className="sticky top-0 z-10 flex justify-center border border-b-neutral-300 bg-neutral-100 py-2 text-sm text-neutral-700 dark:border-none dark:bg-[#444654] dark:text-neutral-200">
-                  {t('Temp')}
-                  : {selectedConversation?.temperature} |
-                  
-                  <button
-                    className="ml-2 cursor-pointer hover:opacity-50"
+                <button
+                    className="mr-2 cursor-pointer hover:opacity-50"
                     onClick={onClearAll}
                     title="Clear all messages"
                     aria-label='Clear all messages'
                   >
                     <IconClearAll size={18} />
                   </button>
+                  {(selectedConversation?.model.name != "GPT-4") ? "Model: " + (selectedConversation?.model.name) + " | " : ""}
+                  {t('Temp')} : {selectedConversation?.temperature}
+
+                  <button
+                    className="ml-2 cursor-pointer hover:opacity-50"
+                    onClick={onDownload}
+                    title="Download conversation"
+                    aria-label="Download conversation"
+                  >
+                    <IconDownload size={18} />
+                  </button>
+
+                  {selectedConversation?.folderId !== "0" && selectedConversation?.folderId && (
+                    <button
+                      className="ml-2 cursor-pointer hover:opacity-50"
+                      onClick={onDownloadFolder}
+                      title="Download all conversations in this folder"
+                      aria-label="Download all conversations in this folder"
+                    >
+                      <IconFolderDown size={18} />
+                    </button>
+                  )}
                 </div>
-                {false && showSettings && (
-                  <div className="flex flex-col space-y-10 md:mx-auto md:max-w-xl md:gap-6 md:py-3 md:pt-6 lg:max-w-2xl lg:px-0 xl:max-w-3xl">
-                    <div className="flex h-full flex-col space-y-4 border-b border-neutral-200 p-4 dark:border-neutral-600 md:rounded-lg md:border">
-                      { //<ModelSelect />
-                      }
-                    </div>
-                  </div>
-                )}
 
                 {selectedConversation?.messages.map((message, index) => (
                   <MemoizedChatMessage
@@ -504,7 +558,6 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             }}
             showScrollDownButton={showScrollDownButton}
           />
-
         </>
       )}
     </div>
