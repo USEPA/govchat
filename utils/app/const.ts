@@ -14,7 +14,7 @@ export const OPENAI_API_TYPE =
   process.env.OPENAI_API_TYPE || 'openai';
 
 export const OPENAI_API_VERSION =
-  process.env.OPENAI_API_VERSION || '2024-12-01-preview';
+  process.env.OPENAI_API_VERSION || '2023-03-15-preview';
 
 export const OPENAI_ORGANIZATION =
   process.env.OPENAI_ORGANIZATION || '';

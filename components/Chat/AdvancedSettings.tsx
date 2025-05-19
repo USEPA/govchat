@@ -4,11 +4,6 @@ import { SystemPrompt } from './SystemPrompt';
 import { Conversation } from '@/types/chat';
 import { KeyValuePair } from '@/types/data';
 import { Prompt } from '@/types/prompt';
-import { ModelSelect } from './ModelSelect';
-
-const SUPPORTS_TEMPERATURE = [
-  "GPT-4"
-]
 
 interface Props {
     selectedConversation: Conversation,
@@ -24,14 +19,6 @@ interface Props {
 export const AdvancedSettings: FC<Props> = ({ selectedConversation, prompts, handleUpdateConversation, t, onToggle }) => {
   // State to manage visibility of the advanced settings
   const [showAdvanced, setShowAdvanced] = useState(false);
-
-  let prodFlag = false;
-  let stagingFlag = false;
-  if (typeof window !== 'undefined' && window.__MODEL_SELECT_FLAGS__) {
-    prodFlag = window.__MODEL_SELECT_FLAGS__.prod;
-    stagingFlag = window.__MODEL_SELECT_FLAGS__.stage;
-  }
-  const showModelSelect = prodFlag || (stagingFlag && window.location.hostname === 'govchat-web-app.govchat-stg-asev3.appserviceenvironment.net');
 
   const toggleAdvancedSettings = () => {
     const newShowAdvanced = !showAdvanced;
@@ -59,7 +46,6 @@ export const AdvancedSettings: FC<Props> = ({ selectedConversation, prompts, han
       {showAdvanced && (
         <div className="mt-4 space-y-4">
           {/* SystemPrompt component */}
-          {showModelSelect && <ModelSelect />}
           <SystemPrompt
             conversation={selectedConversation}
             prompts={prompts}
@@ -70,6 +56,7 @@ export const AdvancedSettings: FC<Props> = ({ selectedConversation, prompts, han
               })
             }
           />
+
           {/* TemperatureSlider component */}
           <TemperatureSlider
             label={t('Temperature')}
@@ -79,7 +66,6 @@ export const AdvancedSettings: FC<Props> = ({ selectedConversation, prompts, han
                 value: temperature,
               })
             }
-            disabled={!SUPPORTS_TEMPERATURE.includes(selectedConversation?.model.name || '')}
           />
         </div>
       )}

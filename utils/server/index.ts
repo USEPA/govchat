@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 
 import { Message, OpenAIMessage, makeTimestamp } from '@/types/chat';
-import { OpenAIModel, OpenAIModels } from '@/types/openai';
+import { OpenAIModel } from '@/types/openai';
 
 import { AZURE_DEPLOYMENT_ID, OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION, AZURE_APIM } from '../app/const';
 
@@ -70,7 +70,7 @@ const printLogLines = (
 export const OpenAIStream = async (
   model: OpenAIModel,
   systemPrompt: string,
-  temperature : number|undefined,
+  temperature : number,
   key: string,
   messages: OpenAIMessage[],
   principalName: string|null,
@@ -80,7 +80,7 @@ export const OpenAIStream = async (
 ) => {
   let url = `${OPENAI_API_HOST}/v1/chat/completions`;
   if (OPENAI_API_TYPE === 'azure') {
-    url = `${OPENAI_API_HOST}/openai/deployments/${model.id}/chat/completions?api-version=${OPENAI_API_VERSION}`;
+    url = `${OPENAI_API_HOST}/openai/deployments/${AZURE_DEPLOYMENT_ID}/chat/completions?api-version=${OPENAI_API_VERSION}`;
   }
   let token = await getAuthToken();
 
@@ -111,7 +111,7 @@ export const OpenAIStream = async (
       'x-ms-client-principal-id': bearerAuth
     })
   };
-  var body = {
+  const body = {
     ...(OPENAI_API_TYPE === 'openai' && {model: model.id}),
     messages: [
       {
@@ -120,12 +120,10 @@ export const OpenAIStream = async (
       },
       ...messages,
     ],
+    max_tokens: 1000,
     temperature: temperature,
-    stream: true
+    stream: true,
   };
-  if (model.id == "o3-mini" || model.id == "o1") {
-    delete body.temperature;
-  }
 
   const res = await fetch(url, {
     headers: header,
@@ -141,7 +139,7 @@ export const OpenAIStream = async (
       userName: string|null;
       logID: string;
       maxTokens: number;
-      temperature: number|undefined;
+      temperature: number;
       model: string|undefined;
       page: number;
       totalPages: number } 
@@ -149,7 +147,7 @@ export const OpenAIStream = async (
     messagesJSON: "", 
     userName: userName,
     logID: uuidv4(),
-    maxTokens: 0,
+    maxTokens: body.max_tokens,
     temperature: body.temperature,
     model: body.model,
     page: 1,
