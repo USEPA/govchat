@@ -96,7 +96,6 @@ export const OpenAIStream = async (
     url = `${OPENAI_API_HOST}/openai/deployments/${model.id}/chat/completions?api-version=${OPENAI_API_VERSION}`;
   }
 
-<<<<<<< HEAD
   if (os.hostname() === "localhost") {
 
     //url = `https://management.azure.com/subscriptions/${AZURE_SUBSCRIPTION_ID}/providers/Microsoft.CognitiveServices/locations/${AZURE_REGION}/models?api-version=${OPENAI_API_VERSION}`;
@@ -145,37 +144,7 @@ export const OpenAIStream = async (
 
   var body = {
     ...(OPENAI_API_TYPE === 'openai' && { model: model.id }),
-=======
-  const header = {
-    'Content-Type': 'application/json',
-    ...(OPENAI_API_TYPE === 'openai' && {
-      Authorization: `Bearer ${key ? key : process.env.OPENAI_API_KEY}`
-    }),
-    ...(OPENAI_API_TYPE === 'azure' && process.env.AZURE_USE_MANAGED_IDENTITY=="false" && {
-      'api-key': `${key ? key : process.env.OPENAI_API_KEY}`
-    }),
-    ...(OPENAI_API_TYPE === 'azure' && process.env.AZURE_USE_MANAGED_IDENTITY=="true" && {
-      Authorization: `Bearer ${token.token}`
-    }),
-    ...((OPENAI_API_TYPE === 'openai' && OPENAI_ORGANIZATION) && {
-      'OpenAI-Organization': OPENAI_ORGANIZATION,
-    }),
-    ...((AZURE_APIM) && {
-      'Ocp-Apim-Subscription-Key': process.env.AZURE_APIM_KEY
-    }),
-    ...((principalName) && {
-      'x-ms-client-principal-name': principalName
-    }),
-    ...((bearer) && { 
-      'x-ms-client-principal': bearer
-    }),
-    ...((bearerAuth) && { 
-      'x-ms-client-principal-id': bearerAuth
-    })
-  };
-  var body = {
-    ...(OPENAI_API_TYPE === 'openai' && {model: model.id}),
->>>>>>> main
+
     messages: [
       {
         role: 'system',
@@ -330,7 +299,7 @@ export const getFileChatBody = async (
 
   // create assistant.
   // TODO - pull this out to create only one per conversation or for the entire app???????????. store it in the conversation local_data????
-  var assistant = await openAI.beta.assistants.create(
+  var assistant = await openAI.assistants.create(
     {
       model: model.id,
       name: "GovChat File Upload Assistant " + conversationId,
@@ -345,7 +314,7 @@ export const getFileChatBody = async (
   );
 
   // Create a vector store to hold the files
-  const vectorStore = await openAI.beta.vectorStores.create({ name: "Files for Assistant " + conversationId });
+  const vectorStore = await openAI.vectorStores.create({ name: "Files for Assistant " + conversationId });
 
   // get the array of base64String files data
   //const messageFiles: string[] = JSON.parse(messages[messages.length].content)
@@ -367,21 +336,21 @@ export const getFileChatBody = async (
 
   //Use the upload and poll SDK helper to upload the files, add them to the vector store,
   //and poll the status of the file batch for completion.
-  const fileBatch = await openAI.beta.vectorStores.fileBatches.uploadAndPoll(vectorStore.id, { files });
+  const fileBatch = await openAI.vectorStores.fileBatches.uploadAndPoll(vectorStore.id, { files });
 
 
   console.log(fileBatch.status)
   console.log(fileBatch.file_counts)
 
 
-  assistant = openAI.beta.assistants.update(
+  assistant = openAI.assistants.update(
     assistant: assistant.id,
     toolResources = { "file_search": { "vector_store_ids": [vectorStore.id] } },
   );
 
 
 //convert python to js
-  with client.beta.threads.runs.stream(
+  with client.threads.runs.stream(
       thread_id=thread.id,
       assistant_id=assistant.id,
       instructions="Please address the user as Jane Doe. The user has a premium account.",
@@ -439,7 +408,7 @@ export const getFileChatBody = async (
         )
  
         # Create a thread and attach the file to the message
-        thread = client.beta.threads.create(
+        thread = client.threads.create(
           messages=[
             {
               "role": "user",
