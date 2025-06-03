@@ -29,6 +29,8 @@ import { PluginSelect } from './PluginSelect';
 import { PromptList } from './PromptList';
 import { VariableModal } from './VariableModal';
 
+import { FileUpload } from '@/components/Chat/FileUpload';
+
 
 interface Props {
   onSend: (message: Message, plugin: Plugin | null) => void;
@@ -356,7 +358,7 @@ export const ChatInput = ({
             />
           )}
 
-
+          <FileUpload />
 
           {(promptCharacterLength <= maxLength && promptCharacterLength > maxLength * .75) && (
             <div className="text-orange-500 m-4">

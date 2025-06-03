@@ -99,6 +99,20 @@ export const OpenAIStream = async (
   if (os.hostname() === "localhost") {
 
     //url = `https://management.azure.com/subscriptions/${AZURE_SUBSCRIPTION_ID}/providers/Microsoft.CognitiveServices/locations/${AZURE_REGION}/models?api-version=${OPENAI_API_VERSION}`;
+    /*
+    const credential = new DefaultAzureCredential();
+    const scope = "https://cognitiveservices.azure.com/.default";
+    const azureADTokenProvider = getBearerTokenProvider(credential, scope);
+    //await credential.getToken("https://cognitiveservices.azure.com/.default").token;
+
+    const openAI = new AzureOpenAI({
+      azureADTokenProvider: azureADTokenProvider,
+      endpoint: OPENAI_API_HOST,
+      //azureDeploymentId: AZURE_DEPLOYMENT_ID,
+      apiVersion: OPENAI_API_VERSION
+    });
+    */
+
 
     let entraToken = await getEntraToken();
 
@@ -164,6 +178,12 @@ export const OpenAIStream = async (
   //content = `[{type: "text",text: "${content}",}, {"type": "file","file":{"filename": "file_name1","file_data": "`base64String`"}}
   if (newMessageContent.some((content: { type: string; }) => content.type === 'file')) {
 
+
+
+
+
+
+
     // change body
     body = getFileChatBody(
       conversationId,
@@ -181,7 +201,7 @@ export const OpenAIStream = async (
 
 
     // change url to assistant API
-    url = "new URL From getFileChatBody properties???";
+    //url = "new URL From getFileChatBody properties???";
 
   }
 
@@ -293,145 +313,158 @@ export const getFileChatBody = async (
 
   var url = `${OPENAI_API_HOST}/openai/assistants`;
 
-  const decoder = new TextDecoder();
+  const credential = new DefaultAzureCredential();
+  const scope = "https://cognitiveservices.azure.com/.default";
+  const azureADTokenProvider = getBearerTokenProvider(credential, scope);
+  //await credential.getToken("https://cognitiveservices.azure.com/.default").token;
 
-  const openAI = new AzureOpenAI();
-
-  // create assistant.
-  // TODO - pull this out to create only one per conversation or for the entire app???????????. store it in the conversation local_data????
-  var assistant = await openAI.assistants.create(
-    {
-      model: model.id,
-      name: "GovChat File Upload Assistant " + conversationId,
-      instructions: systemPrompt,
-      tools: [{ type: "file_search" }],
-      //tool_resources: {
-      //  file_search: {
-      //    vector_store_ids: [],
-      //  },
-      //},
-    },
-  );
-
-  // Create a vector store to hold the files
-  const vectorStore = await openAI.vectorStores.create({ name: "Files for Assistant " + conversationId });
-
-  // get the array of base64String files data
-  //const messageFiles: string[] = JSON.parse(messages[messages.length].content)
-  //                      .any((part: { type: string; }) => part.type === 'file')
-  //                      .file.file_data;
+  const openAI = new AzureOpenAI({
+    azureADTokenProvider: azureADTokenProvider,
+    endpoint: OPENAI_API_HOST,
+    //azureDeploymentId: AZURE_DEPLOYMENT_ID,
+    apiVersion: OPENAI_API_VERSION
+  });
 
 
-  //content = `[{type: "text",text: "${content}",}, {"type": "file","file":{"filename": "file_name1","file_data": "`base64String`"}}
+  const conversationId = Math.floor(Math.random() * 1000000);
+
   const messageFiles: string[] = JSON.parse(messages[messages.length].content)
                         .any((part: { type: string; }) => part.type === 'file')
                         .file; //.file_data;
 
-
-
   // convert base64 to fs.readstream
-
   const files = await Promise.all(messageFiles
     .map(messageFile => base64ToReadStream(messageFile)));
 
-  //Use the upload and poll SDK helper to upload the files, add them to the vector store,
-  //and poll the status of the file batch for completion.
-  const fileBatch = await openAI.vectorStores.fileBatches.uploadAndPoll(vectorStore.id, { files });
+  // Upload each file using the files endpoint with purpose 'user_data'
+  const fileIds = [];
+  for (const fileStr of messageFiles) {
+    const fileStream = base64ToReadStream(fileStr);
+    const uploadedFile = await openAI.files.create({
+      purpose: 'assistants',
+      file: fileStream
+    });
+    fileIds.push(uploadedFile.id);
+    console.log(`Uploaded file: ${fileName}, id: ${uploadedFile.id}`);
+  }
+
+  //// create assistant with file_search tool for file Q&A (v2 API)
+  const assistant = await openAI.beta.assistants.create({
+    model: AZURE_MODEL,
+    name: "GovChat File Upload Assistant " + conversationId,
+    instructions: DEFAULT_SYSTEM_PROMPT,
+    tools: [{ type: "file_search" }]
+  });
+
+  console.log(`created assistant: ${assistant.id}`);
+
+  // Create a thread
+  const thread = await openAI.beta.threads.create();
+
+  // Add a message to the thread with the prompt and attach the uploaded files using correct tools object
+  await openAI.beta.threads.messages.create(thread.id, {
+    role: "user",
+    content: "Summarize the content of the uploaded file",
+    attachments: fileIds.map(id => ({ file_id: id, tools: [{ type: "file_search" }] }))
+  });
+
+  // Run the assistant on the thread
+  const run = await openAI.beta.threads.runs.create(thread.id, {
+    assistant_id: assistant.id
+  });
+
+  // Poll for the run to complete
+  let runStatus;
+  do {
+    await new Promise(r => setTimeout(r, 2000));
+    runStatus = await openAI.beta.threads.runs.retrieve(thread.id, run.id);
+  } while (runStatus.status !== "completed" && runStatus.status !== "failed");
+
+  if (runStatus.status === "completed") {
+    const messages = await openAI.beta.threads.messages.list(thread.id);
+    const lastMessage = messages.data.find(m => m.role === "assistant");
+    const reply = lastMessage?.content?.[0]?.text?.value || "No summary returned.";
+    console.log('message:', reply);
+    res.end(reply);
+  } else {
+    console.error('Assistant run failed:', runStatus);
+    res.end("Assistant failed to summarize the file.");
+  }
 
 
-  console.log(fileBatch.status)
-  console.log(fileBatch.file_counts)
+  messages.push(reply);
+
+  const body = {
+    ...(OPENAI_API_TYPE === 'openai' && { model: model.id }),
+    messages: [
+      {
+        role: 'system',
+        content: systemPrompt,
+      },
+      ...messages,
+    ],
+    max_tokens: 1000,
+    temperature: temperature,
+    stream: true,
+  };
 
 
-  assistant = openAI.assistants.update(
-    assistant: assistant.id,
-    toolResources = { "file_search": { "vector_store_ids": [vectorStore.id] } },
-  );
-
-
-//convert python to js
-  with client.threads.runs.stream(
-      thread_id=thread.id,
-      assistant_id=assistant.id,
-      instructions="Please address the user as Jane Doe. The user has a premium account.",
-      event_handler=EventHandler(),
-  ) as stream:
-      stream.until_done()
 
   /*
 
+    const openAI = new AzureOpenAI();
 
-  "data_sources": [
-  {
-   "type": "azure_search",
-   "parameters": {
-    "endpoint": "https://your-search-endpoint.search.windows.net/",
-    "authentication": {
-     "type": "user_assigned_managed_identity",
-     "managed_identity_resource_id": "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{resource-name}"
-    },
-    "index_name": "{index name}",
-    "query_type": "vector",
-    "embedding_dependency": {
-     "type": "deployment_name",
-     "deployment_name": "{embedding deployment name}"
-    },
-    "in_scope": true,
-    "top_n_documents": 5,
-    "strictness": 3,
-    "role_information": "You are an AI assistant that helps people find information.",
-    "fields_mapping": {
-     "content_fields_separator": "\\n",
-     "content_fields": [
-      "content"
-     ],
-     "filepath_field": "filepath",
-     "title_field": "title",
-     "url_field": "url",
-     "vector_fields": [
-      "contentvector"
-     ]
-    }
-   }
-  }
- ]
+    // create assistant.
+    // TODO - pull this out to create only one per conversation or for the entire app???????????. store it in the conversation local_data????
+    var assistant = await openAI.assistants.create(
+      {
+        model: model.id,
+        name: "GovChat File Upload Assistant " + conversationId,
+        instructions: systemPrompt,
+        tools: [{ type: "file_search" }],
+        //tool_resources: {
+        //  file_search: {
+        //    vector_store_ids: [],
+        //  },
+        //},
+      },
+    );
+
+    // Create a vector store to hold the files
+    const vectorStore = await openAI.vectorStores.create({ name: "Files for Assistant " + conversationId });
+
+    // get the array of base64String files data
+    //const messageFiles: string[] = JSON.parse(messages[messages.length].content)
+    //                      .any((part: { type: string; }) => part.type === 'file')
+    //                      .file.file_data;
+
+
+    //content = `[{type: "text",text: "${content}",}, {"type": "file","file":{"filename": "file_name1","file_data": "`base64String`"}}
+    const messageFiles: string[] = JSON.parse(messages[messages.length].content)
+                          .any((part: { type: string; }) => part.type === 'file')
+                          .file; //.file_data;
 
 
 
+    // convert base64 to fs.readstream
+
+    const files = await Promise.all(messageFiles
+      .map(messageFile => base64ToReadStream(messageFile)));
+
+    //Use the upload and poll SDK helper to upload the files, add them to the vector store,
+    //and poll the status of the file batch for completion.
+    const fileBatch = await openAI.vectorStores.fileBatches.uploadAndPoll(vectorStore.id, { files });
 
 
+    console.log(fileBatch.status)
+    console.log(fileBatch.file_counts)
 
 
-        # Upload the user provided file to OpenAI
-        message_file = client.files.create(
-          file=open("mydirectory/myfile.pdf", "rb"), purpose="assistants"
-        )
- 
-        # Create a thread and attach the file to the message
-        thread = client.threads.create(
-          messages=[
-            {
-              "role": "user",
-              "content": "How many company shares were outstanding last quarter?",
-              # Attach the new file to the message.
-              "attachments": [
-                { "file_id": message_file.id, "tools": [{"type": "file_search"}] }
-              ],
-            }
-          ]
-        )
- 
-        # The thread now has a vector store with that file in its tool resources.
-        print(thread.tool_resources.file_search)
+    assistant = openAI.assistants.update(
+      assistant: assistant.id,
+      toolResources = { "file_search": { "vector_store_ids": [vectorStore.id] } },
+    );
 
-
-
-
-
-
-
-
-  */
 
 
 
@@ -479,7 +512,7 @@ export const getFileChatBody = async (
     temperature: temperature,
     stream: true,
   };
-
+    */
 
   return body;
 };
