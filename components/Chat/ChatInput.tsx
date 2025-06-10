@@ -29,7 +29,7 @@ import { PluginSelect } from './PluginSelect';
 import { PromptList } from './PromptList';
 import { VariableModal } from './VariableModal';
 
-import { FileUpload } from '@/components/Chat/FileUpload';
+import { FileUpload } from './FileUpload';
 
 
 interface Props {
@@ -71,6 +71,8 @@ export const ChatInput = ({
 
   const promptListRef = useRef<HTMLUListElement | null>(null);
 
+  const [uploadFiles, setUploadFiles] = useState([]);
+
   const filteredPrompts = prompts.filter((prompt) =>
     prompt.name.toLowerCase().includes(promptInputValue.toLowerCase()),
   );
@@ -84,7 +86,11 @@ export const ChatInput = ({
 
 
   const handleSend = () => {
+
+    console.log('handleSend triggered ');
+
     if (messageIsStreaming) {
+      console.log('handleSend messageIsStreaming');
       return;
     }
 
@@ -93,13 +99,78 @@ export const ChatInput = ({
       return;
     }
 
-    onSend({ role: 'user', content, timestamp: makeTimestamp() }, plugin);
-    setContent('');
-    setPlugin(null);
+
+    if (uploadFiles && uploadFiles.length > 0) {
+      console.log('files attached: ' + uploadFiles.length);
+
+      getContentForFiles(content, uploadFiles).then(fileContent => {
+
+        console.log('new content from async func, length: ' + fileContent.length);
+        console.log(fileContent);
+
+        var newContent = `[{type: "text",text: "${content}",},${fileContent}]`; 
+
+        onSend({ role: 'user', content: newContent, timestamp: makeTimestamp() }, plugin);
+
+        setContent('');
+        setPlugin(null);
+        setUploadFiles([]);
+      })
+      .catch(error => {
+        //do nothing
+      })
+    }
+    else {
+      console.log('no files attached');
+
+      onSend({ role: 'user', content }, plugin);
+      setContent('');
+      setPlugin(null);
+      setUploadFiles([]);
+    }
 
     if (window.innerWidth < 640 && textareaRef && textareaRef.current) {
       textareaRef.current.blur();
     }
+
+  };
+
+  const getContentForFiles = async (content: string, files: File[]) => {
+
+    let tmpContent = "";
+
+    const filePromises = files.map((file) => {
+      // Return a promise per file
+      return new Promise((resolve, reject) => {
+        console.log('--file: ' + file.name);
+        const reader = new FileReader();
+
+        reader.onload = async () => {
+          try {
+            const base64String = reader.result;
+
+            tmpContent += '{"type": "file","file":{"filename": "' + file.name + '","file_data": "`' + base64String + '`"}},';
+
+            // Resolve the promise with the response value
+            resolve(tmpContent);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        reader.onerror = (error) => {
+          console.error("Error reading file:", file.name);
+          reject(error);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    // Wait for all promises to be resolved
+    const resultStr = await Promise.all(filePromises);
+
+    console.log('COMPLETED');
+
+    return tmpContent.substring(0, tmpContent.length - 1);  
   };
 
   const handleStopConversation = () => {
@@ -166,6 +237,10 @@ export const ChatInput = ({
       setShowPluginSelect(!showPluginSelect);
     }
   };
+
+  const handleFileSelect = (uploadFiles: File[]) => {
+    setUploadFiles([...uploadFiles]);
+  }
 
   const parseVariables = (content: string) => {
     const regex = /{{(.*?)}}/g;
@@ -311,6 +386,8 @@ export const ChatInput = ({
             autoFocus
           />
 
+          <FileUpload onFileSelect={handleFileSelect} />
+
           <button
             className="absolute right-2 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"
             onClick={handleSend}
@@ -358,7 +435,7 @@ export const ChatInput = ({
             />
           )}
 
-          <FileUpload />
+
 
           {(promptCharacterLength <= maxLength && promptCharacterLength > maxLength * .75) && (
             <div className="text-orange-500 m-4">

@@ -87,7 +87,8 @@ export const FileUpload = ({
     console.log("delete file : " + fileIndex);
     const newSelectedFiles = [...selectedFiles];
     newSelectedFiles.splice(fileIndex, 1);
-    setSelectedFiles(newSelectedFiles);
+    setSelectedFiles(...newSelectedFiles);
+    onFileSelect(...newSelectedFiles);
   }
 
   return (

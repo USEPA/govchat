@@ -117,6 +117,9 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           });
         }
         const controller = new AbortController();
+
+        console.log('chat.tsx - handleSend - endpoint:' + endpoint);
+
         const response = await fetch(endpoint, {
           method: 'POST',
           headers: {

@@ -9,7 +9,7 @@ import { Tiktoken } from '@dqbd/tiktoken';
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '2mb'
+      sizeLimit: '20mb'
     }
   }
 }
@@ -22,6 +22,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       tiktokenModel.special_tokens,
       tiktokenModel.pat_str,
     );
+
+    console.log('Received request with body:', req.body);
+    console.log(`messages length: ${messages.length}`);
+
     let promptToSend = prompt || DEFAULT_SYSTEM_PROMPT;
     let temperatureToUse = temperature ?? DEFAULT_TEMPERATURE;
 
@@ -34,9 +38,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       const message: OpenAIMessage = messages[i];
       const tokens = encoding.encode(message.content);
 
-      if (tokenCount + tokens.length + 1000 > model.tokenLimit) {
-        break;
-      }
+      //if (tokenCount + tokens.length + 1000 > model.tokenLimit) {
+      //  console.log(`BREAKIN', Token limit reached: ${tokenCount + tokens.length} > ${model.tokenLimit}`);
+      //  break;
+      //}
       tokenCount += tokens.length;
       messagesToSend = [message, ...messagesToSend];
     }
@@ -45,10 +50,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
     const bearer: string = req.headers['x-ms-token-aad-access-token']?.toString() || req.headers['x-ms-client-principal']?.toString() || "";
     const bearerAuth: string = req.headers['x-ms-client-principal-id']?.toString() || "";
     const userName: string = req.headers['x-ms-client-principal-name']?.toString() || "";
+    const conversationId = Math.floor(Math.random() * 1000000);
+
+    console.log('chat.handler - MessagesToSend len:', messagesToSend.length);
 
     encoding.free();
 
     const stream = await OpenAIStream(
+      conversationId,
       model,
       promptToSend,
       temperatureToUse,

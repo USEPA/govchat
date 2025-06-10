@@ -89,11 +89,13 @@ export const OpenAIStream = async (
   userName: string|null
 ) => {
 
-  var url = `${OPENAI_API_HOST}/v1/chat/completions`; 
+  //var url = `${OPENAI_API_HOST}/v1/chat/completions`; 
+  var url = `${OPENAI_API_HOST}/assistants`;
+
   var header = {};
   
   if (OPENAI_API_TYPE === 'azure') {
-    url = `${OPENAI_API_HOST}/openai/deployments/${model.id}/chat/completions?api-version=${OPENAI_API_VERSION}`;
+    url = `${OPENAI_API_HOST}openai/assistants?api-version=${OPENAI_API_VERSION}`;
   }
 
   if (os.hostname() === "localhost") {
@@ -169,20 +171,19 @@ export const OpenAIStream = async (
     temperature: temperature,
     stream: true
   };
+
   if (model.id == "o3-mini" || model.id == "o1") {
     delete body.temperature;
   }
 
-  const newMessageContent = JSON.parse(messages[messages.length].content);
+  console.log(`Messages : (${messages.length}) ${messages[messages.length - 1].content.substring(0, 1000) }`);
 
-  //content = `[{type: "text",text: "${content}",}, {"type": "file","file":{"filename": "file_name1","file_data": "`base64String`"}}
-  if (newMessageContent.some((content: { type: string; }) => content.type === 'file')) {
+  const newMessageContent = messages[messages.length - 1].content;
 
+  // content: '[{type: "text",text: "whats in this file",},{"type": "file","file":{"filename": "MikeUploadtest.pdf","file_data": "`data:application/pdf;b
+  if (isJson(newMessageContent) && JSON.parse(newMessageContent).some((content: { type: string; }) => content.type === 'file')) {
 
-
-
-
-
+    console.log("File upload detected in the last message content. Processing...");
 
     // change body
     body = getFileChatBody(
@@ -191,7 +192,7 @@ export const OpenAIStream = async (
       systemPrompt,
       temperature,
       key,
-      newMessageContent,
+      JSON.parse(newMessageContent),
       principalName,
       bearer,
       bearerAuth,
@@ -199,12 +200,9 @@ export const OpenAIStream = async (
       header
     );
 
-
-    // change url to assistant API
-    //url = "new URL From getFileChatBody properties???";
-
   }
 
+  console.log(`fetching url: ${url}`);
 
   const res = await fetch(url, {
     headers: header,
@@ -311,12 +309,14 @@ export const getFileChatBody = async (
   header: {}
 ) => {
 
-  var url = `${OPENAI_API_HOST}/openai/assistants`;
 
   const credential = new DefaultAzureCredential();
   const scope = "https://cognitiveservices.azure.com/.default";
   const azureADTokenProvider = getBearerTokenProvider(credential, scope);
   //await credential.getToken("https://cognitiveservices.azure.com/.default").token;
+
+
+  console.log(`getFileChatBody - making AzureOpenAI`);
 
   const openAI = new AzureOpenAI({
     azureADTokenProvider: azureADTokenProvider,
@@ -325,16 +325,19 @@ export const getFileChatBody = async (
     apiVersion: OPENAI_API_VERSION
   });
 
-
-  const conversationId = Math.floor(Math.random() * 1000000);
-
   const messageFiles: string[] = JSON.parse(messages[messages.length].content)
                         .any((part: { type: string; }) => part.type === 'file')
                         .file; //.file_data;
 
+  console.log(`getFileChatBody - messageFiles: ${messageFiles.length} `);
+
+
   // convert base64 to fs.readstream
   const files = await Promise.all(messageFiles
     .map(messageFile => base64ToReadStream(messageFile)));
+
+
+  console.log(`getFileChatBody - messageFiles: ${files.length} `);
 
   // Upload each file using the files endpoint with purpose 'user_data'
   const fileIds = [];
@@ -408,114 +411,20 @@ export const getFileChatBody = async (
     stream: true,
   };
 
-
-
-  /*
-
-    const openAI = new AzureOpenAI();
-
-    // create assistant.
-    // TODO - pull this out to create only one per conversation or for the entire app???????????. store it in the conversation local_data????
-    var assistant = await openAI.assistants.create(
-      {
-        model: model.id,
-        name: "GovChat File Upload Assistant " + conversationId,
-        instructions: systemPrompt,
-        tools: [{ type: "file_search" }],
-        //tool_resources: {
-        //  file_search: {
-        //    vector_store_ids: [],
-        //  },
-        //},
-      },
-    );
-
-    // Create a vector store to hold the files
-    const vectorStore = await openAI.vectorStores.create({ name: "Files for Assistant " + conversationId });
-
-    // get the array of base64String files data
-    //const messageFiles: string[] = JSON.parse(messages[messages.length].content)
-    //                      .any((part: { type: string; }) => part.type === 'file')
-    //                      .file.file_data;
-
-
-    //content = `[{type: "text",text: "${content}",}, {"type": "file","file":{"filename": "file_name1","file_data": "`base64String`"}}
-    const messageFiles: string[] = JSON.parse(messages[messages.length].content)
-                          .any((part: { type: string; }) => part.type === 'file')
-                          .file; //.file_data;
-
-
-
-    // convert base64 to fs.readstream
-
-    const files = await Promise.all(messageFiles
-      .map(messageFile => base64ToReadStream(messageFile)));
-
-    //Use the upload and poll SDK helper to upload the files, add them to the vector store,
-    //and poll the status of the file batch for completion.
-    const fileBatch = await openAI.vectorStores.fileBatches.uploadAndPoll(vectorStore.id, { files });
-
-
-    console.log(fileBatch.status)
-    console.log(fileBatch.file_counts)
-
-
-    assistant = openAI.assistants.update(
-      assistant: assistant.id,
-      toolResources = { "file_search": { "vector_store_ids": [vectorStore.id] } },
-    );
-
-
-
-
-
-
-  const createAssistantRes = await fetch(url, {
-    headers: header,
-    method: 'post',
-    body: JSON.stringify(createAssistantBody),
-  });
-
-  if (createAssistantRes.status !== 200) {
-    const result = await createAssistantRes.json();
-    if (result.error) {
-
-      console.debug("Got a 'Create Assistant' Error: " + result.error.message);
-      throw new OpenAIError(
-        result.error.message,
-        result.error.type,
-        result.error.param,
-        result.error.code,
-      );
-    } else {
-      console.debug("Got a 'Create Assistant' Error: " + result.statusText);
-      throw new Error(
-        `OpenAI API returned an error: ${decoder.decode(result?.value) || result.statusText
-        }`,
-      );
-    }
-  }
-
-
-
-  // finally, return this
-  const body = {
-    ...(OPENAI_API_TYPE === 'openai' && { model: model.id }),
-    messages: [
-      {
-        role: 'system',
-        content: systemPrompt,
-      },
-      ...messages,
-    ],
-    max_tokens: 1000,
-    temperature: temperature,
-    stream: true,
-  };
-    */
-
   return body;
 };
+
+
+function isJson(item) {
+  let value = typeof item !== "string" ? JSON.stringify(item) : item;    
+  try {
+    value = JSON.parse(value);
+  } catch (e) {
+    return false;
+  }
+    
+  return typeof value === "object" && value !== null;
+}
 
 
 
