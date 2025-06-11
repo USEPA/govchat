@@ -57,7 +57,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
     encoding.free();
 
     const stream = await OpenAIStream(
-      conversationId,
+      conversationId.toString(),
       model,
       promptToSend,
       temperatureToUse,
@@ -66,7 +66,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       principalName,
       bearer,
       bearerAuth,
-      userName
+      userName, 
+      uploadFiles
     );
 
     res.setHeader('Content-Type', 'text/event-stream');

@@ -47,7 +47,7 @@ export const FileUpload = ({
 
   const uploadButton = document.getElementById("upload-button");
 
-  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const dropRef = useRef(null);
 
   const handleDragOver = (event: { preventDefault: () => void; }) => {
@@ -83,7 +83,7 @@ export const FileUpload = ({
     onFileSelect([...newSelectedFiles]);
   };
 
-  const handleDeleteFile = (event: MouseEvent<HTMLSpanElement, MouseEvent>, fileIndex: string | number) => {
+  const handleDeleteFile = (event: MouseEvent<HTMLSpanElement, MouseEvent>, fileIndex: number) => {
     console.log("delete file : " + fileIndex);
     const newSelectedFiles = [...selectedFiles];
     newSelectedFiles.splice(fileIndex, 1);

@@ -71,7 +71,7 @@ export const ChatInput = ({
 
   const promptListRef = useRef<HTMLUListElement | null>(null);
 
-  const [uploadFiles, setUploadFiles] = useState([]);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
 
   const filteredPrompts = prompts.filter((prompt) =>
     prompt.name.toLowerCase().includes(promptInputValue.toLowerCase()),
@@ -103,27 +103,38 @@ export const ChatInput = ({
     if (uploadFiles && uploadFiles.length > 0) {
       console.log('files attached: ' + uploadFiles.length);
 
-      getContentForFiles(content, uploadFiles).then(fileContent => {
+      var fileContent = getContentForFiles2(content, uploadFiles);
 
-        console.log('new content from async func, length: ' + fileContent.length);
-        console.log(fileContent);
+      var newContent = `[{"type": "text","text": "${content}"},${fileContent}]`; 
 
-        var newContent = `[{type: "text",text: "${content}",},${fileContent}]`; 
+      onSend({ role: 'user', content: newContent, timestamp: makeTimestamp() }, plugin);
 
-        onSend({ role: 'user', content: newContent, timestamp: makeTimestamp() }, plugin);
+      setContent('');
+      setPlugin(null);
+      setUploadFiles([]);
 
-        setContent('');
-        setPlugin(null);
-        setUploadFiles([]);
-      })
-      .catch(error => {
-        //do nothing
-      })
+
+      // getContentForFiles2(content, uploadFiles).then(fileContent => {
+
+      //   console.log('new content from async func, length: ' + fileContent.length);
+      //   console.log(fileContent);
+
+      //   var newContent = `[{"type": "text","text": "${content}"},${fileContent}]`; 
+
+      //   onSend({ role: 'user', content: newContent, timestamp: makeTimestamp() }, plugin);
+
+      //   setContent('');
+      //   setPlugin(null);
+      //   setUploadFiles([]);
+      // })
+      // .catch(error => {
+      //   //do nothing
+      // })
     }
     else {
       console.log('no files attached');
 
-      onSend({ role: 'user', content }, plugin);
+      onSend({ role: 'user', content, timestamp: makeTimestamp() }, plugin);
       setContent('');
       setPlugin(null);
       setUploadFiles([]);
@@ -134,6 +145,22 @@ export const ChatInput = ({
     }
 
   };
+
+
+  const getContentForFiles2 = async (content: string, files: File[]) => {
+
+    let tmpContent = "";
+
+    const filePromises = files.map((file) => {
+      // Return a promise per file
+
+      console.log('--file: ' + file.name);
+      tmpContent += '{"type": "file","file":{"filename": "' + file.name + '"}}';
+    });
+
+    return tmpContent.substring(0, tmpContent.length - 1);  
+  };
+
 
   const getContentForFiles = async (content: string, files: File[]) => {
 
@@ -239,7 +266,7 @@ export const ChatInput = ({
   };
 
   const handleFileSelect = (uploadFiles: File[]) => {
-    setUploadFiles([...uploadFiles]);
+    setUploadFiles(uploadFiles);
   }
 
   const parseVariables = (content: string) => {

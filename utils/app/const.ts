@@ -22,6 +22,8 @@ export const OPENAI_ORGANIZATION =
 export const AZURE_DEPLOYMENT_ID =
   process.env.AZURE_DEPLOYMENT_ID || '';
 
+export const DEFAULT_MODEL = process.env.DEFAULT_MODEL || 'gpt-4o';
+
 export const AZURE_SUBSCRIPTION_ID = process.env.AZURE_SUBSCRIPTION_ID || '';
 
 export const AZURE_REGION = process.env.AZURE_REGION || '';

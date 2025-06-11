@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Message, OpenAIMessage, makeTimestamp } from '@/types/chat';
 import { OpenAIModel, OpenAIModels } from '@/types/openai';
 
-import { AZURE_DEPLOYMENT_ID, OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION, AZURE_APIM } from '../app/const';
+import { OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION, AZURE_APIM, DEFAULT_SYSTEM_PROMPT, DEFAULT_MODEL } from '../app/const';
 
 import {
   ParsedEvent,
@@ -19,6 +19,7 @@ import path from 'path';
 import { Readable } from 'stream';
 import { Uploadable } from 'openai/core';
 import { Assistant } from 'openai/resources/beta/assistants';
+import { DefaultAzureCredential, getBearerTokenProvider } from '@azure/identity';
 
 
 export class OpenAIError extends Error {
@@ -179,8 +180,7 @@ export const OpenAIStream = async (
   console.log(`Messages : (${messages.length}) ${messages[messages.length - 1].content.substring(0, 1000) }`);
 
   const newMessageContent = messages[messages.length - 1].content;
-
-  // content: '[{type: "text",text: "whats in this file",},{"type": "file","file":{"filename": "MikeUploadtest.pdf","file_data": "`data:application/pdf;b
+  
   if (isJson(newMessageContent) && JSON.parse(newMessageContent).some((content: { type: string; }) => content.type === 'file')) {
 
     console.log("File upload detected in the last message content. Processing...");
@@ -192,12 +192,13 @@ export const OpenAIStream = async (
       systemPrompt,
       temperature,
       key,
-      JSON.parse(newMessageContent),
+      messages,
       principalName,
       bearer,
       bearerAuth,
       userName,
-      header
+      header,
+      newMessageContent
     );
 
   }
@@ -299,14 +300,15 @@ export const getFileChatBody = async (
   conversationId: string,
   model: OpenAIModel,
   systemPrompt: string,
-  temperature: number,
+  temperature: number | undefined,
   key: string,
-  messages: Message[],
+  messages: OpenAIMessage[],
   principalName: string | null,
   bearer: string | null,
   bearerAuth: string | null,
   userName: string | null,
-  header: {}
+  header: {},
+  newMessage: string,
 ) => {
 
 
@@ -325,19 +327,17 @@ export const getFileChatBody = async (
     apiVersion: OPENAI_API_VERSION
   });
 
-  const messageFiles: string[] = JSON.parse(messages[messages.length].content)
-                        .any((part: { type: string; }) => part.type === 'file')
-                        .file; //.file_data;
-
+  const messageFiles: string[] = JSON.parse(newMessage).filter( (part: { type: string; }) => part.type === 'file')
+    .map((part: { file: { file_data: string; }; }) => part.file.file_data);
+  
   console.log(`getFileChatBody - messageFiles: ${messageFiles.length} `);
 
+  // // convert base64 to fs.readstream
+  // const files = await Promise.all(messageFiles
+  //   .map(messageFile => base64ToReadStream(messageFile)));
 
-  // convert base64 to fs.readstream
-  const files = await Promise.all(messageFiles
-    .map(messageFile => base64ToReadStream(messageFile)));
 
-
-  console.log(`getFileChatBody - messageFiles: ${files.length} `);
+  // console.log(`getFileChatBody - files: ${files.length} `);
 
   // Upload each file using the files endpoint with purpose 'user_data'
   const fileIds = [];
@@ -348,12 +348,12 @@ export const getFileChatBody = async (
       file: fileStream
     });
     fileIds.push(uploadedFile.id);
-    console.log(`Uploaded file: ${fileName}, id: ${uploadedFile.id}`);
+    console.log(`Uploaded file: ${uploadedFile.filename}, id: ${uploadedFile.id}`);
   }
 
   //// create assistant with file_search tool for file Q&A (v2 API)
   const assistant = await openAI.beta.assistants.create({
-    model: AZURE_MODEL,
+    model: DEFAULT_MODEL,
     name: "GovChat File Upload Assistant " + conversationId,
     instructions: DEFAULT_SYSTEM_PROMPT,
     tools: [{ type: "file_search" }]
@@ -364,10 +364,14 @@ export const getFileChatBody = async (
   // Create a thread
   const thread = await openAI.beta.threads.create();
 
+  const message: string = JSON.parse(messages[messages.length - 1].content)
+                        .any((part: { type: string; }) => part.type === 'text')
+                        .text;
+
   // Add a message to the thread with the prompt and attach the uploaded files using correct tools object
   await openAI.beta.threads.messages.create(thread.id, {
     role: "user",
-    content: "Summarize the content of the uploaded file",
+    content: message,
     attachments: fileIds.map(id => ({ file_id: id, tools: [{ type: "file_search" }] }))
   });
 
@@ -388,14 +392,13 @@ export const getFileChatBody = async (
     const lastMessage = messages.data.find(m => m.role === "assistant");
     const reply = lastMessage?.content?.[0]?.text?.value || "No summary returned.";
     console.log('message:', reply);
-    res.end(reply);
+
+    messages.push(reply);
+
   } else {
     console.error('Assistant run failed:', runStatus);
-    res.end("Assistant failed to summarize the file.");
+
   }
-
-
-  messages.push(reply);
 
   const body = {
     ...(OPENAI_API_TYPE === 'openai' && { model: model.id }),
@@ -428,16 +431,17 @@ function isJson(item) {
 
 
 
-function base64ToReadStream(base64String: string) {
+function base64ToReadStream(base64String: string): Readable {
   const buffer = Buffer.from(base64String, 'base64');
 
-  const stream = new Readable();
-
-  stream.push(buffer);
-  stream.push(null); // Signals the end of the stream
-
-  return stream;
+  return new Readable({
+    read() {
+      this.push(buffer);
+      this.push(null);
+    },
+  });
 }
+
 
 
 
