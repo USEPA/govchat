@@ -66,8 +66,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       principalName,
       bearer,
       bearerAuth,
-      userName, 
-      uploadFiles
+      userName
     );
 
     res.setHeader('Content-Type', 'text/event-stream');

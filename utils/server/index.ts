@@ -177,7 +177,7 @@ export const OpenAIStream = async (
     delete body.temperature;
   }
 
-  console.log(`Messages : (${messages.length}) ${messages[messages.length - 1].content.substring(0, 1000) }`);
+  console.log(`Messages : (${messages.length}) ${messages[messages.length - 1].content.substring(0, 500) }`);
 
   const newMessageContent = messages[messages.length - 1].content;
   
@@ -308,7 +308,7 @@ export const getFileChatBody = async (
   bearerAuth: string | null,
   userName: string | null,
   header: {},
-  newMessage: string,
+  newMessageContent: string,
 ) => {
 
 
@@ -327,17 +327,10 @@ export const getFileChatBody = async (
     apiVersion: OPENAI_API_VERSION
   });
 
-  const messageFiles: string[] = JSON.parse(newMessage).filter( (part: { type: string; }) => part.type === 'file')
+  const messageFiles: string[] = JSON.parse(newMessageContent).filter( (part: { type: string; }) => part.type === 'file')
     .map((part: { file: { file_data: string; }; }) => part.file.file_data);
   
   console.log(`getFileChatBody - messageFiles: ${messageFiles.length} `);
-
-  // // convert base64 to fs.readstream
-  // const files = await Promise.all(messageFiles
-  //   .map(messageFile => base64ToReadStream(messageFile)));
-
-
-  // console.log(`getFileChatBody - files: ${files.length} `);
 
   // Upload each file using the files endpoint with purpose 'user_data'
   const fileIds = [];
@@ -364,8 +357,8 @@ export const getFileChatBody = async (
   // Create a thread
   const thread = await openAI.beta.threads.create();
 
-  const message: string = JSON.parse(messages[messages.length - 1].content)
-                        .any((part: { type: string; }) => part.type === 'text')
+  const message: string = JSON.parse(newMessageContent)
+                        .filter((part: { type: string; }) => part.type === 'text')
                         .text;
 
   // Add a message to the thread with the prompt and attach the uploaded files using correct tools object
@@ -418,7 +411,7 @@ export const getFileChatBody = async (
 };
 
 
-function isJson(item) {
+function isJson(item : any) {
   let value = typeof item !== "string" ? JSON.stringify(item) : item;    
   try {
     value = JSON.parse(value);
@@ -431,7 +424,7 @@ function isJson(item) {
 
 
 
-function base64ToReadStream(base64String: string): Readable {
+function base64ToReadable(base64String: string): Readable {
   const buffer = Buffer.from(base64String, 'base64');
 
   return new Readable({
@@ -442,6 +435,18 @@ function base64ToReadStream(base64String: string): Readable {
   });
 }
 
+function base64ToReadStream(base64String: string): fs.ReadStream{
+  
+  // TODO - delete old files
+  
+  var newString = base64String.substring(base64String.indexOf(',') + 1);
 
+// USE MULTER????????
 
+  const buffer = Buffer.from(newString, 'base64');
+  const newFilePath :string = '_tmpFiles/testFile123.pdf';
+  fs.writeFileSync(newFilePath, new Uint8Array(buffer));
+   
+  return fs.createReadStream(newFilePath);
+}
 

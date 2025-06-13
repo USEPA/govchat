@@ -103,33 +103,25 @@ export const ChatInput = ({
     if (uploadFiles && uploadFiles.length > 0) {
       console.log('files attached: ' + uploadFiles.length);
 
-      var fileContent = getContentForFiles2(content, uploadFiles);
+      //var fileContent = getContentForFiles(content, uploadFiles);
 
-      var newContent = `[{"type": "text","text": "${content}"},${fileContent}]`; 
+      getContentForFiles(content, uploadFiles).then(fileContent => {
 
-      onSend({ role: 'user', content: newContent, timestamp: makeTimestamp() }, plugin);
+        console.log('new content from async func, length: ' + fileContent.length);
+        console.log(fileContent);
 
-      setContent('');
-      setPlugin(null);
-      setUploadFiles([]);
+        var newContent = `[{"type": "text","text": "${content}"},${fileContent}]`; 
 
+        onSend({ role: 'user', content: newContent, timestamp: makeTimestamp() }, plugin);
 
-      // getContentForFiles2(content, uploadFiles).then(fileContent => {
+        setContent('');
+        setPlugin(null);
+        setUploadFiles([]);
+      })
+      .catch(error => {
+        //do nothing
+      })
 
-      //   console.log('new content from async func, length: ' + fileContent.length);
-      //   console.log(fileContent);
-
-      //   var newContent = `[{"type": "text","text": "${content}"},${fileContent}]`; 
-
-      //   onSend({ role: 'user', content: newContent, timestamp: makeTimestamp() }, plugin);
-
-      //   setContent('');
-      //   setPlugin(null);
-      //   setUploadFiles([]);
-      // })
-      // .catch(error => {
-      //   //do nothing
-      // })
     }
     else {
       console.log('no files attached');
