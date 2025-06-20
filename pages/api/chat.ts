@@ -16,7 +16,7 @@ export const config = {
 
 const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
   try {
-    const { model, messages, key, prompt, temperature } = req.body as ChatBody;
+    const { conversationId, model, messages, key, prompt, temperature, assistantId } = req.body as ChatBody;
     const encoding = new Tiktoken(
       tiktokenModel.bpe_ranks,
       tiktokenModel.special_tokens,
@@ -50,14 +50,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
     const bearer: string = req.headers['x-ms-token-aad-access-token']?.toString() || req.headers['x-ms-client-principal']?.toString() || "";
     const bearerAuth: string = req.headers['x-ms-client-principal-id']?.toString() || "";
     const userName: string = req.headers['x-ms-client-principal-name']?.toString() || "";
-    const conversationId = Math.floor(Math.random() * 1000000);
 
     console.log('chat.handler - MessagesToSend len:', messagesToSend.length);
 
     encoding.free();
 
     const stream = await OpenAIStream(
-      conversationId.toString(),
+      conversationId,
       model,
       promptToSend,
       temperatureToUse,
@@ -66,7 +65,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       principalName,
       bearer,
       bearerAuth,
-      userName
+      userName,
+      assistantId
     );
 
     res.setHeader('Content-Type', 'text/event-stream');

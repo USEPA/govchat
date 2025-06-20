@@ -22,6 +22,7 @@ export interface ChatBody {
   key: string;
   prompt: string;
   temperature: number;
+  assistantId?: string | null;
 }
 
 export interface Conversation {
@@ -34,4 +35,5 @@ export interface Conversation {
   folderId: string | null;
   tokenLength: number;
   characterLength: number;
+  assistantId?: string | null;
 }

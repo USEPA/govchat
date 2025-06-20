@@ -87,7 +87,9 @@ export const OpenAIStream = async (
   principalName: string|null,
   bearer: string|null,
   bearerAuth: string|null,
-  userName: string|null
+  userName: string|null,
+  assistantId: string|null = '',
+  threadId: string|null = '',
 ) => {
 
   //var url = `${OPENAI_API_HOST}/v1/chat/completions`; 
@@ -179,14 +181,56 @@ export const OpenAIStream = async (
 
   console.log(`Messages : (${messages.length}) ${messages[messages.length - 1].content.substring(0, 500) }`);
 
-  const newMessageContent = messages[messages.length - 1].content;
+  var newMessageContent = messages[messages.length - 1].content;
   
+
+  const credential = new DefaultAzureCredential();
+  const scope = "https://cognitiveservices.azure.com/.default";
+  const azureADTokenProvider = getBearerTokenProvider(credential, scope);
+  //await credential.getToken("https://cognitiveservices.azure.com/.default").token;
+
+  const openAI = new AzureOpenAI({
+    azureADTokenProvider: azureADTokenProvider,
+    endpoint: OPENAI_API_HOST,
+    //azureDeploymentId: AZURE_DEPLOYMENT_ID,
+    apiVersion: OPENAI_API_VERSION
+  });
+
+  // if the conversation is new, create an assistant
+  if (assistantId === null) {
+    console.log("No assistantId provided, creating a new assistant...");
+
+    const assistant = await openAI.beta.assistants.create({
+      model: DEFAULT_MODEL,
+      name: "GovChat Assistant " + conversationId,
+      instructions: DEFAULT_SYSTEM_PROMPT,
+      tools: [{ type: "file_search" }]
+    });
+    assistantId = assistant.id;
+
+    console.log(`created assistant: ${assistant.id}`);
+  }
+  if (threadId === null) {
+
+    const thread = await openAI.beta.threads.create();
+
+    threadId = thread.id;
+    console.log(`created thread: ${thread.id} for assistant: ${assistantId}`);
+  }
+
+  var fileIds = String[];
+
+  // if there is a file uploaded, send it, then add the fileId to the body 
   if (isJson(newMessageContent) && JSON.parse(newMessageContent).some((content: { type: string; }) => content.type === 'file')) {
+
+    newMessageContent = JSON.parse(newMessageContent)
+      .filter((part: { type: string; }) => part.type === 'text')
+      .text;
 
     console.log("File upload detected in the last message content. Processing...");
 
     // change body
-    body = getFileChatBody(
+    fileIds = await getChatFileIds(
       conversationId,
       model,
       systemPrompt,
@@ -198,18 +242,57 @@ export const OpenAIStream = async (
       bearerAuth,
       userName,
       header,
-      newMessageContent
+      newMessageContent,
+      openAI
     );
 
   }
 
-  console.log(`fetching url: ${url}`);
 
-  const res = await fetch(url, {
-    headers: header,
-    method: 'post',
-    body: JSON.stringify(body),
+  // Add a message to the thread with the prompt and attach the uploaded files using correct tools object
+  await openAI.beta.threads.messages.create(threadId, {
+    role: "user",
+    content: newMessageContent,
+    attachments: fileIds.map((id: any) => ({ file_id: id, tools: [{ type: "file_search" }] }))
   });
+
+  // Run the assistant on the thread
+  const run = await openAI.beta.threads.runs.create(threadId, {
+    assistant_id: assistantId
+  });
+
+  const res = new Response();
+    
+    
+
+  // Poll for the run to complete
+  let runStatus;
+  do {
+    await new Promise(r => setTimeout(r, 2000));
+    runStatus = await openAI.beta.threads.runs.retrieve(threadId, run.id);
+  } while (runStatus.status !== "completed" && runStatus.status !== "failed");
+
+  if (runStatus.status === "completed") {
+    const messages = await openAI.beta.threads.messages.list(threadId);
+    const lastMessage = messages.data.find(m => m.role === "assistant");
+    const reply = lastMessage?.content?.[0]?.text?.value || "No summary returned.";
+    console.log('threads.message found:', reply);
+
+    messages.push(reply);
+
+  } else {
+    console.error('Assistant run failed:', runStatus);
+
+  }
+
+
+  // console.log(`fetching url: ${url}`);
+
+  // const res = await fetch(url, {
+  //   headers: header,
+  //   method: 'post',
+  //   body: JSON.stringify(body),
+  // });
 
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
@@ -296,7 +379,7 @@ export const OpenAIStream = async (
 
 
 
-export const getFileChatBody = async (
+export const getChatFileIds = async (
   conversationId: string,
   model: OpenAIModel,
   systemPrompt: string,
@@ -309,23 +392,9 @@ export const getFileChatBody = async (
   userName: string | null,
   header: {},
   newMessageContent: string,
+  openAI: AzureOpenAI,
 ) => {
 
-
-  const credential = new DefaultAzureCredential();
-  const scope = "https://cognitiveservices.azure.com/.default";
-  const azureADTokenProvider = getBearerTokenProvider(credential, scope);
-  //await credential.getToken("https://cognitiveservices.azure.com/.default").token;
-
-
-  console.log(`getFileChatBody - making AzureOpenAI`);
-
-  const openAI = new AzureOpenAI({
-    azureADTokenProvider: azureADTokenProvider,
-    endpoint: OPENAI_API_HOST,
-    //azureDeploymentId: AZURE_DEPLOYMENT_ID,
-    apiVersion: OPENAI_API_VERSION
-  });
 
   const messageFiles: string[] = JSON.parse(newMessageContent).filter( (part: { type: string; }) => part.type === 'file')
     .map((part: { file: { file_data: string; }; }) => part.file.file_data);
@@ -344,70 +413,25 @@ export const getFileChatBody = async (
     console.log(`Uploaded file: ${uploadedFile.filename}, id: ${uploadedFile.id}`);
   }
 
-  //// create assistant with file_search tool for file Q&A (v2 API)
-  const assistant = await openAI.beta.assistants.create({
-    model: DEFAULT_MODEL,
-    name: "GovChat File Upload Assistant " + conversationId,
-    instructions: DEFAULT_SYSTEM_PROMPT,
-    tools: [{ type: "file_search" }]
-  });
+  return fileIds;
 
-  console.log(`created assistant: ${assistant.id}`);
 
-  // Create a thread
-  const thread = await openAI.beta.threads.create();
-
-  const message: string = JSON.parse(newMessageContent)
-                        .filter((part: { type: string; }) => part.type === 'text')
-                        .text;
-
-  // Add a message to the thread with the prompt and attach the uploaded files using correct tools object
-  await openAI.beta.threads.messages.create(thread.id, {
-    role: "user",
-    content: message,
-    attachments: fileIds.map(id => ({ file_id: id, tools: [{ type: "file_search" }] }))
-  });
-
-  // Run the assistant on the thread
-  const run = await openAI.beta.threads.runs.create(thread.id, {
-    assistant_id: assistant.id
-  });
-
-  // Poll for the run to complete
-  let runStatus;
-  do {
-    await new Promise(r => setTimeout(r, 2000));
-    runStatus = await openAI.beta.threads.runs.retrieve(thread.id, run.id);
-  } while (runStatus.status !== "completed" && runStatus.status !== "failed");
-
-  if (runStatus.status === "completed") {
-    const messages = await openAI.beta.threads.messages.list(thread.id);
-    const lastMessage = messages.data.find(m => m.role === "assistant");
-    const reply = lastMessage?.content?.[0]?.text?.value || "No summary returned.";
-    console.log('message:', reply);
-
-    messages.push(reply);
-
-  } else {
-    console.error('Assistant run failed:', runStatus);
-
-  }
-
-  const body = {
-    ...(OPENAI_API_TYPE === 'openai' && { model: model.id }),
-    messages: [
-      {
-        role: 'system',
-        content: systemPrompt,
-      },
-      ...messages,
-    ],
-    max_tokens: 1000,
-    temperature: temperature,
-    stream: true,
-  };
-
-  return body;
+  // const body = {
+  //   ...(OPENAI_API_TYPE === 'openai' && { model: model.id }),
+  //   messages: [
+  //     {
+  //       role: 'system',
+  //       content: systemPrompt,
+  //     },
+  //     ...messages,
+  //   ],
+  //   max_tokens: 1000,
+  //   temperature: temperature,
+  //   stream: true,
+  //   model: model,
+  // };
+  
+  // return body;
 };
 
 
