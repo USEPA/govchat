@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 
 import { Message, OpenAIMessage, makeTimestamp } from '@/types/chat';
-import { OpenAIModel, OpenAIModels } from '@/types/openai';
+import { OpenAIModel, OpenAIModels, OpenAIConversation } from '@/types/openai';
 
 import { OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION, AZURE_APIM, DEFAULT_SYSTEM_PROMPT, DEFAULT_MODEL } from '../app/const';
 
@@ -103,22 +103,6 @@ export const OpenAIStream = async (
 
   if (os.hostname() === "localhost") {
 
-    //url = `https://management.azure.com/subscriptions/${AZURE_SUBSCRIPTION_ID}/providers/Microsoft.CognitiveServices/locations/${AZURE_REGION}/models?api-version=${OPENAI_API_VERSION}`;
-    /*
-    const credential = new DefaultAzureCredential();
-    const scope = "https://cognitiveservices.azure.com/.default";
-    const azureADTokenProvider = getBearerTokenProvider(credential, scope);
-    //await credential.getToken("https://cognitiveservices.azure.com/.default").token;
-
-    const openAI = new AzureOpenAI({
-      azureADTokenProvider: azureADTokenProvider,
-      endpoint: OPENAI_API_HOST,
-      //azureDeploymentId: AZURE_DEPLOYMENT_ID,
-      apiVersion: OPENAI_API_VERSION
-    });
-    */
-
-
     let entraToken = await getEntraToken();
 
     header = {
@@ -179,11 +163,6 @@ export const OpenAIStream = async (
     delete body.temperature;
   }
 
-  console.log(`Messages : (${messages.length}) ${messages[messages.length - 1].content.substring(0, 500) }`);
-
-  var newMessageContent = messages[messages.length - 1].content;
-  
-
   const credential = new DefaultAzureCredential();
   const scope = "https://cognitiveservices.azure.com/.default";
   const azureADTokenProvider = getBearerTokenProvider(credential, scope);
@@ -208,9 +187,9 @@ export const OpenAIStream = async (
     });
     assistantId = assistant.id;
 
-    console.log(`created assistant: ${assistant.id}`);
+    console.log(`created assistant: ${assistantId}`);
   }
-  if (threadId === null) {
+  if (threadId === null || threadId === '') {
 
     const thread = await openAI.beta.threads.create();
 
@@ -218,14 +197,21 @@ export const OpenAIStream = async (
     console.log(`created thread: ${thread.id} for assistant: ${assistantId}`);
   }
 
-  var fileIds = String[];
+  console.log(`Messages : (${messages.length}) ${messages[messages.length - 1].content.substring(0, 500) }`);
+
+  var newMessageContent = messages[messages.length - 1].content;
+  var newMessageText = JSON.parse(newMessageContent)
+    .filter((part: { type: string; }) => part.type === 'text')
+    .text;
+  var newMessageFiles = "";
+
+  var fileIds: string[] = [];
 
   // if there is a file uploaded, send it, then add the fileId to the body 
   if (isJson(newMessageContent) && JSON.parse(newMessageContent).some((content: { type: string; }) => content.type === 'file')) {
 
-    newMessageContent = JSON.parse(newMessageContent)
-      .filter((part: { type: string; }) => part.type === 'text')
-      .text;
+    newMessageFiles = JSON.parse(newMessageContent).filter( (part: { type: string; }) => part.type === 'file')
+    .map((part: { file: { file_data: string; }; }) => part.file.file_data);
 
     console.log("File upload detected in the last message content. Processing...");
 
@@ -242,28 +228,30 @@ export const OpenAIStream = async (
       bearerAuth,
       userName,
       header,
-      newMessageContent,
+      newMessageFiles,
       openAI
     );
 
   }
 
-
   // Add a message to the thread with the prompt and attach the uploaded files using correct tools object
   await openAI.beta.threads.messages.create(threadId, {
     role: "user",
-    content: newMessageContent,
+    content: newMessageText,
     attachments: fileIds.map((id: any) => ({ file_id: id, tools: [{ type: "file_search" }] }))
+  });
+
+  var openAIConversation = new OpenAIConversation({
+    conversationId: conversationId,
+    assistantId: assistantId,
+    threadId: threadId,
+    messages: messages
   });
 
   // Run the assistant on the thread
   const run = await openAI.beta.threads.runs.create(threadId, {
     assistant_id: assistantId
   });
-
-  const res = new Response();
-    
-    
 
   // Poll for the run to complete
   let runStatus;
@@ -278,16 +266,15 @@ export const OpenAIStream = async (
     const reply = lastMessage?.content?.[0]?.text?.value || "No summary returned.";
     console.log('threads.message found:', reply);
 
-    messages.push(reply);
+    //messages.push(reply);
+    openAIConversation.messages.push(reply);
 
   } else {
     console.error('Assistant run failed:', runStatus);
 
   }
 
-
   // console.log(`fetching url: ${url}`);
-
   // const res = await fetch(url, {
   //   headers: header,
   //   method: 'post',
@@ -317,62 +304,66 @@ export const OpenAIStream = async (
     totalPages: 1
   };
 
-  if (res.status !== 200) {
-    const result = await res.json();
-    if (result.error) {
+  // if (res.status !== 200) {
+  //   const result = await res.json();
+  //   if (result.error) {
       
-      console.debug("Got a Chat Error: " + result.error.message);
-      throw new OpenAIError(
-        result.error.message,
-        result.error.type,
-        result.error.param,
-        result.error.code,
-      );
-    } else {
-      console.debug("Got a Chat Error: " + result.statusText);
-      throw new Error(
-        `OpenAI API returned an error: ${
-          decoder.decode(result?.value) || result.statusText
-        }`,
-      );
-    }
-  }
+  //     console.debug("Got a Chat Error: " + result.error.message);
+  //     throw new OpenAIError(
+  //       result.error.message,
+  //       result.error.type,
+  //       result.error.param,
+  //       result.error.code,
+  //     );
+  //   } else {
+  //     console.debug("Got a Chat Error: " + result.statusText);
+  //     throw new Error(
+  //       `OpenAI API returned an error: ${
+  //         decoder.decode(result?.value) || result.statusText
+  //       }`,
+  //     );
+  //   }
+  // }
 
   console.debug("got Chat");  
-  const stream = new ReadableStream({
-    async start(controller) {
-      const onParse = (event: ParsedEvent | ReconnectInterval) => {
-        if (event.type === 'event') {
-          const data = event.data;
 
-          if(data !== "[DONE]"){
-            try {
-              const json = JSON.parse(data);
-              if (json.choices[0] && json.choices[0].finish_reason && json.choices[0].finish_reason != null) {
-                printLogLines(loggingObject, body.messages, loggingObjectTempResult.join(''))
-                controller.close();
-                return;
-              }
-              if (json.choices[0] && json.choices[0].delta) {
-              const text = json.choices[0].delta.content;
-              const queue = encoder.encode(text);
-              loggingObjectTempResult.push(text);
-              controller.enqueue(queue);
-              }
-            } catch (e) {
-              controller.error(e + " Data: " + data);              
-            }
-        }
-        }
-      };
+  // const stream = new ReadableStream({
+  //   async start(controller) {
+  //     const onParse = (event: ParsedEvent | ReconnectInterval) => {
+  //       if (event.type === 'event') {
+  //         const data = event.data;
 
-      const parser = createParser(onParse);
+  //         if(data !== "[DONE]"){
+  //           try {
+  //             const json = JSON.parse(data);
+  //             if (json.choices[0] && json.choices[0].finish_reason && json.choices[0].finish_reason != null) {
+  //               printLogLines(loggingObject, body.messages, loggingObjectTempResult.join(''))
+  //               controller.close();
+  //               return;
+  //             }
+  //             if (json.choices[0] && json.choices[0].delta) {
+  //             const text = json.choices[0].delta.content;
+  //             const queue = encoder.encode(text);
+  //             loggingObjectTempResult.push(text);
+  //             controller.enqueue(queue);
+  //             }
+  //           } catch (e) {
+  //             controller.error(e + " Data: " + data);              
+  //           }
+  //       }
+  //       }
+  //     };
 
-      for await (const chunk of res.body as any) {
-        parser.feed(decoder.decode(chunk));
-      }
-    },
-  });
+  //     const parser = createParser(onParse);
+
+  //     for await (const chunk of res.body as any) {
+  //       parser.feed(decoder.decode(chunk));
+  //     }
+  //   },
+  // });
+
+  const stream = Readable.from(JSON.stringify(openAIConversation));
+  //const stream = fs.createReadStream(JSON.stringify(openAIConversation));
 
   return stream;
 };
@@ -391,13 +382,11 @@ export const getChatFileIds = async (
   bearerAuth: string | null,
   userName: string | null,
   header: {},
-  newMessageContent: string,
+  messageFiles: string,
   openAI: AzureOpenAI,
 ) => {
 
 
-  const messageFiles: string[] = JSON.parse(newMessageContent).filter( (part: { type: string; }) => part.type === 'file')
-    .map((part: { file: { file_data: string; }; }) => part.file.file_data);
   
   console.log(`getFileChatBody - messageFiles: ${messageFiles.length} `);
 
@@ -444,19 +433,6 @@ function isJson(item : any) {
   }
     
   return typeof value === "object" && value !== null;
-}
-
-
-
-function base64ToReadable(base64String: string): Readable {
-  const buffer = Buffer.from(base64String, 'base64');
-
-  return new Readable({
-    read() {
-      this.push(buffer);
-      this.push(null);
-    },
-  });
 }
 
 function base64ToReadStream(base64String: string): fs.ReadStream{

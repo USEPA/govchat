@@ -148,7 +148,9 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           homeDispatch({ field: 'messageIsStreaming', value: false });
           return;
         }
+  
         if (!plugin) {
+          console.log('chat.tsx - handleSend - !plugin');
           if (updatedConversation.messages.length === 1) {
             const { content } = message;
             const customName =
@@ -209,6 +211,8 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
               });
             }
           }
+          // updatedConversation.assistantId = response.headers.get('assistantId') || null;
+          // updatedConversation.threadId = response.headers.get('threadId') || null;
           saveConversation(updatedConversation);
           const updatedConversations: Conversation[] = conversations.map(
             (conversation) => {
@@ -225,7 +229,19 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           saveConversations(updatedConversations);
           homeDispatch({ field: 'messageIsStreaming', value: false });
         } else {
+          console.log('chat.tsx - handleSend - plugin');
           const { answer } = await response.json();
+
+          // res.body.content.threadId   // OpenAIConversation threadId, assistantId
+          // res.setHeader('assistantId', assistantId || '');
+          // res.setHeader('threadId', threadId || '');
+    
+          try{
+            updatedConversation.assistantId = answer.assistantId;
+            updatedConversation.threadId = answer.threadId;
+          }
+          catch{}
+
           const updatedMessages: Message[] = [
             ...updatedConversation.messages,
             { role: 'assistant', content: answer, timestamp: makeTimestamp() },
@@ -238,6 +254,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             field: 'selectedConversation',
             value: updateConversation,
           });
+
           saveConversation(updatedConversation);
           const updatedConversations: Conversation[] = conversations.map(
             (conversation) => {

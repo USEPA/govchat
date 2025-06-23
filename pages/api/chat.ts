@@ -1,6 +1,7 @@
 import { DEFAULT_SYSTEM_PROMPT, DEFAULT_TEMPERATURE } from '@/utils/app/const';
 import { OpenAIError, OpenAIStream } from '@/utils/server';
 import { ChatBody, Message, OpenAIMessage } from '@/types/chat';
+import { OpenAIConversation } from '@/types/openai';
 
 import tiktokenModel from '@dqbd/tiktoken/encoders/o200k_base.json';
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -74,13 +75,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
 
-    const reader = stream.getReader();
+    //const reader = stream.getReader();
     const decoder = new TextDecoder();
 
     const processStream = async () => {
       let done = false;
       while (!done) {
-        const { value, done: readerDone } = await reader.read();
+        const { value, done: readerDone } = await stream.read(); //reader.read();
         done = readerDone;
         if (value) {
           const chunk = decoder.decode(value, { stream: !done });

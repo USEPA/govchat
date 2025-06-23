@@ -36,3 +36,10 @@ export const OpenAIModels: Record<OpenAIModelID, OpenAIModel> = {
     tokenLimit: 128_000,
   }
 };
+
+export interface OpenAIConversation {
+  conversationId: string;
+  assistantId: string;
+  threadId: string;
+  messages: string[];
+}

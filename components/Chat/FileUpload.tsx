@@ -100,7 +100,7 @@ export const FileUpload = ({
     >
       <p>Drag and drop pdf files here or</p>
       <input type="file" accept=".pdf" multiple onChange={handleFileSelect} />
-      {selectedFiles.length > 0 && (
+      {selectedFiles && selectedFiles.length > 0 && (
         <ul>
           {selectedFiles.map((file, index) => (
             <li className="uploadFileName" key={index}>{file.name} <span className="fileDel" onClick={(e) => handleDeleteFile(e, index)}>X</span></li>

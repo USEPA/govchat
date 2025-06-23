@@ -36,4 +36,5 @@ export interface Conversation {
   tokenLength: number;
   characterLength: number;
   assistantId?: string | null;
+  threadId?: string | null;
 }

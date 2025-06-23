@@ -126,7 +126,9 @@ export const ChatInput = ({
     else {
       console.log('no files attached');
 
-      onSend({ role: 'user', content, timestamp: makeTimestamp() }, plugin);
+      var newContent = `[{"type": "text","text": "${content}"}]`; 
+
+      onSend({ role: 'user', content: newContent, timestamp: makeTimestamp() }, plugin);
       setContent('');
       setPlugin(null);
       setUploadFiles([]);
