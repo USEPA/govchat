@@ -201,10 +201,9 @@ export const OpenAIStream = async (
 
   var newMessageContent = messages[messages.length - 1].content;
   var newMessageText = JSON.parse(newMessageContent)
-    .filter((part: { type: string; }) => part.type === 'text')
-    .text;
-  var newMessageFiles = "";
+    .filter((part: { type: string; }) => part.type === 'text')[0].text;
 
+  var newMessageFiles = "";
   var fileIds: string[] = [];
 
   // if there is a file uploaded, send it, then add the fileId to the body 
@@ -241,12 +240,12 @@ export const OpenAIStream = async (
     attachments: fileIds.map((id: any) => ({ file_id: id, tools: [{ type: "file_search" }] }))
   });
 
-  var openAIConversation = new OpenAIConversation({
+  var openAIConversation : OpenAIConversation = {
     conversationId: conversationId,
     assistantId: assistantId,
     threadId: threadId,
     messages: messages
-  });
+  };
 
   // Run the assistant on the thread
   const run = await openAI.beta.threads.runs.create(threadId, {
