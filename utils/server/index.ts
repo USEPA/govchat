@@ -326,48 +326,76 @@ export const OpenAIStream = async (
 
   console.debug("got Chat");  
 
-  // const stream = new ReadableStream({
-  //   async start(controller) {
-  //     const onParse = (event: ParsedEvent | ReconnectInterval) => {
-  //       if (event.type === 'event') {
-  //         const data = event.data;
+  const stream = new ReadableStream({
+    async start(controller) {
+      const onParse = (event: ParsedEvent | ReconnectInterval) => {
+        if (event.type === 'event') {
+          const data = event.data;
 
-  //         if(data !== "[DONE]"){
-  //           try {
-  //             const json = JSON.parse(data);
-  //             if (json.choices[0] && json.choices[0].finish_reason && json.choices[0].finish_reason != null) {
-  //               printLogLines(loggingObject, body.messages, loggingObjectTempResult.join(''))
-  //               controller.close();
-  //               return;
-  //             }
-  //             if (json.choices[0] && json.choices[0].delta) {
-  //             const text = json.choices[0].delta.content;
-  //             const queue = encoder.encode(text);
-  //             loggingObjectTempResult.push(text);
-  //             controller.enqueue(queue);
-  //             }
-  //           } catch (e) {
-  //             controller.error(e + " Data: " + data);              
-  //           }
-  //       }
-  //       }
-  //     };
+          if(data !== "[DONE]"){
+            try {
+              const json = JSON.parse(data);
+              if (json.choices[0] && json.choices[0].finish_reason && json.choices[0].finish_reason != null) {
+                printLogLines(loggingObject, body.messages, loggingObjectTempResult.join(''))
+                controller.close();
+                return;
+              }
+              if (json.choices[0] && json.choices[0].delta) {
+              const text = json.choices[0].delta.content;
+              const queue = encoder.encode(text);
+              loggingObjectTempResult.push(text);
+              controller.enqueue(queue);
+              }
+            } catch (e) {
+              controller.error(e + " Data: " + data);              
+            }
+        }
+        }
+      };
 
-  //     const parser = createParser(onParse);
+      const parser = createParser(onParse);
 
-  //     for await (const chunk of res.body as any) {
-  //       parser.feed(decoder.decode(chunk));
-  //     }
-  //   },
-  // });
+      // var theData = JSON.stringify(openAIConversation);
+      // const encoder = new TextEncoder();
+      // const encodedData = encoder.encode(theData);
+      const readableStream = objectToReadableStream(openAIConversation);
 
-  const stream = Readable.from(JSON.stringify(openAIConversation));
+
+
+
+
+
+
+      for await (const chunk of readableStream as any) { //res.body
+        parser.feed(decoder.decode(chunk));
+      }
+    },
+  });
+
+  // const stream2 = Readable.from(JSON.stringify(openAIConversation));
   //const stream = fs.createReadStream(JSON.stringify(openAIConversation));
 
   return stream;
 };
 
+function objectToReadableStream(obj: any) {
+  const jsonString = JSON.stringify(obj);
+  const encoder = new TextEncoder();
+  let offset = 0;
+  const chunkSize = 16; // Define a chunk size for streaming
 
+  return new ReadableStream({
+    pull(controller) {
+      if (offset < jsonString.length) {
+        const chunk = jsonString.substring(offset, offset + chunkSize);
+        controller.enqueue(encoder.encode(chunk));
+        offset += chunkSize;
+      } else {
+        controller.close();
+      }
+    },
+  });
+}
 
 export const getChatFileIds = async (
   conversationId: string,
@@ -403,23 +431,6 @@ export const getChatFileIds = async (
 
   return fileIds;
 
-
-  // const body = {
-  //   ...(OPENAI_API_TYPE === 'openai' && { model: model.id }),
-  //   messages: [
-  //     {
-  //       role: 'system',
-  //       content: systemPrompt,
-  //     },
-  //     ...messages,
-  //   ],
-  //   max_tokens: 1000,
-  //   temperature: temperature,
-  //   stream: true,
-  //   model: model,
-  // };
-  
-  // return body;
 };
 
 

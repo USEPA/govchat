@@ -70,28 +70,40 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       assistantId
     );
 
+    console.log('chat.handler - setting headers');
+
+    
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
 
-    //const reader = stream.getReader();
+
+    console.log('Stream started, processing...');
+
+    const reader = stream.getReader();
     const decoder = new TextDecoder();
 
     const processStream = async () => {
       let done = false;
       while (!done) {
-        const { value, done: readerDone } = await stream.read(); //reader.read();
+
+        console.log('Reading from stream...');
+        const { value, done: readerDone } = await reader.read();
         done = readerDone;
         if (value) {
+          console.log('Received chunk from stream:', value);
           const chunk = decoder.decode(value, { stream: !done });
           res.write(chunk);
         }
       }
+      console.log('Stream ended.');
       res.end();
     };
 
     await processStream();
+
+    console.log('Stream processing completed.');
 
   } catch (error) {
     console.error(error);
