@@ -1,5 +1,5 @@
 import { OPENAI_API_TYPE } from '../utils/app/const';
-import { OpenAIMessage } from './chat';
+import { Message } from './chat';
 
 export interface OpenAIModel {
   id: string;
@@ -42,5 +42,5 @@ export interface OpenAIConversation {
   conversationId: string;
   assistantId: string;
   threadId: string;
-  messages: OpenAIMessage[];
+  messages: Message[];
 }

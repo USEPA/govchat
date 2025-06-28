@@ -1,7 +1,6 @@
 import { DEFAULT_SYSTEM_PROMPT, DEFAULT_TEMPERATURE } from '@/utils/app/const';
 import { OpenAIError, OpenAIStream } from '@/utils/server';
-import { ChatBody, Message, OpenAIMessage } from '@/types/chat';
-import { OpenAIConversation } from '@/types/openai';
+import { ChatBody, Message } from '@/types/chat';
 
 import tiktokenModel from '@dqbd/tiktoken/encoders/o200k_base.json';
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -32,11 +31,11 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
 
     const prompt_tokens = encoding.encode(promptToSend);
     let tokenCount = prompt_tokens.length;
-    let messagesToSend: OpenAIMessage[] = [];
+    let messagesToSend: Message[] = [];
 
     // Reverse loop through the messages to add them until the token limit is reached
     for (let i = messages.length - 1; i >= 0; i--) {
-      const message: OpenAIMessage = messages[i];
+      const message: Message = messages[i];
       const tokens = encoding.encode(message.content);
 
       //if (tokenCount + tokens.length + 1000 > model.tokenLimit) {

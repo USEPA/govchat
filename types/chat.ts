@@ -8,17 +8,12 @@ export interface Message {
 }
 export const makeTimestamp = () => {return format(new Date(), "yyyy-MM-dd'T'HH:mm:ssxxx");}
 
-export interface OpenAIMessage {
-  role: Role;
-  content: string;
-}
-
 export type Role = 'assistant' | 'user';
 
 export interface ChatBody {
   conversationId: string;
   model: OpenAIModel;
-  messages: OpenAIMessage[];
+  messages: Message[];
   key: string;
   prompt: string;
   temperature: number;
@@ -35,6 +30,7 @@ export interface Conversation {
   folderId: string | null;
   tokenLength: number;
   characterLength: number;
+  conversationId?: string;
   assistantId?: string | null;
   threadId?: string | null;
 }

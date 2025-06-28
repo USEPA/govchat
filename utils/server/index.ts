@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 
-import { Message, OpenAIMessage, makeTimestamp } from '@/types/chat';
+import { Message, makeTimestamp } from '@/types/chat';
 import { OpenAIModel, OpenAIModels, OpenAIConversation } from '@/types/openai';
 
 import { OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION, AZURE_APIM, DEFAULT_SYSTEM_PROMPT, DEFAULT_MODEL } from '../app/const';
@@ -83,7 +83,7 @@ export const OpenAIStream = async (
   systemPrompt: string,
   temperature : number|undefined,
   key: string,
-  messages: OpenAIMessage[],
+  messages: Message[],
   principalName: string|null,
   bearer: string|null,
   bearerAuth: string|null,
@@ -273,6 +273,7 @@ export const OpenAIStream = async (
 
   }
 
+  // OLD VERSION
   // console.log(`fetching url: ${url}`);
   // const res = await fetch(url, {
   //   headers: header,
@@ -306,7 +307,6 @@ export const OpenAIStream = async (
   // if (res.status !== 200) {
   //   const result = await res.json();
   //   if (result.error) {
-      
   //     console.debug("Got a Chat Error: " + result.error.message);
   //     throw new OpenAIError(
   //       result.error.message,
@@ -326,6 +326,15 @@ export const OpenAIStream = async (
 
   console.debug("got Chat");  
 
+  const res = new Response(JSON.stringify(openAIConversation), {
+    status: 200,
+    statusText: "Response received",
+    headers: {
+        'Content-Type': 'application/json'
+    }
+  });
+
+
   const stream = new ReadableStream({
     async start(controller) {
       const onParse = (event: ParsedEvent | ReconnectInterval) => {
@@ -341,61 +350,31 @@ export const OpenAIStream = async (
                 return;
               }
               if (json.choices[0] && json.choices[0].delta) {
-              const text = json.choices[0].delta.content;
-              const queue = encoder.encode(text);
-              loggingObjectTempResult.push(text);
-              controller.enqueue(queue);
+                const text = json.choices[0].delta.content;
+
+                console.debug("chunk parsed: " + text);  
+
+                const queue = encoder.encode(text);
+                loggingObjectTempResult.push(text);
+                controller.enqueue(queue);
               }
             } catch (e) {
               controller.error(e + " Data: " + data);              
-            }
+              console.error("Error parsing JSON from OpenAI response:", e);}
         }
         }
       };
 
       const parser = createParser(onParse);
 
-      // var theData = JSON.stringify(openAIConversation);
-      // const encoder = new TextEncoder();
-      // const encodedData = encoder.encode(theData);
-      const readableStream = objectToReadableStream(openAIConversation);
-
-
-
-
-
-
-
-      for await (const chunk of readableStream as any) { //res.body
+      for await (const chunk of res.body as any) { // const chunk of readableStream
         parser.feed(decoder.decode(chunk));
       }
     },
   });
 
-  // const stream2 = Readable.from(JSON.stringify(openAIConversation));
-  //const stream = fs.createReadStream(JSON.stringify(openAIConversation));
-
   return stream;
 };
-
-function objectToReadableStream(obj: any) {
-  const jsonString = JSON.stringify(obj);
-  const encoder = new TextEncoder();
-  let offset = 0;
-  const chunkSize = 16; // Define a chunk size for streaming
-
-  return new ReadableStream({
-    pull(controller) {
-      if (offset < jsonString.length) {
-        const chunk = jsonString.substring(offset, offset + chunkSize);
-        controller.enqueue(encoder.encode(chunk));
-        offset += chunkSize;
-      } else {
-        controller.close();
-      }
-    },
-  });
-}
 
 export const getChatFileIds = async (
   conversationId: string,
@@ -403,7 +382,7 @@ export const getChatFileIds = async (
   systemPrompt: string,
   temperature: number | undefined,
   key: string,
-  messages: OpenAIMessage[],
+  messages: Message[],
   principalName: string | null,
   bearer: string | null,
   bearerAuth: string | null,
@@ -450,8 +429,6 @@ function base64ToReadStream(base64String: string): fs.ReadStream{
   // TODO - delete old files
   
   var newString = base64String.substring(base64String.indexOf(',') + 1);
-
-// USE MULTER????????
 
   const buffer = Buffer.from(newString, 'base64');
   const newFilePath :string = '_tmpFiles/testFile123.pdf';

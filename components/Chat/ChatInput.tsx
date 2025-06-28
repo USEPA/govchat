@@ -103,8 +103,6 @@ export const ChatInput = ({
     if (uploadFiles && uploadFiles.length > 0) {
       console.log('files attached: ' + uploadFiles.length);
 
-      //var fileContent = getContentForFiles(content, uploadFiles);
-
       getContentForFiles(content, uploadFiles).then(fileContent => {
 
         console.log('new content from async func, length: ' + fileContent.length);
@@ -139,22 +137,6 @@ export const ChatInput = ({
     }
 
   };
-
-
-  const getContentForFiles2 = async (content: string, files: File[]) => {
-
-    let tmpContent = "";
-
-    const filePromises = files.map((file) => {
-      // Return a promise per file
-
-      console.log('--file: ' + file.name);
-      tmpContent += '{"type": "file","file":{"filename": "' + file.name + '"}}';
-    });
-
-    return tmpContent.substring(0, tmpContent.length - 1);  
-  };
-
 
   const getContentForFiles = async (content: string, files: File[]) => {
 

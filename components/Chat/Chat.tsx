@@ -232,10 +232,6 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           console.log('chat.tsx - handleSend - plugin');
           const { answer } = await response.json();
 
-          // res.body.content.threadId   // OpenAIConversation threadId, assistantId
-          // res.setHeader('assistantId', assistantId || '');
-          // res.setHeader('threadId', threadId || '');
-    
           try{
             updatedConversation.assistantId = answer.assistantId;
             updatedConversation.threadId = answer.threadId;
