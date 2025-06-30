@@ -30,9 +30,6 @@ import Spinner from '../Spinner';
 import { ChatInput } from './ChatInput';
 import { ChatLoader } from './ChatLoader';
 import { ErrorMessageDiv } from './ErrorMessageDiv';
-//import { ModelSelect } from './ModelSelect';
-import { SystemPrompt } from './SystemPrompt';
-import { TemperatureSlider } from './Temperature';
 import { Rules } from './Rules';
 import { Notice } from './Notice';
 import { MemoizedChatMessage } from './MemoizedChatMessage';
@@ -131,7 +128,13 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         if (!response.ok) {
           homeDispatch({ field: 'loading', value: false });
           homeDispatch({ field: 'messageIsStreaming', value: false });
-          toast.error(response.statusText);
+          const errorMsg = await response.text();
+          if (errorMsg.includes('have exceeded call rate limit')) {
+            toast.error("This model is currently overloaded. Please try again in a few minutes.");
+          } else {
+             toast.error(response.statusText);
+          }
+          
           return;
         }
         const data = response.body;
@@ -466,9 +469,6 @@ const onDownloadFolder = () => {
                       alt="Decorative image of a robot hand holding a transparent globe." 
                       className="w-full h-[200px] object-cover rounded-lg object-bottom"
                     />
-                      {
-                        //<ModelSelect />
-                      }
                         <Notice />
                         <Rules isAdvancedOpen={showAdvanced} />
                         <AdvancedSettings 
@@ -492,6 +492,7 @@ const onDownloadFolder = () => {
                   >
                     <IconClearAll size={18} />
                   </button>
+                  {(selectedConversation?.model.name != "GPT-4") ? "Model: " + (selectedConversation?.model.name) + " | " : ""}
                   {t('Temp')} : {selectedConversation?.temperature}
 
                   <button
@@ -514,14 +515,6 @@ const onDownloadFolder = () => {
                     </button>
                   )}
                 </div>
-                {false && showSettings && (
-                  <div className="flex flex-col space-y-10 md:mx-auto md:max-w-xl md:gap-6 md:py-3 md:pt-6 lg:max-w-2xl lg:px-0 xl:max-w-3xl">
-                    <div className="flex h-full flex-col space-y-4 border-b border-neutral-200 p-4 dark:border-neutral-600 md:rounded-lg md:border">
-                      {// <ModelSelect />
-                      }
-                    </div>
-                  </div>
-                )}
 
                 {selectedConversation?.messages.map((message, index) => (
                   <MemoizedChatMessage
