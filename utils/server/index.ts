@@ -79,8 +79,10 @@ export const OpenAIStream = async (
   userName: string|null
 ) => {
   let url = `${OPENAI_API_HOST}/v1/chat/completions`;
+  // The issue is old versions used the deployment ID as gpt-4o but if this was refactored then old conversations would not work.
+  let modelId = model.id === "gpt-4" ? "gpt-4o" : model.id;
   if (OPENAI_API_TYPE === 'azure') {
-    url = `${OPENAI_API_HOST}/openai/deployments/${model.id}/chat/completions?api-version=${OPENAI_API_VERSION}`;
+    url = `${OPENAI_API_HOST}/openai/deployments/${modelId}/chat/completions?api-version=${OPENAI_API_VERSION}`;
   }
   let token = await getAuthToken();
 
