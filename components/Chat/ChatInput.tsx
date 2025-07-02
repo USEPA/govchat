@@ -362,18 +362,20 @@ export const ChatInput = ({
 
         <div className="relative mx-2 flex w-full flex-grow flex-col rounded-md border border-black/10 bg-white shadow-[0_0_10px_rgba(0,0,0,0.10)] dark:border-gray-900/50 dark:bg-[#40414F] dark:text-white dark:shadow-[0_0_15px_rgba(0,0,0,0.10)] sm:mx-4">
 
+          <FileUpload onFileSelect={handleFileSelect} />
+
           <textarea
             ref={textareaRef}
-            className="placeholder-neutral-700 m-0 w-full resize-none border-0 bg-transparent p-0 py-2 pr-4 pl-4 text-black dark:bg-transparent dark:text-white md:py-3 md:pl-4"
+            className="placeholder-neutral-700 m-0 w-full box-border resize-none border-0 bg-transparent p-0 py-2 pr-4 pl-4 text-black dark:bg-transparent dark:text-white md:py-3 md:pl-4 "
             style={{
               resize: 'none',
               bottom: `${textareaRef?.current?.scrollHeight}px`,
               maxHeight: '400px',
               overflow: `${
-              textareaRef.current && textareaRef.current.scrollHeight > 400
-                ? 'auto'
-                : 'hidden'
-                }`,
+                textareaRef.current && textareaRef.current.scrollHeight > 400
+                  ? 'auto'
+                  : 'hidden'
+              }`,
             }}
             placeholder={
               t('Type a message ') || ''
@@ -388,8 +390,6 @@ export const ChatInput = ({
             aria-label="Chat input field"
             autoFocus
           />
-
-          <FileUpload onFileSelect={handleFileSelect} />
 
           <button
             className="absolute right-2 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"

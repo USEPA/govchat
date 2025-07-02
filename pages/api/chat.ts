@@ -96,11 +96,18 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
           res.write(chunk);
         }
       }
+      reader.releaseLock();
       console.log('Stream ended.');
       res.end();
     };
 
-    await processStream();
+    try {
+      await processStream();
+    } catch (error) {
+      console.error('Error processing stream:', error);
+      reader.cancel();
+      res.end();
+    }
 
     console.log('Stream processing completed.');
 

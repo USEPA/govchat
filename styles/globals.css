@@ -90,3 +90,16 @@ pre:has(div.codeblock) {
 .fileDel:hover {
     cursor: pointer;
 }
+.fileUploadButton {
+  opacity: 0; /* Make the input invisible */
+  width: 0.1px;
+  height: 0.1px;
+  position: absolute;
+}
+
+.fileUploadButtonDisp{
+  background-image: url('/images/paperclip.png');
+  width: 27px;
+  height: 27px;
+  position: absolute;
+}

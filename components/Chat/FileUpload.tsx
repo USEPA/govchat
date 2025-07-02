@@ -91,15 +91,26 @@ export const FileUpload = ({
     onFileSelect(...newSelectedFiles);
   }
 
+  const handleUploadSelect = (event: MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    const fileInput = document.getElementById("fileUploadButton") as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  };
+
   return (
     <div
       ref={dropRef}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      style={{ border: '2px dashed #ccc', padding: '0px', textAlign: 'center' }}
+
+      className="absolute left-2 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"
     >
-      <p>Drag and drop pdf files here or</p>
-      <input type="file" accept=".pdf" multiple onChange={handleFileSelect} />
+      
+      <input type="file" id="fileUploadButton" className="fileUploadButton" accept=".pdf" onChange={handleFileSelect} />
+      {/* <label htmlFor="fileUploadButton">Select file</label> */}
+      <input type="button" id="fileUploadButtonDisp" className="fileUploadButtonDisp" value="" onClick={handleUploadSelect} />
+   
       {selectedFiles && selectedFiles.length > 0 && (
         <ul>
           {selectedFiles.map((file, index) => (

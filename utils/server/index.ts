@@ -344,7 +344,9 @@ export const OpenAIStream = async (
           if(data !== "[DONE]"){
             try {
               const json = JSON.parse(data);
+              console.log("json: " + JSON.stringify(json));
               if (json.choices[0] && json.choices[0].finish_reason && json.choices[0].finish_reason != null) {
+                console.log("json.choices[0].finish_reason: " + json.choices[0].finish_reason);
                 printLogLines(loggingObject, body.messages, loggingObjectTempResult.join(''))
                 controller.close();
                 return;
@@ -352,7 +354,7 @@ export const OpenAIStream = async (
               if (json.choices[0] && json.choices[0].delta) {
                 const text = json.choices[0].delta.content;
 
-                console.debug("chunk parsed: " + text);  
+                console.debug("chunk parsed ");  
 
                 const queue = encoder.encode(text);
                 loggingObjectTempResult.push(text);
@@ -368,6 +370,7 @@ export const OpenAIStream = async (
       const parser = createParser(onParse);
 
       for await (const chunk of res.body as any) { // const chunk of readableStream
+        console.log("chunk received: " + chunk);
         parser.feed(decoder.decode(chunk));
       }
     },
