@@ -189,9 +189,8 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             }
             console.log('chat.tsx - handleSend - awaiting reader.read');
             const { value, done: doneReading } = await reader.read();
-            console.log('chat.tsx - handleSend - chunkin value:' +  value);
             done = doneReading;
-            const chunkValue = decoder.decode(value);
+            var chunkValue = decoder.decode(value);
             
             // this now returns a Json string of an OpenAIConversation {
               //   conversationId: conversationId,
@@ -200,7 +199,36 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
               //   messages: messages
               // };
             // valueJson = JSON.parse(chunkValue).    .content????   .messages[0]
-            console.log('chunk:', chunkValue);
+            console.log('chat.tsx - handleSend - chunk value: ' + chunkValue);
+
+            try{
+              const valueJson = JSON.parse(chunkValue);
+              if (valueJson.conversationId) {
+                updatedConversation.id = valueJson.conversationId;
+              }
+              if (valueJson.assistantId) {
+                updatedConversation.assistantId = valueJson.assistantId;
+              }
+              if (valueJson.threadId) {
+                updatedConversation.threadId = valueJson.threadId;
+              }
+              if (valueJson.messages && Array.isArray(valueJson.messages)) {
+                const newMessages: Message[] = valueJson.messages.map((msg: any) => ({
+                  role: msg.role,
+                  content: msg.content,
+                  timestamp: makeTimestamp(),
+                }));
+                updatedConversation.messages = [
+                  ...updatedConversation.messages,
+                  ...newMessages,
+                ];
+                console.log('chat.tsx - handleSend - parsed chunkValue messages:' +  JSON.stringify(newMessages));
+                chunkValue = valueJson.messages;
+                console.log('chat.tsx - handleSend - new chunkValue:' + chunkValue);
+              }
+            }catch(e){
+              console.error('chat.tsx - handleSend - error parsing chunkValue:', e);
+            }
 
             text += chunkValue;
             if (isFirst) {

@@ -324,56 +324,60 @@ export const OpenAIStream = async (
   });
 
 
-  const stream = new ReadableStream({
-    async start(controller) {
-      const onParse = (event: ParsedEvent | ReconnectInterval) => {
-        if (event.type === 'event') {
-          const data = event.data;
-          console.log("event type = event ");  
+  return Promise.resolve(res.body);
 
-          if(data !== "[DONE]"){
-            try {
-              const json = JSON.parse(data);
-              console.log("json: " + JSON.stringify(json));
-              if (json.choices[0] && json.choices[0].finish_reason && json.choices[0].finish_reason != null) {
 
-                console.log("json.choices[0].finish_reason: " + json.choices[0].finish_reason);
 
-                printLogLines(loggingObject, body.messages, loggingObjectTempResult.join(''))
-                controller.close();
+  // const stream = new ReadableStream({
+  //   async start(controller) {
+  //     const onParse = (event: ParsedEvent | ReconnectInterval) => {
+  //       if (event.type === 'event') {
+  //         const data = event.data;
+  //         console.log("event type = event ");  
 
-                return;
-              }
-              if (json.choices[0] && json.choices[0].delta) {
-                const text = json.choices[0].delta.content;
+  //         if(data !== "[DONE]"){
+  //           try {
+  //             const json = JSON.parse(data);
+  //             console.log("json: " + JSON.stringify(json));
+  //             if (json.choices[0] && json.choices[0].finish_reason && json.choices[0].finish_reason != null) {
 
-                console.log("chunk parsed, queueing ");  
+  //               console.log("json.choices[0].finish_reason: " + json.choices[0].finish_reason);
 
-                const queue = encoder.encode(text);
-                loggingObjectTempResult.push(text);
-                controller.enqueue(queue);
-              }
-            } catch (e) {
-              controller.error(e + " Data: " + data);              
-              console.error("Error parsing JSON from OpenAI response:", e);
-            }
-          }
-        }
-      };
+  //               printLogLines(loggingObject, body.messages, loggingObjectTempResult.join(''))
+  //               controller.close();
 
-      const parser = createParser(onParse);
-      console.log("index.ts - chunking response body: " + res.body);
+  //               return;
+  //             }
+  //             if (json.choices[0] && json.choices[0].delta) {
+  //               const text = json.choices[0].delta.content;
 
-      for await (const chunk of res.body as any) { // const chunk of readableStream
-        console.log("index.ts - chunk received, decoding: " + decoder.decode(chunk));
-        parser.feed(decoder.decode(chunk));
-      }
-      // console.debug("Stream ended, closing controller.");
-      // controller.close();
-    },
-  });
+  //               console.log("chunk parsed, queueing ");  
 
-  return stream;
+  //               const queue = encoder.encode(text);
+  //               loggingObjectTempResult.push(text);
+  //               controller.enqueue(queue);
+  //             }
+  //           } catch (e) {
+  //             controller.error(e + " Data: " + data);              
+  //             console.error("Error parsing JSON from OpenAI response:", e);
+  //           }
+  //         }
+  //       }
+  //     };
+
+  //     const parser = createParser(onParse);
+  //     console.log("index.ts - chunking response body: " + res.body);
+
+  //     for await (const chunk of res.body as any) { // const chunk of readableStream
+  //       console.log("index.ts - chunk received, decoding: " + decoder.decode(chunk));
+  //       parser.feed(decoder.decode(chunk));
+  //     }
+  //     // console.debug("Stream ended, closing controller.");
+  //     // controller.close();
+  //   },
+  // });
+
+  // return stream;
 };
 
 export const getChatFileIds = async (

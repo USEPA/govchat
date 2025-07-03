@@ -98,7 +98,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
         }
       }
       console.log('chat.ts - Stream ended.');
-      //res.end();
+      res.end();
     };
     
     try {
@@ -109,7 +109,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       reader.cancel();
       res.end();
     }
-    // reader.releaseLock();
+    reader.releaseLock();
     
     console.log('chat.ts - Stream processing completed.');
 
