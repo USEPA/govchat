@@ -8,6 +8,7 @@ import {
   IconFileUpload
 } from '@tabler/icons-react';
 import {
+  CSSProperties,
   KeyboardEvent,
   MouseEvent,
   MutableRefObject,
@@ -44,8 +45,6 @@ export const FileUpload = ({
     state: { fileIsSelected },
     dispatch: homeDispatch,
   } = useContext(HomeContext);
-
-  const uploadButton = document.getElementById("upload-button");
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const dropRef = useRef(null);
@@ -104,17 +103,17 @@ export const FileUpload = ({
       onDragOver={handleDragOver}
       onDrop={handleDrop}
 
-      className="absolute left-2 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"
+      className="absolute left-1 top-2 rounded-sm text-neutral-800 opacity-80 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"
     >
       
       <input type="file" id="fileUploadButton" className="fileUploadButton" accept=".pdf" onChange={handleFileSelect} />
-      {/* <label htmlFor="fileUploadButton">Select file</label> */}
       <input type="button" id="fileUploadButtonDisp" className="fileUploadButtonDisp" value="" onClick={handleUploadSelect} />
    
       {selectedFiles && selectedFiles.length > 0 && (
         <ul>
           {selectedFiles.map((file, index) => (
-            <li className="uploadFileName" key={index}>{file.name} <span className="fileDel" onClick={(e) => handleDeleteFile(e, index)}>X</span></li>
+            // {inlineStyle = "padding: " + file.name.length + "px"}   style={{inlineStyle}}
+            <li className="uploadFileName"  key={index}>{file.name} <span className="fileDel" onClick={(e) => handleDeleteFile(e, index)}>X</span></li>
           ))}
         </ul>
       )}

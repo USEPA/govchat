@@ -102,4 +102,5 @@ pre:has(div.codeblock) {
   width: 27px;
   height: 27px;
   position: absolute;
+  cursor: pointer;
 }

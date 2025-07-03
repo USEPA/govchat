@@ -197,11 +197,13 @@ export const OpenAIStream = async (
     console.log(`created thread: ${thread.id} for assistant: ${assistantId}`);
   }
 
-  console.log(`Messages : (${messages.length}) ${messages[messages.length - 1].content.substring(0, 500) }`);
+  console.log(`Messages : (${messages.length}) ${messages[messages.length - 1].content.substring(0, 300) }`);
 
   var newMessageContent = messages[messages.length - 1].content;
   var newMessageText = JSON.parse(newMessageContent)
     .filter((part: { type: string; }) => part.type === 'text')[0].text;
+
+  messages[messages.length - 1] = newMessageText;
 
   var newMessageFiles = "";
   var fileIds: string[] = [];
@@ -214,19 +216,7 @@ export const OpenAIStream = async (
 
     console.log("File upload detected in the last message content. Processing...");
 
-    // change body
     fileIds = await getChatFileIds(
-      conversationId,
-      model,
-      systemPrompt,
-      temperature,
-      key,
-      messages,
-      principalName,
-      bearer,
-      bearerAuth,
-      userName,
-      header,
       newMessageFiles,
       openAI
     );
@@ -260,12 +250,11 @@ export const OpenAIStream = async (
   } while (runStatus.status !== "completed" && runStatus.status !== "failed");
 
   if (runStatus.status === "completed") {
-    const messages = await openAI.beta.threads.messages.list(threadId);
-    const lastMessage = messages.data.find(m => m.role === "assistant");
+    const threadMessages = await openAI.beta.threads.messages.list(threadId);
+    const lastMessage = threadMessages.data.find(m => m.role === "assistant");
     const reply = lastMessage?.content?.[0]?.text?.value || "No summary returned.";
     console.log('threads.message found:', reply);
 
-    //messages.push(reply);
     openAIConversation.messages.push(reply);
 
   } else {
@@ -324,7 +313,7 @@ export const OpenAIStream = async (
   //   }
   // }
 
-  console.debug("got Chat");  
+  console.debug("index.ts - got Chat: " + JSON.stringify(openAIConversation));  
 
   const res = new Response(JSON.stringify(openAIConversation), {
     status: 200,
@@ -340,21 +329,25 @@ export const OpenAIStream = async (
       const onParse = (event: ParsedEvent | ReconnectInterval) => {
         if (event.type === 'event') {
           const data = event.data;
+          console.log("event type = event ");  
 
           if(data !== "[DONE]"){
             try {
               const json = JSON.parse(data);
               console.log("json: " + JSON.stringify(json));
               if (json.choices[0] && json.choices[0].finish_reason && json.choices[0].finish_reason != null) {
+
                 console.log("json.choices[0].finish_reason: " + json.choices[0].finish_reason);
+
                 printLogLines(loggingObject, body.messages, loggingObjectTempResult.join(''))
                 controller.close();
+
                 return;
               }
               if (json.choices[0] && json.choices[0].delta) {
                 const text = json.choices[0].delta.content;
 
-                console.debug("chunk parsed ");  
+                console.log("chunk parsed, queueing ");  
 
                 const queue = encoder.encode(text);
                 loggingObjectTempResult.push(text);
@@ -362,17 +355,21 @@ export const OpenAIStream = async (
               }
             } catch (e) {
               controller.error(e + " Data: " + data);              
-              console.error("Error parsing JSON from OpenAI response:", e);}
-        }
+              console.error("Error parsing JSON from OpenAI response:", e);
+            }
+          }
         }
       };
 
       const parser = createParser(onParse);
+      console.log("index.ts - chunking response body: " + res.body);
 
       for await (const chunk of res.body as any) { // const chunk of readableStream
-        console.log("chunk received: " + chunk);
+        console.log("index.ts - chunk received, decoding: " + decoder.decode(chunk));
         parser.feed(decoder.decode(chunk));
       }
+      // console.debug("Stream ended, closing controller.");
+      // controller.close();
     },
   });
 
@@ -380,17 +377,6 @@ export const OpenAIStream = async (
 };
 
 export const getChatFileIds = async (
-  conversationId: string,
-  model: OpenAIModel,
-  systemPrompt: string,
-  temperature: number | undefined,
-  key: string,
-  messages: Message[],
-  principalName: string | null,
-  bearer: string | null,
-  bearerAuth: string | null,
-  userName: string | null,
-  header: {},
   messageFiles: string,
   openAI: AzureOpenAI,
 ) => {

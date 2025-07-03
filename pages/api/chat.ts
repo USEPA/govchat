@@ -69,7 +69,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       assistantId
     );
 
-    console.log('chat.handler - setting headers');
+    console.log('chat.ts - setting headers');
 
     
     res.setHeader('Content-Type', 'text/event-stream');
@@ -78,7 +78,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
     res.flushHeaders();
 
 
-    console.log('Stream started, processing...');
+    console.log('chat.ts - Stream started, processing...');
 
     const reader = stream.getReader();
     const decoder = new TextDecoder();
@@ -87,29 +87,31 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       let done = false;
       while (!done) {
 
-        console.log('Reading from stream...');
+        console.log('chat.ts - Reading from stream...');
         const { value, done: readerDone } = await reader.read();
         done = readerDone;
+        console.log('chat.ts - Reader done readin ');
         if (value) {
-          console.log('Received chunk from stream:', value);
+          console.log('chat.ts - Received chunk from stream:' + decoder.decode(value));
           const chunk = decoder.decode(value, { stream: !done });
           res.write(chunk);
         }
       }
-      reader.releaseLock();
-      console.log('Stream ended.');
-      res.end();
+      console.log('chat.ts - Stream ended.');
+      //res.end();
     };
-
+    
     try {
       await processStream();
+      // res.end();
     } catch (error) {
-      console.error('Error processing stream:', error);
+      console.error('chat.ts - Error processing stream:', error);
       reader.cancel();
       res.end();
     }
-
-    console.log('Stream processing completed.');
+    // reader.releaseLock();
+    
+    console.log('chat.ts - Stream processing completed.');
 
   } catch (error) {
     console.error(error);

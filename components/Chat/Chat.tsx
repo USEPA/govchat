@@ -15,6 +15,7 @@ import { useTranslation } from 'next-i18next';
 
 import { getEndpoint } from '@/utils/app/api';
 import {
+  filterMessageText,
   saveConversation,
   saveConversations,
   updateConversation,
@@ -73,35 +74,45 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
     async (message: Message, deleteCount = 0, plugin: Plugin | null = null) => {
       if (selectedConversation) {
         let updatedConversation: Conversation;
+
+        console.log('chat.tsx - handleSend - message:', message);
+        const filteredMessage = filterMessageText(message);
+        console.log('chat.tsx - handleSend - filtered message:', filteredMessage);
+
         if (deleteCount) {
           const updatedMessages = [...selectedConversation.messages];
           for (let i = 0; i < deleteCount; i++) {
             updatedMessages.pop();
           }
+
           updatedConversation = {
             ...selectedConversation,
-            messages: [...updatedMessages, message],
+            messages: [...updatedMessages, filteredMessage],
           };
         } else {
           updatedConversation = {
             ...selectedConversation,
-            messages: [...selectedConversation.messages, message],
+            messages: [...selectedConversation.messages, filteredMessage],
           };
         }
         homeDispatch({
           field: 'selectedConversation',
-          value: updatedConversation,
+          value: {
+            ...selectedConversation,
+            messages: [...selectedConversation.messages, filteredMessage],
+          },
         });
         homeDispatch({ field: 'loading', value: true });
         homeDispatch({ field: 'messageIsStreaming', value: true });
         const chatBody: ChatBody = {
           conversationId: updatedConversation.id,
           model: updatedConversation.model,
-          messages: updatedConversation.messages.map(({ role, content }) => ({role, content })),
+          messages: [message], //updatedConversation.messages.map(({ role, content, timestamp }) => ({role, content, timestamp })),
           key: apiKey,
           prompt: updatedConversation.prompt,
           temperature: updatedConversation.temperature,
           assistantId: updatedConversation.assistantId || null,
+          threadId: updatedConversation.threadId || null,
         };
         const endpoint = getEndpoint(plugin);
         let body;
@@ -143,7 +154,9 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           return;
         }
         const data = response.body;
+        console.log('chat.tsx - handleSend - response:', response);
         if (!data) {
+          console.log('chat.tsx - handleSend - !data');
           homeDispatch({ field: 'loading', value: false });
           homeDispatch({ field: 'messageIsStreaming', value: false });
           return;
@@ -152,9 +165,9 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         if (!plugin) {
           console.log('chat.tsx - handleSend - !plugin');
           if (updatedConversation.messages.length === 1) {
-            const { content } = message;
-            const customName =
-              content.length > 30 ? content.substring(0, 30) + '...' : content;
+            console.log('chat.tsx - handleSend - firsties! setting convo name:' + filteredMessage.content);
+            const newName = filteredMessage.content;
+            const customName = newName.length > 30 ? newName.substring(0, 30) + '...' : newName;
             updatedConversation = {
               ...updatedConversation,
               name: customName,
@@ -167,14 +180,28 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           let isFirst = true;
           let text = '';
           while (!done) {
+            console.log('chat.tsx - handleSend - !done');
             if (stopConversationRef.current === true) {
               controller.abort();
               done = true;
+              console.log('chat.tsx - handleSend - controller aborted');
               break;
             }
+            console.log('chat.tsx - handleSend - awaiting reader.read');
             const { value, done: doneReading } = await reader.read();
+            console.log('chat.tsx - handleSend - chunkin value:' +  value);
             done = doneReading;
             const chunkValue = decoder.decode(value);
+            
+            // this now returns a Json string of an OpenAIConversation {
+              //   conversationId: conversationId,
+              //   assistantId: assistantId,
+              //   threadId: threadId,
+              //   messages: messages
+              // };
+            // valueJson = JSON.parse(chunkValue).    .content????   .messages[0]
+            console.log('chunk:', chunkValue);
+
             text += chunkValue;
             if (isFirst) {
               isFirst = false;

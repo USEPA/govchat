@@ -378,7 +378,7 @@ export const ChatInput = ({
               }`,
             }}
             placeholder={
-              t('Type a message ') || ''
+              t('      Type a message ') || ''
             }
             value={content}
             rows={1}

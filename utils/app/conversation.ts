@@ -1,4 +1,4 @@
-import { Conversation } from '@/types/chat';
+import { Conversation, Message } from '@/types/chat';
 
 export const updateConversation = (
   updatedConversation: Conversation,
@@ -39,3 +39,15 @@ export const saveConversation = (conversation: Conversation) => {
 export const saveConversations = (conversations: Conversation[]) => {
   localStorage.setItem('conversationHistory', JSON.stringify(conversations));
 };
+
+export const filterMessageText = (message: Message) => {
+  var newMessage = { ...message };  
+  try{
+    newMessage.content = JSON.parse(newMessage.content)
+      .filter((part: { type: string; }) => part.type === 'text')[0].text;
+  }
+  catch (error) {}
+
+  return newMessage;
+
+}
