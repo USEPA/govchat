@@ -75,9 +75,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
       if (selectedConversation) {
         let updatedConversation: Conversation;
 
-        console.log('chat.tsx - handleSend - message:', message);
         const filteredMessage = filterMessageText(message);
-        console.log('chat.tsx - handleSend - filtered message:', filteredMessage);
 
         if (deleteCount) {
           const updatedMessages = [...selectedConversation.messages];
@@ -131,8 +129,6 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         }
         const controller = new AbortController();
 
-        console.log('chat.tsx - handleSend - endpoint:' + endpoint);
-
         const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
@@ -154,18 +150,14 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           return;
         }
         const data = response.body;
-        console.log('chat.tsx - handleSend - response:', response);
         if (!data) {
-          console.log('chat.tsx - handleSend - !data');
           homeDispatch({ field: 'loading', value: false });
           homeDispatch({ field: 'messageIsStreaming', value: false });
           return;
         }
   
         if (!plugin) {
-          console.log('chat.tsx - handleSend - !plugin');
           if (updatedConversation.messages.length === 1) {
-            console.log('chat.tsx - handleSend - firsties! setting convo name:' + filteredMessage.content);
             const newName = filteredMessage.content;
             const customName = newName.length > 30 ? newName.substring(0, 30) + '...' : newName;
             updatedConversation = {
@@ -180,27 +172,15 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           let isFirst = true;
           let text = '';
           while (!done) {
-            console.log('chat.tsx - handleSend - !done');
             if (stopConversationRef.current === true) {
               controller.abort();
               done = true;
-              console.log('chat.tsx - handleSend - controller aborted');
               break;
             }
-            console.log('chat.tsx - handleSend - awaiting reader.read');
             const { value, done: doneReading } = await reader.read();
             done = doneReading;
             var chunkValue = decoder.decode(value);
             
-            // this now returns a Json string of an OpenAIConversation {
-              //   conversationId: conversationId,
-              //   assistantId: assistantId,
-              //   threadId: threadId,
-              //   messages: messages
-              // };
-            // valueJson = JSON.parse(chunkValue).    .content????   .messages[0]
-            console.log('chat.tsx - handleSend - chunk value: ' + chunkValue);
-
             try{
               const valueJson = JSON.parse(chunkValue);
               if (valueJson.conversationId) {
@@ -222,9 +202,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                   ...updatedConversation.messages,
                   ...newMessages,
                 ];
-                console.log('chat.tsx - handleSend - parsed chunkValue messages:' +  JSON.stringify(newMessages));
                 chunkValue = valueJson.messages;
-                console.log('chat.tsx - handleSend - new chunkValue:' + chunkValue);
               }
             }catch(e){
               console.error('chat.tsx - handleSend - error parsing chunkValue:', e);
@@ -284,7 +262,6 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           saveConversations(updatedConversations);
           homeDispatch({ field: 'messageIsStreaming', value: false });
         } else {
-          console.log('chat.tsx - handleSend - plugin');
           const { answer } = await response.json();
 
           try{
@@ -434,14 +411,6 @@ const onDownloadFolder = () => {
   };
   const throttledScrollDown = throttle(scrollDown, 250);
   const [showAdvanced, setShowAdvanced] = useState(false);
-
-  // useEffect(() => {
-  //   console.log('currentMessage', currentMessage);
-  //   if (currentMessage) {
-  //     handleSend(currentMessage);
-  //     homeDispatch({ field: 'currentMessage', value: undefined });
-  //   }
-  // }, [currentMessage]);
 
   useEffect(() => {
     throttledScrollDown();

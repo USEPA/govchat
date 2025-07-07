@@ -23,9 +23,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       tiktokenModel.pat_str,
     );
 
-    console.log('Received request with body:', req.body);
-    console.log(`messages length: ${messages.length}`);
-
     let promptToSend = prompt || DEFAULT_SYSTEM_PROMPT;
     let temperatureToUse = temperature ?? DEFAULT_TEMPERATURE;
 
@@ -51,8 +48,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
     const bearerAuth: string = req.headers['x-ms-client-principal-id']?.toString() || "";
     const userName: string = req.headers['x-ms-client-principal-name']?.toString() || "";
 
-    console.log('chat.handler - MessagesToSend len:', messagesToSend.length);
-
     encoding.free();
 
     const stream = await OpenAIStream(
@@ -69,16 +64,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       assistantId
     );
 
-    console.log('chat.ts - setting headers');
-
-    
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
-
-
-    console.log('chat.ts - Stream started, processing...');
 
     const reader = stream.getReader();
     const decoder = new TextDecoder();
@@ -87,17 +76,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       let done = false;
       while (!done) {
 
-        console.log('chat.ts - Reading from stream...');
         const { value, done: readerDone } = await reader.read();
         done = readerDone;
-        console.log('chat.ts - Reader done readin ');
         if (value) {
-          console.log('chat.ts - Received chunk from stream:' + decoder.decode(value));
           const chunk = decoder.decode(value, { stream: !done });
           res.write(chunk);
         }
       }
-      console.log('chat.ts - Stream ended.');
       res.end();
     };
     
@@ -110,8 +95,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       res.end();
     }
     reader.releaseLock();
-    
-    console.log('chat.ts - Stream processing completed.');
 
   } catch (error) {
     console.error(error);

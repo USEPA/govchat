@@ -175,6 +175,8 @@ export const OpenAIStream = async (
     apiVersion: OPENAI_API_VERSION
   });
 
+  console.log(`New Message : ${messages[messages.length - 1] }`);
+
   // if the conversation is new, create an assistant
   if (assistantId === null) {
     console.log("No assistantId provided, creating a new assistant...");
@@ -197,8 +199,6 @@ export const OpenAIStream = async (
     console.log(`created thread: ${thread.id} for assistant: ${assistantId}`);
   }
 
-  console.log(`Messages : (${messages.length}) ${messages[messages.length - 1].content.substring(0, 300) }`);
-
   var newMessageContent = messages[messages.length - 1].content;
   var newMessageText = JSON.parse(newMessageContent)
     .filter((part: { type: string; }) => part.type === 'text')[0].text;
@@ -212,9 +212,9 @@ export const OpenAIStream = async (
   if (isJson(newMessageContent) && JSON.parse(newMessageContent).some((content: { type: string; }) => content.type === 'file')) {
 
     newMessageFiles = JSON.parse(newMessageContent).filter( (part: { type: string; }) => part.type === 'file')
-    .map((part: { file: { file_data: string; }; }) => part.file.file_data);
+    .map((part: { file: { filename: string, file_data: string; }; }) => part.file);
 
-    console.log("File upload detected in the last message content. Processing...");
+    console.log("File upload detected in the last message content. Processing files:" + newMessageFiles);
 
     fileIds = await getChatFileIds(
       newMessageFiles,
@@ -262,14 +262,6 @@ export const OpenAIStream = async (
 
   }
 
-  // OLD VERSION
-  // console.log(`fetching url: ${url}`);
-  // const res = await fetch(url, {
-  //   headers: header,
-  //   method: 'post',
-  //   body: JSON.stringify(body),
-  // });
-
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
   const loggingObjectTempResult:string[] = [];
@@ -293,28 +285,6 @@ export const OpenAIStream = async (
     totalPages: 1
   };
 
-  // if (res.status !== 200) {
-  //   const result = await res.json();
-  //   if (result.error) {
-  //     console.debug("Got a Chat Error: " + result.error.message);
-  //     throw new OpenAIError(
-  //       result.error.message,
-  //       result.error.type,
-  //       result.error.param,
-  //       result.error.code,
-  //     );
-  //   } else {
-  //     console.debug("Got a Chat Error: " + result.statusText);
-  //     throw new Error(
-  //       `OpenAI API returned an error: ${
-  //         decoder.decode(result?.value) || result.statusText
-  //       }`,
-  //     );
-  //   }
-  // }
-
-  console.debug("index.ts - got Chat: " + JSON.stringify(openAIConversation));  
-
   const res = new Response(JSON.stringify(openAIConversation), {
     status: 200,
     statusText: "Response received",
@@ -323,82 +293,29 @@ export const OpenAIStream = async (
     }
   });
 
-
   return Promise.resolve(res.body);
 
-
-
-  // const stream = new ReadableStream({
-  //   async start(controller) {
-  //     const onParse = (event: ParsedEvent | ReconnectInterval) => {
-  //       if (event.type === 'event') {
-  //         const data = event.data;
-  //         console.log("event type = event ");  
-
-  //         if(data !== "[DONE]"){
-  //           try {
-  //             const json = JSON.parse(data);
-  //             console.log("json: " + JSON.stringify(json));
-  //             if (json.choices[0] && json.choices[0].finish_reason && json.choices[0].finish_reason != null) {
-
-  //               console.log("json.choices[0].finish_reason: " + json.choices[0].finish_reason);
-
-  //               printLogLines(loggingObject, body.messages, loggingObjectTempResult.join(''))
-  //               controller.close();
-
-  //               return;
-  //             }
-  //             if (json.choices[0] && json.choices[0].delta) {
-  //               const text = json.choices[0].delta.content;
-
-  //               console.log("chunk parsed, queueing ");  
-
-  //               const queue = encoder.encode(text);
-  //               loggingObjectTempResult.push(text);
-  //               controller.enqueue(queue);
-  //             }
-  //           } catch (e) {
-  //             controller.error(e + " Data: " + data);              
-  //             console.error("Error parsing JSON from OpenAI response:", e);
-  //           }
-  //         }
-  //       }
-  //     };
-
-  //     const parser = createParser(onParse);
-  //     console.log("index.ts - chunking response body: " + res.body);
-
-  //     for await (const chunk of res.body as any) { // const chunk of readableStream
-  //       console.log("index.ts - chunk received, decoding: " + decoder.decode(chunk));
-  //       parser.feed(decoder.decode(chunk));
-  //     }
-  //     // console.debug("Stream ended, closing controller.");
-  //     // controller.close();
-  //   },
-  // });
-
-  // return stream;
 };
 
 export const getChatFileIds = async (
-  messageFiles: string,
+  messageFiles: any,
   openAI: AzureOpenAI,
 ) => {
 
-
-  
-  console.log(`getFileChatBody - messageFiles: ${messageFiles.length} `);
-
-  // Upload each file using the files endpoint with purpose 'user_data'
   const fileIds = [];
-  for (const fileStr of messageFiles) {
-    const fileStream = base64ToReadStream(fileStr);
+  const tmpFileDir = "_tmpFiles/";
+  
+  for (const messageFile of messageFiles) {
+    const fileStream = base64ToReadStream(messageFile.filename, messageFile.file_data, tmpFileDir);
     const uploadedFile = await openAI.files.create({
       purpose: 'assistants',
       file: fileStream
     });
     fileIds.push(uploadedFile.id);
-    console.log(`Uploaded file: ${uploadedFile.filename}, id: ${uploadedFile.id}`);
+
+    //console.log(`Uploaded file: ${uploadedFile.filename}, id: ${uploadedFile.id}`);
+
+    fs.unlinkSync( tmpFileDir + messageFile.filename); // should we keep the files for later viewing by the user?
   }
 
   return fileIds;
@@ -417,14 +334,12 @@ function isJson(item : any) {
   return typeof value === "object" && value !== null;
 }
 
-function base64ToReadStream(base64String: string): fs.ReadStream{
-  
-  // TODO - delete old files
+function base64ToReadStream(fileName:string, base64String: string, tmpFileDir: string): fs.ReadStream{
   
   var newString = base64String.substring(base64String.indexOf(',') + 1);
 
   const buffer = Buffer.from(newString, 'base64');
-  const newFilePath :string = '_tmpFiles/testFile123.pdf';
+  const newFilePath :string = tmpFileDir + fileName;
   fs.writeFileSync(newFilePath, new Uint8Array(buffer));
    
   return fs.createReadStream(newFilePath);
