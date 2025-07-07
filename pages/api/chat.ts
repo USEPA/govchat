@@ -16,7 +16,7 @@ export const config = {
 
 const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
   try {
-    const { conversationId, model, messages, key, prompt, temperature, assistantId } = req.body as ChatBody;
+    const { conversationId, model, messages, key, prompt, temperature, assistantId, threadId } = req.body as ChatBody;
     const encoding = new Tiktoken(
       tiktokenModel.bpe_ranks,
       tiktokenModel.special_tokens,
@@ -61,7 +61,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       bearer,
       bearerAuth,
       userName,
-      assistantId
+      assistantId,
+      threadId
     );
 
     res.setHeader('Content-Type', 'text/event-stream');
