@@ -1,40 +1,17 @@
 import {
-  IconArrowDown,
-  IconBolt,
-  IconBrandGoogle,
-  IconPlayerStop,
-  IconRepeat,
-  IconSend,
-  IconFileUpload
+  IconPaperclip
 } from '@tabler/icons-react';
 import {
-  CSSProperties,
-  KeyboardEvent,
   MouseEvent,
-  MutableRefObject,
-  useCallback,
   useContext,
-  useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
 
-import { useTranslation } from 'next-i18next';
-
-import { Message, Conversation } from '@/types/chat';
-import { Plugin } from '@/types/plugin';
-import { Prompt } from '@/types/prompt';
-
 import HomeContext from '@/utils/home/home.context';
 
-import { PluginSelect } from './PluginSelect';
-import { PromptList } from './PromptList';
-import { VariableModal } from './VariableModal';
-
-
 interface Props {
-  onFileSelect: () => void;
+  onFileSelect: (files: File[]) => void;
 }
 
 export const FileUpload = ({
@@ -59,26 +36,9 @@ export const FileUpload = ({
     setSelectedFiles([...selectedFiles, ...newSelectedFiles]);
   };
 
-  const handleFileSelect = (event: { target: { files: Iterable<unknown> | ArrayLike<unknown>; }; }) => {
-    const newSelectedFiles = Array.from(event.target.files);
-    //setSelectedFiles([...selectedFiles, ...newSelectedFiles]);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newSelectedFiles = Array.from(event.target.files || []);
     setSelectedFiles([...newSelectedFiles]);
-
-
-    console.log('newSelectedFiles:');
-    for (const file of newSelectedFiles) {
-      console.log('----Filename:', file.name);
-    }
-
-    console.log('selectedFiles:');
-    for (const file of selectedFiles) {
-      console.log('----Filename:', file.name);
-    }
-
-    //console.log("new files selected. old list: " + newSelectedFiles);
-    //console.log("new list: " + selectedFiles);
-
-
     onFileSelect([...newSelectedFiles]);
   };
 
@@ -86,8 +46,8 @@ export const FileUpload = ({
     console.log("delete file : " + fileIndex);
     const newSelectedFiles = [...selectedFiles];
     newSelectedFiles.splice(fileIndex, 1);
-    setSelectedFiles(...newSelectedFiles);
-    onFileSelect(...newSelectedFiles);
+    setSelectedFiles([...newSelectedFiles]);
+    onFileSelect([...newSelectedFiles]);
   }
 
   const handleUploadSelect = (event: MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -98,13 +58,52 @@ export const FileUpload = ({
   };
 
   return (
-    <div
-      ref={dropRef}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
+    <>
+    {(!selectedFiles || selectedFiles.length === 0) && (
+      <>
+          <label
+        ref={dropRef as React.RefObject<HTMLLabelElement>}
+        onDragOver={handleDragOver}
+        className="absolute left-2 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200 cursor-pointer"
+        title="Send"
+        aria-label="Send"
+      >
+        <IconPaperclip size={18} />
+        <input
+          type="file"
+          onChange={handleFileChange}
+          multiple
+          className="hidden"
+        />
+      </label>
+      </>
+      )}
 
-      className="absolute left-1 top-2 rounded-sm text-neutral-800 opacity-80 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"
-    >
+
+
+    {selectedFiles && selectedFiles.length > 0 && (
+      <ul className="space-y-2">
+        {selectedFiles.map((file, index) => (
+          <li
+            key={index}
+            className="inline-flex items-center bg-gray-100 text-gray-800 px-4 py-2 rounded-full text-sm shadow-sm"
+          >
+            {file.name}
+            <span
+              onClick={(e) => handleDeleteFile(e, index)}
+              className="ml-2 text-gray-500 hover:text-gray-700 cursor-pointer font-semibold"
+            >
+              ×
+            </span>
+          </li>
+        ))}
+      </ul>
+    )}
+
+
+
+    {/* {messageIsStreaming ? (
+
       
       <input type="file" id="fileUploadButton" className="fileUploadButton" accept=".pdf" onChange={handleFileSelect} />
       <input type="button" id="fileUploadButtonDisp" className="fileUploadButtonDisp" value="" onClick={handleUploadSelect} />
@@ -116,15 +115,7 @@ export const FileUpload = ({
             <li className="uploadFileName"  key={index}>{file.name} <span className="fileDel" onClick={(e) => handleDeleteFile(e, index)}>X</span></li>
           ))}
         </ul>
-      )}
-    </div>
+      )} */}
+    </>
   );
-
-
 }
-
-
-
-
-
-
