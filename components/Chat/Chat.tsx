@@ -35,6 +35,7 @@ import { Rules } from './Rules';
 import { Notice } from './Notice';
 import { MemoizedChatMessage } from './MemoizedChatMessage';
 import { AdvancedSettings } from './AdvancedSettings';
+import { timeStamp } from 'console';
 
 interface Props {
   stopConversationRef: MutableRefObject<boolean>;
@@ -97,7 +98,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           field: 'selectedConversation',
           value: {
             ...selectedConversation,
-            messages: [...selectedConversation.messages, filteredMessage],
+            messages: [...selectedConversation.messages, filteredMessage ],
           },
         });
         homeDispatch({ field: 'loading', value: true });
@@ -179,7 +180,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             }
             const { value, done: doneReading } = await reader.read();
             done = doneReading;
-            var chunkValue = decoder.decode(value);
+            var chunkValue = await decoder.decode(value);
             
             try{
               const valueJson = JSON.parse(chunkValue);
@@ -203,17 +204,17 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                   ...newMessages,
                 ];
                 chunkValue = valueJson.messages;
+                text += chunkValue;
               }
             }catch(e){
               console.error('chat.tsx - handleSend - error parsing chunkValue:', e);
             }
 
-            text += chunkValue;
             if (isFirst) {
               isFirst = false;
               const updatedMessages: Message[] = [
                 ...updatedConversation.messages,
-                { role: 'assistant', content: chunkValue, timestamp: makeTimestamp() },
+                { role: 'assistant', content: text, timestamp: makeTimestamp() },
               ];
               updatedConversation = {
                 ...updatedConversation,
@@ -224,28 +225,12 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                 value: updatedConversation,
               });
             } else {
-              const updatedMessages: Message[] =
-                updatedConversation.messages.map((message, index) => {
-                  if (index === updatedConversation.messages.length - 1) {
-                    return {
-                      ...message,
-                      content: text,
-                    };
-                  }
-                  return message;
-                });
-              updatedConversation = {
-                ...updatedConversation,
-                messages: updatedMessages,
-              };
               homeDispatch({
                 field: 'selectedConversation',
                 value: updatedConversation,
               });
             }
           }
-          // updatedConversation.assistantId = response.headers.get('assistantId') || null;
-          // updatedConversation.threadId = response.headers.get('threadId') || null;
           saveConversation(updatedConversation);
           const updatedConversations: Conversation[] = conversations.map(
             (conversation) => {

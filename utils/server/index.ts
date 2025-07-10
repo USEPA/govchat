@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 
 import { Message, makeTimestamp } from '@/types/chat';
-import { OpenAIModel, OpenAIModels, OpenAIConversation } from '@/types/openai';
+import { OpenAIModel, OpenAIModels } from '@/types/openai';
 
 import { OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION, AZURE_APIM, DEFAULT_SYSTEM_PROMPT, DEFAULT_MODEL } from '../app/const';
 
@@ -36,6 +36,12 @@ export class OpenAIError extends Error {
   }
 }
 
+interface OpenAIConversation {
+  conversationId: string;
+  assistantId: string;
+  threadId: string;
+  messages: Message[];
+}
 
 const printLogLines = (
   loggingObject: { 
@@ -255,6 +261,7 @@ export const OpenAIStream = async (
     const reply = lastMessage?.content?.[0]?.text?.value || "No summary returned.";
     console.log('threads.message found:', reply);
 
+    openAIConversation.messages.pop(); // only send the reply
     openAIConversation.messages.push(reply);
 
   } else {

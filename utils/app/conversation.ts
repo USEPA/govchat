@@ -41,7 +41,7 @@ export const saveConversations = (conversations: Conversation[]) => {
 };
 
 export const filterMessageText = (message: Message) => {
-  var newMessage = { ...message };  
+  var newMessage = { ...message };
   try{
     newMessage.content = JSON.parse(newMessage.content)
       .filter((part: { type: string; }) => part.type === 'text')[0].text;

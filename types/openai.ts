@@ -38,9 +38,3 @@ export const OpenAIModels: Record<OpenAIModelID, OpenAIModel> = {
   }
 };
 
-export interface OpenAIConversation {
-  conversationId: string;
-  assistantId: string;
-  threadId: string;
-  messages: Message[];
-}
