@@ -16,6 +16,7 @@ import { useTranslation } from 'next-i18next';
 import { getEndpoint } from '@/utils/app/api';
 import {
   filterMessageText,
+  setFileUploadText,
   saveConversation,
   saveConversations,
   updateConversation,
@@ -76,7 +77,13 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
       if (selectedConversation) {
         let updatedConversation: Conversation;
 
-        const filteredMessage = filterMessageText(message);
+        const fileUploadText = setFileUploadText(message);
+        var filteredMessage = filterMessageText(message);
+
+        if(fileUploadText && fileUploadText.length > 0) {
+          filteredMessage.role = 'fileUpload'; 
+          filteredMessage.content = fileUploadText + ' \n' + filteredMessage.content;
+        }
 
         if (deleteCount) {
           const updatedMessages = [...selectedConversation.messages];
@@ -94,11 +101,12 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             messages: [...selectedConversation.messages, filteredMessage],
           };
         }
+
         homeDispatch({
           field: 'selectedConversation',
           value: {
-            ...selectedConversation,
-            messages: [...selectedConversation.messages, filteredMessage ],
+            ...updatedConversation,
+            messages: [...updatedConversation.messages], //[...selectedConversation.messages, filteredMessage ],
           },
         });
         homeDispatch({ field: 'loading', value: true });
@@ -194,15 +202,21 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                 updatedConversation.threadId = valueJson.threadId;
               }
               if (valueJson.messages && Array.isArray(valueJson.messages)) {
-                const newMessages: Message[] = valueJson.messages.map((msg: any) => ({
-                  role: msg.role,
-                  content: msg.content,
-                  timestamp: makeTimestamp(),
-                }));
-                updatedConversation.messages = [
-                  ...updatedConversation.messages,
-                  ...newMessages,
-                ];
+
+                console.log('chat.tsx - handleSend - valueJson messages:', valueJson.messages);
+
+                // const newMessages: Message[] = valueJson.messages.map((msg: any) => ({
+                //   role: msg.role,
+                //   content: msg.content,
+                //   timestamp: makeTimestamp(),
+                // }));
+
+                // console.log('chat.tsx - handleSend - newMessages:', newMessages);
+
+                // updatedConversation.messages = [
+                //   ...updatedConversation.messages,
+                //   ...newMessages,
+                // ];
                 chunkValue = valueJson.messages;
                 text += chunkValue;
               }
@@ -220,11 +234,13 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                 ...updatedConversation,
                 messages: updatedMessages,
               };
+
               homeDispatch({
                 field: 'selectedConversation',
                 value: updatedConversation,
               });
             } else {
+
               homeDispatch({
                 field: 'selectedConversation',
                 value: updatedConversation,

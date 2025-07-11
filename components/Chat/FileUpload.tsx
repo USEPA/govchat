@@ -12,10 +12,12 @@ import HomeContext from '@/utils/home/home.context';
 
 interface Props {
   onFileSelect: (files: File[]) => void;
+  onCancelUpload: () => void;
 }
 
 export const FileUpload = ({
   onFileSelect,
+  onCancelUpload,
 }: Props) => {
 
   const {
@@ -48,6 +50,7 @@ export const FileUpload = ({
     newSelectedFiles.splice(fileIndex, 1);
     setSelectedFiles([...newSelectedFiles]);
     onFileSelect([...newSelectedFiles]);
+    onCancelUpload();
   }
 
   const handleUploadSelect = (event: MouseEvent<HTMLButtonElement, MouseEvent>) => {

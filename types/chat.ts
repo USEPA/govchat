@@ -8,7 +8,7 @@ export interface Message {
 }
 export const makeTimestamp = () => {return format(new Date(), "yyyy-MM-dd'T'HH:mm:ssxxx");}
 
-export type Role = 'assistant' | 'user';
+export type Role = 'assistant' | 'user' | 'fileUpload';
 
 export interface ChatBody {
   conversationId: string;

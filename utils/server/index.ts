@@ -181,8 +181,6 @@ export const OpenAIStream = async (
     apiVersion: OPENAI_API_VERSION
   });
 
-  console.log(`New Message : ${messages[messages.length - 1] }`);
-
   // if the conversation is new, create an assistant
   if (assistantId === null) {
     console.log("No assistantId provided, creating a new assistant...");
