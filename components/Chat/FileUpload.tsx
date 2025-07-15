@@ -32,11 +32,11 @@ export const FileUpload = ({
     event.preventDefault();
   };
 
-  const handleDrop = (event: { preventDefault: () => void; dataTransfer: { selectedFiles: Iterable<File> | ArrayLike<File>; }; }) => {
-    event.preventDefault();
-    const newSelectedFiles = Array.from(event.dataTransfer.selectedFiles);
-    setSelectedFiles([...selectedFiles, ...newSelectedFiles]);
-  };
+  // const handleDrop = (event: { preventDefault: () => void; dataTransfer: { selectedFiles: Iterable<unknown> | ArrayLike<unknown>; }; }) => {
+  //   event.preventDefault();
+  //   const newSelectedFiles = Array.from(event.dataTransfer.selectedFiles);
+  //   setSelectedFiles([...selectedFiles, ...newSelectedFiles]);
+  // };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newSelectedFiles = Array.from(event.target.files || []);
