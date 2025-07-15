@@ -82,7 +82,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
 
         if(fileUploadText && fileUploadText.length > 0) {
           filteredMessage.role = 'fileUpload'; 
-          filteredMessage.content = fileUploadText + ' \n' + filteredMessage.content;
+          filteredMessage.content = fileUploadText + ' \n\n' + filteredMessage.content;
         }
 
         if (deleteCount) {
