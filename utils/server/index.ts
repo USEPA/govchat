@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 
-import { Message, OpenAIMessage, makeTimestamp } from '@/types/chat';
+import { Message, makeTimestamp } from '@/types/chat';
 import { OpenAIModel, OpenAIModels } from '@/types/openai';
 
-import { AZURE_DEPLOYMENT_ID, OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION, AZURE_APIM } from '../app/const';
+import { OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION, AZURE_APIM, DEFAULT_SYSTEM_PROMPT, DEFAULT_MODEL } from '../app/const';
 
 import {
   ParsedEvent,
@@ -11,6 +11,16 @@ import {
   createParser,
 } from 'eventsource-parser';
 import { getAuthToken } from '../lib/azure';
+import { getEntraToken } from '../lib/azureEntra';
+import { AzureOpenAI, toFile } from 'openai';
+import * as os from 'os';
+import * as fs from 'fs';
+import path from 'path';
+import { Readable } from 'stream';
+import { Uploadable } from 'openai/core';
+import { Assistant } from 'openai/resources/beta/assistants';
+import { DefaultAzureCredential, getBearerTokenProvider } from '@azure/identity';
+
 
 export class OpenAIError extends Error {
   type: string;
@@ -26,6 +36,12 @@ export class OpenAIError extends Error {
   }
 }
 
+interface OpenAIConversation {
+  conversationId: string;
+  assistantId: string;
+  threadId: string;
+  messages: Message[];
+}
 
 const printLogLines = (
   loggingObject: { 
@@ -68,53 +84,76 @@ const printLogLines = (
 };
 
 export const OpenAIStream = async (
+  conversationId: string,
   model: OpenAIModel,
   systemPrompt: string,
   temperature : number|undefined,
   key: string,
-  messages: OpenAIMessage[],
+  messages: Message[],
   principalName: string|null,
   bearer: string|null,
   bearerAuth: string|null,
-  userName: string|null
+  userName: string|null,
+  assistantId: string|null = '',
+  threadId: string|null = '',
 ) => {
-  let url = `${OPENAI_API_HOST}/v1/chat/completions`;
-  // The issue is old versions used the deployment ID as gpt-4o but if this was refactored then old conversations would not work.
-  let modelId = model.id === "gpt-4" ? "gpt-4o" : model.id;
-  if (OPENAI_API_TYPE === 'azure') {
-    url = `${OPENAI_API_HOST}/openai/deployments/${modelId}/chat/completions?api-version=${OPENAI_API_VERSION}`;
-  }
-  let token = await getAuthToken();
 
-  const header = {
-    'Content-Type': 'application/json',
-    ...(OPENAI_API_TYPE === 'openai' && {
-      Authorization: `Bearer ${key ? key : process.env.OPENAI_API_KEY}`
-    }),
-    ...(OPENAI_API_TYPE === 'azure' && process.env.AZURE_USE_MANAGED_IDENTITY=="false" && {
-      'api-key': `${key ? key : process.env.OPENAI_API_KEY}`
-    }),
-    ...(OPENAI_API_TYPE === 'azure' && process.env.AZURE_USE_MANAGED_IDENTITY=="true" && {
-      Authorization: `Bearer ${token.token}`
-    }),
-    ...((OPENAI_API_TYPE === 'openai' && OPENAI_ORGANIZATION) && {
-      'OpenAI-Organization': OPENAI_ORGANIZATION,
-    }),
-    ...((AZURE_APIM) && {
-      'Ocp-Apim-Subscription-Key': process.env.AZURE_APIM_KEY
-    }),
-    ...((principalName) && {
-      'x-ms-client-principal-name': principalName
-    }),
-    ...((bearer) && { 
-      'x-ms-client-principal': bearer
-    }),
-    ...((bearerAuth) && { 
-      'x-ms-client-principal-id': bearerAuth
-    })
-  };
+  //var url = `${OPENAI_API_HOST}/v1/chat/completions`; 
+  var url = `${OPENAI_API_HOST}/assistants`;
+
+  var header = {};
+  
+  if (OPENAI_API_TYPE === 'azure') {
+    url = `${OPENAI_API_HOST}openai/assistants?api-version=${OPENAI_API_VERSION}`;
+  }
+
+  if (os.hostname() === "localhost") {
+
+    let entraToken = await getEntraToken();
+
+    header = {
+      'Content-Type': 'application/json',
+       'Authorization': `Bearer ${entraToken}`
+    };
+
+  }
+  else {
+
+    let token = await getAuthToken();
+
+    header = {
+      'Content-Type': 'application/json',
+      ...(OPENAI_API_TYPE === 'openai' && {
+        Authorization: `Bearer ${key ? key : process.env.OPENAI_API_KEY}`
+      }),
+      ...(OPENAI_API_TYPE === 'azure' && process.env.AZURE_USE_MANAGED_IDENTITY=="false" && {
+        'api-key': `${key ? key : process.env.OPENAI_API_KEY}`
+      }),
+      ...(OPENAI_API_TYPE === 'azure' && process.env.AZURE_USE_MANAGED_IDENTITY=="true" && {
+        Authorization: `Bearer ${token.token}`
+      }),
+      ...((OPENAI_API_TYPE === 'openai' && OPENAI_ORGANIZATION) && {
+        'OpenAI-Organization': OPENAI_ORGANIZATION,
+      }),
+      ...((AZURE_APIM) && {
+        'Ocp-Apim-Subscription-Key': process.env.AZURE_APIM_KEY
+      }),
+      ...((principalName) && {
+        'x-ms-client-principal-name': principalName
+      }),
+      ...((bearer) && { 
+        'x-ms-client-principal': bearer
+      }),
+      ...((bearerAuth) && { 
+        'x-ms-client-principal-id': bearerAuth
+      })
+    };
+
+  }
+
   var body = {
-    ...(OPENAI_API_TYPE === 'openai' && {model: model.id}),
+    ...(OPENAI_API_TYPE === 'openai' && { model: model.id }),
+
     messages: [
       {
         role: 'system',
@@ -125,15 +164,108 @@ export const OpenAIStream = async (
     temperature: temperature,
     stream: true
   };
+
   if (model.id == "o3-mini" || model.id == "o1") {
     delete body.temperature;
   }
 
-  const res = await fetch(url, {
-    headers: header,
-    method: 'post',
-    body: JSON.stringify(body),
+  const credential = new DefaultAzureCredential();
+  const scope = "https://cognitiveservices.azure.com/.default";
+  const azureADTokenProvider = getBearerTokenProvider(credential, scope);
+  //await credential.getToken("https://cognitiveservices.azure.com/.default").token;
+
+  const openAI = new AzureOpenAI({
+    azureADTokenProvider: azureADTokenProvider,
+    endpoint: OPENAI_API_HOST,
+    //azureDeploymentId: AZURE_DEPLOYMENT_ID,
+    apiVersion: OPENAI_API_VERSION
   });
+
+  // if the conversation is new, create an assistant
+  if (assistantId === null) {
+    console.log("No assistantId provided, creating a new assistant...");
+
+    const assistant = await openAI.beta.assistants.create({
+      model: DEFAULT_MODEL,
+      name: "GovChat Assistant " + conversationId,
+      instructions: DEFAULT_SYSTEM_PROMPT,
+      tools: [{ type: "file_search" }]
+    });
+    assistantId = assistant.id;
+
+    console.log(`created assistant: ${assistantId}`);
+  }
+  if (threadId === null || threadId === '') {
+
+    const thread = await openAI.beta.threads.create();
+
+    threadId = thread.id;
+    console.log(`created thread: ${thread.id} for assistant: ${assistantId}`);
+  }
+
+  var newMessageContent = messages[messages.length - 1].content;
+  var newMessageText = JSON.parse(newMessageContent)
+    .filter((part: { type: string; }) => part.type === 'text')[0].text;
+
+  messages[messages.length - 1] = newMessageText;
+
+  var newMessageFiles = "";
+  var fileIds: string[] = [];
+
+  // if there is a file uploaded, send it, then add the fileId to the body 
+  if (isJson(newMessageContent) && JSON.parse(newMessageContent).some((content: { type: string; }) => content.type === 'file')) {
+
+    newMessageFiles = JSON.parse(newMessageContent).filter( (part: { type: string; }) => part.type === 'file')
+    .map((part: { file: { filename: string, file_data: string; }; }) => part.file);
+
+    console.log("File upload detected in the last message content. Processing files:" + newMessageFiles);
+
+    fileIds = await getChatFileIds(
+      newMessageFiles,
+      openAI
+    );
+
+  }
+
+  // Add a message to the thread with the prompt and attach the uploaded files using correct tools object
+  await openAI.beta.threads.messages.create(threadId, {
+    role: "user",
+    content: newMessageText,
+    attachments: fileIds.map((id: any) => ({ file_id: id, tools: [{ type: "file_search" }] }))
+  });
+
+  var openAIConversation : OpenAIConversation = {
+    conversationId: conversationId,
+    assistantId: assistantId,
+    threadId: threadId,
+    messages: messages
+  };
+
+  // Run the assistant on the thread
+  const run = await openAI.beta.threads.runs.create(threadId, {
+    assistant_id: assistantId
+  });
+
+  // Poll for the run to complete
+  let runStatus;
+  do {
+    await new Promise(r => setTimeout(r, 2000));
+    runStatus = await openAI.beta.threads.runs.retrieve(threadId, run.id);
+  } while (runStatus.status !== "completed" && runStatus.status !== "failed");
+
+  if (runStatus.status === "completed") {
+    const threadMessages = await openAI.beta.threads.messages.list(threadId);
+    const lastMessage = threadMessages.data.find(m => m.role === "assistant");
+    const reply = lastMessage?.content?.[0]?.text?.value || "No summary returned.";
+    console.log('threads.message found:', reply);
+
+    openAIConversation.messages.pop(); // only send the reply
+    openAIConversation.messages.push(reply);
+
+  } else {
+    console.error('Assistant run failed:', runStatus);
+
+  }
 
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
@@ -158,62 +290,63 @@ export const OpenAIStream = async (
     totalPages: 1
   };
 
-  if (res.status !== 200) {
-    const result = await res.json();
-    if (result.error) {
-      
-      console.debug("Got a Chat Error: " + result.error.message);
-      throw new OpenAIError(
-        result.error.message,
-        result.error.type,
-        result.error.param,
-        result.error.code,
-      );
-    } else {
-      console.debug("Got a Chat Error: " + result.statusText);
-      throw new Error(
-        `OpenAI API returned an error: ${
-          decoder.decode(result?.value) || result.statusText
-        }`,
-      );
+  const res = new Response(JSON.stringify(openAIConversation), {
+    status: 200,
+    statusText: "Response received",
+    headers: {
+        'Content-Type': 'application/json'
     }
-  }
-
-  console.debug("got Chat");  
-  const stream = new ReadableStream({
-    async start(controller) {
-      const onParse = (event: ParsedEvent | ReconnectInterval) => {
-        if (event.type === 'event') {
-          const data = event.data;
-
-          if(data !== "[DONE]"){
-            try {
-              const json = JSON.parse(data);
-              if (json.choices[0] && json.choices[0].finish_reason && json.choices[0].finish_reason != null) {
-                printLogLines(loggingObject, body.messages, loggingObjectTempResult.join(''))
-                controller.close();
-                return;
-              }
-              if (json.choices[0] && json.choices[0].delta) {
-              const text = json.choices[0].delta.content;
-              const queue = encoder.encode(text);
-              loggingObjectTempResult.push(text);
-              controller.enqueue(queue);
-              }
-            } catch (e) {
-              controller.error(e + " Data: " + data);              
-            }
-        }
-        }
-      };
-
-      const parser = createParser(onParse);
-
-      for await (const chunk of res.body as any) {
-        parser.feed(decoder.decode(chunk));
-      }
-    },
   });
 
-  return stream;
+  return Promise.resolve(res.body);
+
 };
+
+export const getChatFileIds = async (
+  messageFiles: any,
+  openAI: AzureOpenAI,
+) => {
+
+  const fileIds = [];
+  const tmpFileDir = "_tmpFiles/";
+  
+  for (const messageFile of messageFiles) {
+    const fileStream = base64ToReadStream(messageFile.filename, messageFile.file_data, tmpFileDir);
+    const uploadedFile = await openAI.files.create({
+      purpose: 'assistants',
+      file: fileStream
+    });
+    fileIds.push(uploadedFile.id);
+
+    //console.log(`Uploaded file: ${uploadedFile.filename}, id: ${uploadedFile.id}`);
+
+    fs.unlinkSync( tmpFileDir + messageFile.filename); // should we keep the files for later viewing by the user?
+  }
+
+  return fileIds;
+
+};
+
+
+function isJson(item : any) {
+  let value = typeof item !== "string" ? JSON.stringify(item) : item;    
+  try {
+    value = JSON.parse(value);
+  } catch (e) {
+    return false;
+  }
+    
+  return typeof value === "object" && value !== null;
+}
+
+function base64ToReadStream(fileName:string, base64String: string, tmpFileDir: string): fs.ReadStream{
+  
+  var newString = base64String.substring(base64String.indexOf(',') + 1);
+
+  const buffer = Buffer.from(newString, 'base64');
+  const newFilePath :string = tmpFileDir + fileName;
+  fs.writeFileSync(newFilePath, new Uint8Array(buffer));
+   
+  return fs.createReadStream(newFilePath);
+}
+

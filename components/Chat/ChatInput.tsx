@@ -29,6 +29,8 @@ import { PluginSelect } from './PluginSelect';
 import { PromptList } from './PromptList';
 import { VariableModal } from './VariableModal';
 
+import { FileUpload } from './FileUpload';
+
 
 interface Props {
   onSend: (message: Message, plugin: Plugin | null) => void;
@@ -69,6 +71,8 @@ export const ChatInput = ({
 
   const promptListRef = useRef<HTMLUListElement | null>(null);
 
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+
   const filteredPrompts = prompts.filter((prompt) =>
     prompt.name.toLowerCase().includes(promptInputValue.toLowerCase()),
   );
@@ -82,7 +86,11 @@ export const ChatInput = ({
 
 
   const handleSend = () => {
+
+    console.log('handleSend triggered ');
+
     if (messageIsStreaming) {
+      console.log('handleSend messageIsStreaming');
       return;
     }
 
@@ -91,13 +99,81 @@ export const ChatInput = ({
       return;
     }
 
-    onSend({ role: 'user', content, timestamp: makeTimestamp() }, plugin);
-    setContent('');
-    setPlugin(null);
+
+    if (uploadFiles && uploadFiles.length > 0) {
+      console.log('files attached: ' + uploadFiles.length);
+
+      getContentForFiles(content, uploadFiles).then(fileContent => {
+
+        console.log('new content from async func, length: ' + fileContent.length);
+        console.log(fileContent);
+
+        var newContent = `[{"type": "text","text": "${content}"},${fileContent}]`; 
+
+        onSend({ role: 'user', content: newContent, timestamp: makeTimestamp() }, plugin);
+
+        setContent('');
+        setPlugin(null);
+        setUploadFiles([]);
+      })
+      .catch(error => {
+        //do nothing
+      })
+
+    }
+    else {
+      console.log('no files attached');
+
+      var newContent = `[{"type": "text","text": "${content}"}]`; 
+
+      onSend({ role: 'user', content: newContent, timestamp: makeTimestamp() }, plugin);
+      setContent('');
+      setPlugin(null);
+      setUploadFiles([]);
+    }
 
     if (window.innerWidth < 640 && textareaRef && textareaRef.current) {
       textareaRef.current.blur();
     }
+
+  };
+
+  const getContentForFiles = async (content: string, files: File[]) => {
+
+    let tmpContent = "";
+
+    const filePromises = files.map((file) => {
+      // Return a promise per file
+      return new Promise((resolve, reject) => {
+        console.log('--file: ' + file.name);
+        const reader = new FileReader();
+
+        reader.onload = async () => {
+          try {
+            const base64String = reader.result;
+
+            tmpContent += '{"type": "file","file":{"filename": "' + file.name + '","file_data": "`' + base64String + '`"}},';
+
+            // Resolve the promise with the response value
+            resolve(tmpContent);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        reader.onerror = (error) => {
+          console.error("Error reading file:", file.name);
+          reject(error);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    // Wait for all promises to be resolved
+    const resultStr = await Promise.all(filePromises);
+
+    console.log('COMPLETED');
+
+    return tmpContent.substring(0, tmpContent.length - 1);  
   };
 
   const handleStopConversation = () => {
@@ -164,6 +240,10 @@ export const ChatInput = ({
       setShowPluginSelect(!showPluginSelect);
     }
   };
+
+  const handleFileSelect = (uploadFiles: File[]) => {
+    setUploadFiles(uploadFiles);
+  }
 
   const parseVariables = (content: string) => {
     const regex = /{{(.*?)}}/g;
@@ -282,18 +362,20 @@ export const ChatInput = ({
 
         <div className="relative mx-2 flex w-full flex-grow flex-col rounded-md border border-black/10 bg-white shadow-[0_0_10px_rgba(0,0,0,0.10)] dark:border-gray-900/50 dark:bg-[#40414F] dark:text-white dark:shadow-[0_0_15px_rgba(0,0,0,0.10)] sm:mx-4">
 
+          <FileUpload onFileSelect={handleFileSelect} onCancelUpload={handleStopConversation} />
+
           <textarea
             ref={textareaRef}
-            className="placeholder-neutral-700 m-0 w-full resize-none border-0 bg-transparent p-0 py-2 pr-4 pl-4 text-black dark:bg-transparent dark:text-white md:py-3 md:pl-4"
+            className="placeholder-neutral-700 m-0 w-full box-border resize-none border-0 bg-transparent p-0 py-2 pr-4 pl-9 text-black dark:bg-transparent dark:text-white md:py-3 md:pl-9 "
             style={{
               resize: 'none',
               bottom: `${textareaRef?.current?.scrollHeight}px`,
               maxHeight: '400px',
               overflow: `${
-              textareaRef.current && textareaRef.current.scrollHeight > 400
-                ? 'auto'
-                : 'hidden'
-                }`,
+                textareaRef.current && textareaRef.current.scrollHeight > 400
+                  ? 'auto'
+                  : 'hidden'
+              }`,
             }}
             placeholder={
               t('Type a message ') || ''

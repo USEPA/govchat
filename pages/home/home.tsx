@@ -199,7 +199,8 @@ const Home = ({
       temperature: lastConversation?.temperature ?? DEFAULT_TEMPERATURE,
       folderId: null,
       tokenLength: 0,
-      characterLength: 0
+      characterLength: 0,
+      assistantId: null,
     };
 
     const updatedConversations = [...conversations, newConversation];

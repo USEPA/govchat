@@ -55,3 +55,52 @@ pre:has(div.codeblock) {
   text-decoration: underline;
   color: #0000EE; 
 }
+
+.charLimitDisp {
+    position: absolute;
+    top: 120px;
+    margin-left: 25px; 
+}
+
+.helpCircle {
+    width: 20px;
+    height: 20px;
+    color: black;
+    border-radius: 50%;
+    border-color: black;
+    border-width: 1px;
+    font-size: 17px;
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+.uploadFileName {
+    font-size: 14px;
+    color: #000000;
+    margin-left: 10px;
+    margin-top: 5px;
+}
+
+.fileDel {
+    color: red;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.fileDel:hover {
+    cursor: pointer;
+}
+.fileUploadButton {
+  opacity: 0; /* Make the input invisible */
+  width: 0.1px;
+  height: 0.1px;
+  position: absolute;
+}
+
+.fileUploadButtonDisp{
+  background-image: url('/images/paperclip.png');
+  width: 27px;
+  height: 27px;
+  position: absolute;
+  cursor: pointer;
+}

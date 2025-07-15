@@ -1,4 +1,5 @@
 import { OPENAI_API_TYPE } from '../utils/app/const';
+import { Message } from './chat';
 
 export interface OpenAIModel {
   id: string;
@@ -36,3 +37,4 @@ export const OpenAIModels: Record<OpenAIModelID, OpenAIModel> = {
     tokenLimit: 128_000,
   }
 };
+

@@ -15,6 +15,8 @@ import { useTranslation } from 'next-i18next';
 
 import { getEndpoint } from '@/utils/app/api';
 import {
+  filterMessageText,
+  setFileUploadText,
   saveConversation,
   saveConversations,
   updateConversation,
@@ -34,6 +36,7 @@ import { Rules } from './Rules';
 import { Notice } from './Notice';
 import { MemoizedChatMessage } from './MemoizedChatMessage';
 import { AdvancedSettings } from './AdvancedSettings';
+import { timeStamp } from 'console';
 
 interface Props {
   stopConversationRef: MutableRefObject<boolean>;
@@ -73,33 +76,50 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
     async (message: Message, deleteCount = 0, plugin: Plugin | null = null) => {
       if (selectedConversation) {
         let updatedConversation: Conversation;
+
+        const fileUploadText = setFileUploadText(message);
+        var filteredMessage = filterMessageText(message);
+
+        if(fileUploadText && fileUploadText.length > 0) {
+          filteredMessage.role = 'fileUpload'; 
+          filteredMessage.content = fileUploadText + ' \n' + filteredMessage.content;
+        }
+
         if (deleteCount) {
           const updatedMessages = [...selectedConversation.messages];
           for (let i = 0; i < deleteCount; i++) {
             updatedMessages.pop();
           }
+
           updatedConversation = {
             ...selectedConversation,
-            messages: [...updatedMessages, message],
+            messages: [...updatedMessages, filteredMessage],
           };
         } else {
           updatedConversation = {
             ...selectedConversation,
-            messages: [...selectedConversation.messages, message],
+            messages: [...selectedConversation.messages, filteredMessage],
           };
         }
+
         homeDispatch({
           field: 'selectedConversation',
-          value: updatedConversation,
+          value: {
+            ...updatedConversation,
+            messages: [...updatedConversation.messages], //[...selectedConversation.messages, filteredMessage ],
+          },
         });
         homeDispatch({ field: 'loading', value: true });
         homeDispatch({ field: 'messageIsStreaming', value: true });
         const chatBody: ChatBody = {
+          conversationId: updatedConversation.id,
           model: updatedConversation.model,
-          messages: updatedConversation.messages.map(({ role, content }) => ({role, content })),
+          messages: [message], //updatedConversation.messages.map(({ role, content, timestamp }) => ({role, content, timestamp })),
           key: apiKey,
           prompt: updatedConversation.prompt,
           temperature: updatedConversation.temperature,
+          assistantId: updatedConversation.assistantId || null,
+          threadId: updatedConversation.threadId || null,
         };
         const endpoint = getEndpoint(plugin);
         let body;
@@ -117,6 +137,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           });
         }
         const controller = new AbortController();
+
         const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
@@ -143,11 +164,11 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           homeDispatch({ field: 'messageIsStreaming', value: false });
           return;
         }
+  
         if (!plugin) {
           if (updatedConversation.messages.length === 1) {
-            const { content } = message;
-            const customName =
-              content.length > 30 ? content.substring(0, 30) + '...' : content;
+            const newName = filteredMessage.content;
+            const customName = newName.length > 30 ? newName.substring(0, 30) + '...' : newName;
             updatedConversation = {
               ...updatedConversation,
               name: customName,
@@ -167,37 +188,59 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             }
             const { value, done: doneReading } = await reader.read();
             done = doneReading;
-            const chunkValue = decoder.decode(value);
-            text += chunkValue;
+            var chunkValue = await decoder.decode(value);
+            
+            try{
+              const valueJson = JSON.parse(chunkValue);
+              if (valueJson.conversationId) {
+                updatedConversation.id = valueJson.conversationId;
+              }
+              if (valueJson.assistantId) {
+                updatedConversation.assistantId = valueJson.assistantId;
+              }
+              if (valueJson.threadId) {
+                updatedConversation.threadId = valueJson.threadId;
+              }
+              if (valueJson.messages && Array.isArray(valueJson.messages)) {
+
+                console.log('chat.tsx - handleSend - valueJson messages:', valueJson.messages);
+
+                // const newMessages: Message[] = valueJson.messages.map((msg: any) => ({
+                //   role: msg.role,
+                //   content: msg.content,
+                //   timestamp: makeTimestamp(),
+                // }));
+
+                // console.log('chat.tsx - handleSend - newMessages:', newMessages);
+
+                // updatedConversation.messages = [
+                //   ...updatedConversation.messages,
+                //   ...newMessages,
+                // ];
+                chunkValue = valueJson.messages;
+                text += chunkValue;
+              }
+            }catch(e){
+              console.error('chat.tsx - handleSend - error parsing chunkValue:', e);
+            }
+
             if (isFirst) {
               isFirst = false;
               const updatedMessages: Message[] = [
                 ...updatedConversation.messages,
-                { role: 'assistant', content: chunkValue, timestamp: makeTimestamp() },
+                { role: 'assistant', content: text, timestamp: makeTimestamp() },
               ];
               updatedConversation = {
                 ...updatedConversation,
                 messages: updatedMessages,
               };
+
               homeDispatch({
                 field: 'selectedConversation',
                 value: updatedConversation,
               });
             } else {
-              const updatedMessages: Message[] =
-                updatedConversation.messages.map((message, index) => {
-                  if (index === updatedConversation.messages.length - 1) {
-                    return {
-                      ...message,
-                      content: text,
-                    };
-                  }
-                  return message;
-                });
-              updatedConversation = {
-                ...updatedConversation,
-                messages: updatedMessages,
-              };
+
               homeDispatch({
                 field: 'selectedConversation',
                 value: updatedConversation,
@@ -221,6 +264,13 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           homeDispatch({ field: 'messageIsStreaming', value: false });
         } else {
           const { answer } = await response.json();
+
+          try{
+            updatedConversation.assistantId = answer.assistantId;
+            updatedConversation.threadId = answer.threadId;
+          }
+          catch{}
+
           const updatedMessages: Message[] = [
             ...updatedConversation.messages,
             { role: 'assistant', content: answer, timestamp: makeTimestamp() },
@@ -233,6 +283,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             field: 'selectedConversation',
             value: updateConversation,
           });
+
           saveConversation(updatedConversation);
           const updatedConversations: Conversation[] = conversations.map(
             (conversation) => {
@@ -361,14 +412,6 @@ const onDownloadFolder = () => {
   };
   const throttledScrollDown = throttle(scrollDown, 250);
   const [showAdvanced, setShowAdvanced] = useState(false);
-
-  // useEffect(() => {
-  //   console.log('currentMessage', currentMessage);
-  //   if (currentMessage) {
-  //     handleSend(currentMessage);
-  //     homeDispatch({ field: 'currentMessage', value: undefined });
-  //   }
-  // }, [currentMessage]);
 
   useEffect(() => {
     throttledScrollDown();
