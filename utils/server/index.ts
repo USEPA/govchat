@@ -256,39 +256,49 @@ export const OpenAIStream = async (
   if (runStatus.status === "completed") {
     const threadMessages = await openAI.beta.threads.messages.list(threadId);
     const lastMessage = threadMessages.data.find(m => m.role === "assistant");
-    const reply = lastMessage?.content?.[0]?.text?.value || "No summary returned.";
-    console.log('threads.message found:', reply);
 
-    openAIConversation.messages.pop(); // only send the reply
-    openAIConversation.messages.push(reply);
+    // const reply = lastMessage?.content?.[0]?.text?.value || "No summary returned.";
+    
+    const reply: Message = { 
+      role: lastMessage?.role || "assistant", 
+      content: lastMessage?.content[0].type == "text" ? lastMessage?.content[0].text.value : "", 
+      timestamp: makeTimestamp() 
+    };
+    
+    console.log('threads.message found:', reply?.content || "");
+
+    if(reply) {
+      openAIConversation.messages.pop(); // only send the reply
+      openAIConversation.messages.push(reply);
+    }
 
   } else {
     console.error('Assistant run failed:', runStatus);
 
   }
 
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
-  const loggingObjectTempResult:string[] = [];
-  const loggingObject: { 
-      messagesJSON: string; 
-      userName: string|null;
-      logID: string;
-      maxTokens: number;
-      temperature: number|undefined;
-      model: string|undefined;
-      page: number;
-      totalPages: number } 
-    = { 
-    messagesJSON: "", 
-    userName: userName,
-    logID: uuidv4(),
-    maxTokens: 0,
-    temperature: body.temperature,
-    model: body.model,
-    page: 1,
-    totalPages: 1
-  };
+  // const encoder = new TextEncoder();
+  // const decoder = new TextDecoder();
+  // const loggingObjectTempResult:string[] = [];
+  // const loggingObject: { 
+  //     messagesJSON: string; 
+  //     userName: string|null;
+  //     logID: string;
+  //     maxTokens: number;
+  //     temperature: number|undefined;
+  //     model: string|undefined;
+  //     page: number;
+  //     totalPages: number } 
+  //   = { 
+  //   messagesJSON: "", 
+  //   userName: userName,
+  //   logID: uuidv4(),
+  //   maxTokens: 0,
+  //   temperature: body.temperature,
+  //   model: body.model,
+  //   page: 1,
+  //   totalPages: 1
+  // };
 
   const res = new Response(JSON.stringify(openAIConversation), {
     status: 200,

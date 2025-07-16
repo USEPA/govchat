@@ -20,10 +20,10 @@ export const FileUpload = ({
   onCancelUpload,
 }: Props) => {
 
-  const {
-    state: { fileIsSelected },
-    dispatch: homeDispatch,
-  } = useContext(HomeContext);
+  // const {
+  //   state: { fileIsSelected },
+  //   dispatch: homeDispatch,
+  // } = useContext(HomeContext);
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const dropRef = useRef(null);
@@ -32,7 +32,7 @@ export const FileUpload = ({
     event.preventDefault();
   };
 
-  const handleDrop = (event: { preventDefault: () => void; dataTransfer: { selectedFiles: Iterable<unknown> | ArrayLike<unknown>; }; }) => {
+  const handleDrop = (event: { preventDefault: () => void; dataTransfer: { selectedFiles: Iterable<File> | ArrayLike<File>; }; }) => {
     event.preventDefault();
     const newSelectedFiles = Array.from(event.dataTransfer.selectedFiles);
     setSelectedFiles([...selectedFiles, ...newSelectedFiles]);
@@ -44,7 +44,7 @@ export const FileUpload = ({
     onFileSelect([...newSelectedFiles]);
   };
 
-  const handleDeleteFile = (event: MouseEvent<HTMLSpanElement, MouseEvent>, fileIndex: number) => {
+  const handleDeleteFile = (event: React.MouseEvent<HTMLSpanElement>, fileIndex: number) => {
     console.log("delete file : " + fileIndex);
     const newSelectedFiles = [...selectedFiles];
     newSelectedFiles.splice(fileIndex, 1);
@@ -75,7 +75,7 @@ export const FileUpload = ({
         <input
           type="file"
           onChange={handleFileChange}
-          multiple
+          accept='.c, .cpp, .cs, .doc, .docx, .go, .java, .js, .json, .md, .pdf, .php, .pptx, .py, .ts, .txt'
           className="hidden"
         />
       </label>
@@ -104,21 +104,6 @@ export const FileUpload = ({
     )}
 
 
-
-    {/* {messageIsStreaming ? (
-
-      
-      <input type="file" id="fileUploadButton" className="fileUploadButton" accept=".pdf" onChange={handleFileSelect} />
-      <input type="button" id="fileUploadButtonDisp" className="fileUploadButtonDisp" value="" onClick={handleUploadSelect} />
-   
-      {selectedFiles && selectedFiles.length > 0 && (
-        <ul>
-          {selectedFiles.map((file, index) => (
-            // {inlineStyle = "padding: " + file.name.length + "px"}   style={{inlineStyle}}
-            <li className="uploadFileName"  key={index}>{file.name} <span className="fileDel" onClick={(e) => handleDeleteFile(e, index)}>X</span></li>
-          ))}
-        </ul>
-      )} */}
     </>
   );
 }

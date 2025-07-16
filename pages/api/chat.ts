@@ -70,6 +70,11 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
 
+
+    if (!stream) {
+      res.status(500).send('Failed to create OpenAI stream');
+      return;
+    }
     const reader = stream.getReader();
     const decoder = new TextDecoder();
 

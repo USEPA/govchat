@@ -217,7 +217,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                 //   ...updatedConversation.messages,
                 //   ...newMessages,
                 // ];
-                chunkValue = valueJson.messages;
+                chunkValue = valueJson.messages[0].content;
                 text += chunkValue;
               }
             }catch(e){
