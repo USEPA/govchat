@@ -29,7 +29,7 @@ import { PluginSelect } from './PluginSelect';
 import { PromptList } from './PromptList';
 import { VariableModal } from './VariableModal';
 
-import { FileUpload } from './FileUpload';
+import { FileUploadButton, FileUploadListing } from './FileUpload';
 
 
 interface Props {
@@ -241,10 +241,6 @@ export const ChatInput = ({
     }
   };
 
-  const handleFileSelect = (uploadFiles: File[]) => {
-    setUploadFiles(uploadFiles);
-  }
-
   const parseVariables = (content: string) => {
     const regex = /{{(.*?)}}/g;
     const foundVariables = [];
@@ -335,6 +331,10 @@ export const ChatInput = ({
 
   return (
     <div className="absolute bottom-0 left-0 w-full border-transparent bg-gradient-to-b from-transparent via-white to-white pt-6 dark:border-white/20 dark:via-[#343541] dark:to-[#343541] md:pt-2">
+      
+
+      
+
       <div className="stretch mx-2 mt-4 flex flex-row gap-3 last:mb-2 md:mx-4 md:mt-[52px] md:last:mb-12 lg:mx-auto lg:max-w-3xl">
         {messageIsStreaming && (
           <button
@@ -360,9 +360,13 @@ export const ChatInput = ({
             </button>
           )}
 
-        <div className="relative mx-2 flex w-full flex-grow flex-col rounded-md border border-black/10 bg-white shadow-[0_0_10px_rgba(0,0,0,0.10)] dark:border-gray-900/50 dark:bg-[#40414F] dark:text-white dark:shadow-[0_0_15px_rgba(0,0,0,0.10)] sm:mx-4">
+        
+        
 
-          <FileUpload onFileSelect={handleFileSelect} onCancelUpload={handleStopConversation} />
+        <div className="relative mx-2 flex w-full flex-grow flex-col rounded-md border border-black/10 bg-white shadow-[0_0_10px_rgba(0,0,0,0.10)] dark:border-gray-900/50 dark:bg-[#40414F] dark:text-white dark:shadow-[0_0_15px_rgba(0,0,0,0.10)] sm:mx-4">
+           <FileUploadListing uploadFiles={uploadFiles} setUploadFiles={setUploadFiles} onCancelUpload={handleStopConversation} />
+          <div className="relative">
+            <FileUploadButton uploadFiles={uploadFiles} setUploadFiles={setUploadFiles} onCancelUpload={handleStopConversation} />
 
           <textarea
             ref={textareaRef}
@@ -438,7 +442,7 @@ export const ChatInput = ({
             />
           )}
 
-
+</div>
 
           {(promptCharacterLength <= maxLength && promptCharacterLength > maxLength * .75) && (
             <div className="text-orange-500 m-4">
