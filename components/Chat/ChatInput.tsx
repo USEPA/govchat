@@ -365,12 +365,12 @@ export const ChatInput = ({
 
         <div className="relative mx-2 flex w-full flex-grow flex-col rounded-md border border-black/10 bg-white shadow-[0_0_10px_rgba(0,0,0,0.10)] dark:border-gray-900/50 dark:bg-[#40414F] dark:text-white dark:shadow-[0_0_15px_rgba(0,0,0,0.10)] sm:mx-4">
            <FileUploadListing uploadFiles={uploadFiles} setUploadFiles={setUploadFiles} onCancelUpload={handleStopConversation} />
-          <div className="relative">
+          <div className="relative flex">
             <FileUploadButton uploadFiles={uploadFiles} setUploadFiles={setUploadFiles} onCancelUpload={handleStopConversation} />
 
           <textarea
             ref={textareaRef}
-            className="placeholder-neutral-700 m-0 w-full box-border resize-none border-0 bg-transparent p-0 py-2 pr-4 pl-9 text-black dark:bg-transparent dark:text-white md:py-3 md:pl-9 "
+            className={(uploadFiles.length ? "pl-4" : "pl-9") + (" placeholder-neutral-700 m-0 w-full box-border resize-none border-0 bg-transparent p-0 py-2 pr-4 text-black dark:bg-transparent dark:text-white md:py-3")}
             style={{
               resize: 'none',
               bottom: `${textareaRef?.current?.scrollHeight}px`,

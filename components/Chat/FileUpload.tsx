@@ -41,6 +41,7 @@ export const FileUploadButton = ({
         type="file"
         onChange={handleFileChange}
         accept='.c, .cpp, .cs, .doc, .docx, .go, .java, .js, .json, .md, .pdf, .php, .pptx, .py, .ts, .txt'
+        multiple
         className="hidden"
       />
     </label>
@@ -64,16 +65,32 @@ export const FileUploadListing = ({
 
   if (uploadFiles.length > 0) {
     return (
-      <div className="w-full bg-gray-100 p-3">
-            <span className="text-gray-800">
-            {uploadFiles.length} files will be sent with prompt
-            <span
-              onClick={(e) => deleteFiles()}
-              className="ml-2 text-gray-500 hover:text-gray-700 cursor-pointer font-semibold"
-            >×</span>
-            </span>
+      <div className="w-full bg-gray-100 p-3 border-b">
+        <span className="text-gray-800">
+          {uploadFiles.length === 1 ? (
+            <>
+                1 file will be sent with the prompt:&nbsp;
+                <span className="font-medium">
+                  {uploadFiles[0].name.length > 20
+                    ? `${uploadFiles[0].name.slice(0, 20)}...`
+                    : uploadFiles[0].name}
+                </span>
+            </>
+          ) : (
+            <>
+              {uploadFiles.length} files will be sent with the prompt
+            </>
+          )}
 
-    </div>
+          <button
+            onClick={() => deleteFiles()}
+            className="ml-4 px-3 py-1 text-sm text-black border border-black rounded hover:bg-black/10 transition"
+
+          >
+            Remove Files
+          </button>
+        </span>
+      </div>
     )} else {
       return <></>
     }
