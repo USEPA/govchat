@@ -10,8 +10,7 @@ import {
   ReconnectInterval,
   createParser,
 } from 'eventsource-parser';
-import { getAuthToken } from '../lib/azure';
-import { getEntraToken } from '../lib/azureEntra';
+import { auth } from '../lib/azure';
 import { AzureOpenAI, toFile } from 'openai';
 import * as os from 'os';
 import * as fs from 'fs';
@@ -101,55 +100,12 @@ export const OpenAIStream = async (
   //var url = `${OPENAI_API_HOST}/v1/chat/completions`; 
   var url = `${OPENAI_API_HOST}/assistants`;
 
-  var header = {};
   
   if (OPENAI_API_TYPE === 'azure') {
     url = `${OPENAI_API_HOST}openai/assistants?api-version=${OPENAI_API_VERSION}`;
   }
 
-  if (os.hostname() === "localhost") {
-
-    let entraToken = await getEntraToken();
-
-    header = {
-      'Content-Type': 'application/json',
-       'Authorization': `Bearer ${entraToken}`
-    };
-
-  }
-  else {
-
-    let token = await getAuthToken();
-
-    header = {
-      'Content-Type': 'application/json',
-      ...(OPENAI_API_TYPE === 'openai' && {
-        Authorization: `Bearer ${key ? key : process.env.OPENAI_API_KEY}`
-      }),
-      ...(OPENAI_API_TYPE === 'azure' && process.env.AZURE_USE_MANAGED_IDENTITY=="false" && {
-        'api-key': `${key ? key : process.env.OPENAI_API_KEY}`
-      }),
-      ...(OPENAI_API_TYPE === 'azure' && process.env.AZURE_USE_MANAGED_IDENTITY=="true" && {
-        Authorization: `Bearer ${token.token}`
-      }),
-      ...((OPENAI_API_TYPE === 'openai' && OPENAI_ORGANIZATION) && {
-        'OpenAI-Organization': OPENAI_ORGANIZATION,
-      }),
-      ...((AZURE_APIM) && {
-        'Ocp-Apim-Subscription-Key': process.env.AZURE_APIM_KEY
-      }),
-      ...((principalName) && {
-        'x-ms-client-principal-name': principalName
-      }),
-      ...((bearer) && { 
-        'x-ms-client-principal': bearer
-      }),
-      ...((bearerAuth) && { 
-        'x-ms-client-principal-id': bearerAuth
-      })
-    };
-
-  }
+  var header = await auth(key, principalName, bearer, bearerAuth);
 
   var body = {
     ...(OPENAI_API_TYPE === 'openai' && { model: model.id }),
