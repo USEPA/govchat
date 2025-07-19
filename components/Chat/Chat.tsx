@@ -13,7 +13,6 @@ import { sendGTMEvent } from '@next/third-parties/google'
 
 import { useTranslation } from 'next-i18next';
 
-import { getEndpoint } from '@/utils/app/api';
 import {
   filterMessageText,
   setFileUploadText,
@@ -24,7 +23,6 @@ import {
 import { throttle } from '@/utils/data/throttle';
 
 import { ChatBody, Conversation, Message, makeTimestamp } from '@/types/chat';
-import { Plugin } from '@/types/plugin';
 
 import HomeContext from '@/utils/home/home.context';
 
@@ -73,241 +71,173 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = useCallback(
-    async (message: Message, deleteCount = 0, plugin: Plugin | null = null) => {
-      if (selectedConversation) {
-        let updatedConversation: Conversation;
+    async (message: Message, deleteCount = 0) => {
+      if (!selectedConversation) {
+        return;
+      }
+      let updatedConversation: Conversation;
 
-        const fileUploadText = setFileUploadText(message);
-        var filteredMessage = filterMessageText(message);
+      const fileUploadText = setFileUploadText(message);
+      var filteredMessage = filterMessageText(message);
 
-        if(fileUploadText && fileUploadText.length > 0) {
-          filteredMessage.role = 'fileUpload'; 
-          filteredMessage.content = fileUploadText + ' \n\n' + filteredMessage.content;
+      if(fileUploadText && fileUploadText.length > 0) {
+        filteredMessage.role = 'fileUpload'; 
+        filteredMessage.content = fileUploadText + ' \n\n' + filteredMessage.content;
+      }
+
+      if (deleteCount) {
+        const updatedMessages = [...selectedConversation.messages];
+        for (let i = 0; i < deleteCount; i++) {
+          updatedMessages.pop();
         }
 
-        if (deleteCount) {
-          const updatedMessages = [...selectedConversation.messages];
-          for (let i = 0; i < deleteCount; i++) {
-            updatedMessages.pop();
-          }
-
-          updatedConversation = {
-            ...selectedConversation,
-            messages: [...updatedMessages, filteredMessage],
-          };
-        } else {
-          updatedConversation = {
-            ...selectedConversation,
-            messages: [...selectedConversation.messages, filteredMessage],
-          };
-        }
-
-        homeDispatch({
-          field: 'selectedConversation',
-          value: {
-            ...updatedConversation,
-            messages: [...updatedConversation.messages], //[...selectedConversation.messages, filteredMessage ],
-          },
-        });
-        homeDispatch({ field: 'loading', value: true });
-        homeDispatch({ field: 'messageIsStreaming', value: true });
-        const chatBody: ChatBody = {
-          conversationId: updatedConversation.id,
-          model: updatedConversation.model,
-          messages: [message], //updatedConversation.messages.map(({ role, content, timestamp }) => ({role, content, timestamp })),
-          key: apiKey,
-          prompt: updatedConversation.prompt,
-          temperature: updatedConversation.temperature,
-          assistantId: updatedConversation.assistantId || null,
-          threadId: updatedConversation.threadId || null,
+        updatedConversation = {
+          ...selectedConversation,
+          messages: [...updatedMessages, filteredMessage],
         };
-        const endpoint = getEndpoint(plugin);
-        let body;
-        if (!plugin) {
-          body = JSON.stringify(chatBody);
+      } else {
+        updatedConversation = {
+          ...selectedConversation,
+          messages: [...selectedConversation.messages, filteredMessage],
+        };
+      }
+
+      homeDispatch({
+        field: 'selectedConversation',
+        value: {
+          ...updatedConversation,
+          messages: [...updatedConversation.messages],
+        },
+      });
+      homeDispatch({ field: 'loading', value: true });
+      homeDispatch({ field: 'messageIsStreaming', value: true });
+      const chatBody: ChatBody = {
+        conversationId: updatedConversation.id,
+        model: updatedConversation.model,
+        messages: [message],
+        key: apiKey,
+        prompt: updatedConversation.prompt,
+        temperature: updatedConversation.temperature,
+        assistantId: updatedConversation.assistantId || null,
+        threadId: updatedConversation.threadId || null,
+      };
+      let body = JSON.stringify(chatBody);
+      const controller = new AbortController();
+
+      const response = await fetch('api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+        body,
+      });
+      if (!response.ok) {
+        homeDispatch({ field: 'loading', value: false });
+        homeDispatch({ field: 'messageIsStreaming', value: false });
+        const errorMsg = await response.text();
+        if (errorMsg.includes('have exceeded call rate limit')) {
+          toast.error("This model is currently overloaded. Please try again in a few minutes.");
         } else {
-          body = JSON.stringify({
-            ...chatBody,
-            googleAPIKey: pluginKeys
-              .find((key) => key.pluginId === 'google-search')
-              ?.requiredKeys.find((key) => key.key === 'GOOGLE_API_KEY')?.value,
-            googleCSEId: pluginKeys
-              .find((key) => key.pluginId === 'google-search')
-              ?.requiredKeys.find((key) => key.key === 'GOOGLE_CSE_ID')?.value,
-          });
+            toast.error(response.statusText);
         }
-        const controller = new AbortController();
+        
+        return;
+      }
+      const data = response.body;
+      if (!data) {
+        homeDispatch({ field: 'loading', value: false });
+        homeDispatch({ field: 'messageIsStreaming', value: false });
+        return;
+      }
 
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          signal: controller.signal,
-          body,
-        });
-        if (!response.ok) {
-          homeDispatch({ field: 'loading', value: false });
-          homeDispatch({ field: 'messageIsStreaming', value: false });
-          const errorMsg = await response.text();
-          if (errorMsg.includes('have exceeded call rate limit')) {
-            toast.error("This model is currently overloaded. Please try again in a few minutes.");
-          } else {
-             toast.error(response.statusText);
-          }
-          
-          return;
+      if (updatedConversation.messages.length === 1) {
+        const newName = filteredMessage.content;
+        const customName = newName.length > 30 ? newName.substring(0, 30) + '...' : newName;
+        updatedConversation = {
+          ...updatedConversation,
+          name: customName,
+        };
+      }
+      homeDispatch({ field: 'loading', value: false });
+      const reader = data.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let isFirst = true;
+      let text = '';
+      while (!done) {
+        if (stopConversationRef.current === true) {
+          controller.abort();
+          done = true;
+          break;
         }
-        const data = response.body;
-        if (!data) {
-          homeDispatch({ field: 'loading', value: false });
-          homeDispatch({ field: 'messageIsStreaming', value: false });
-          return;
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        var chunkValue = await decoder.decode(value);
+        if (!chunkValue || chunkValue.length === 0) {
+          continue;
         }
-  
-        if (!plugin) {
-          if (updatedConversation.messages.length === 1) {
-            const newName = filteredMessage.content;
-            const customName = newName.length > 30 ? newName.substring(0, 30) + '...' : newName;
-            updatedConversation = {
-              ...updatedConversation,
-              name: customName,
-            };
-          }
-          homeDispatch({ field: 'loading', value: false });
-          const reader = data.getReader();
-          const decoder = new TextDecoder();
-          let done = false;
-          let isFirst = true;
-          let text = '';
-          while (!done) {
-            if (stopConversationRef.current === true) {
-              controller.abort();
-              done = true;
-              break;
-            }
-            const { value, done: doneReading } = await reader.read();
-            done = doneReading;
-            var chunkValue = await decoder.decode(value);
-            
-            try{
-              const valueJson = JSON.parse(chunkValue);
-              if (valueJson.conversationId) {
-                updatedConversation.id = valueJson.conversationId;
-              }
-              if (valueJson.assistantId) {
-                updatedConversation.assistantId = valueJson.assistantId;
-              }
-              if (valueJson.threadId) {
-                updatedConversation.threadId = valueJson.threadId;
-              }
-              if (valueJson.messages && Array.isArray(valueJson.messages)) {
+      
+        const valueJson = JSON.parse(chunkValue);
+        if (valueJson.conversationId) {
+          updatedConversation.id = valueJson.conversationId;
+        }
+        if (valueJson.assistantId) {
+          updatedConversation.assistantId = valueJson.assistantId;
+        }
+        if (valueJson.threadId) {
+          updatedConversation.threadId = valueJson.threadId;
+        }
+        if (valueJson.messages && Array.isArray(valueJson.messages)) {
+          chunkValue = valueJson.messages[0].content;
+          text += chunkValue;
+        }
 
-                console.log('chat.tsx - handleSend - valueJson messages:', valueJson.messages);
-
-                // const newMessages: Message[] = valueJson.messages.map((msg: any) => ({
-                //   role: msg.role,
-                //   content: msg.content,
-                //   timestamp: makeTimestamp(),
-                // }));
-
-                // console.log('chat.tsx - handleSend - newMessages:', newMessages);
-
-                // updatedConversation.messages = [
-                //   ...updatedConversation.messages,
-                //   ...newMessages,
-                // ];
-                chunkValue = valueJson.messages[0].content;
-                text += chunkValue;
-              }
-            }catch(e){
-              console.error('chat.tsx - handleSend - error parsing chunkValue:', e);
-            }
-
-            if (isFirst) {
-              isFirst = false;
-              const updatedMessages: Message[] = [
-                ...updatedConversation.messages,
-                { role: 'assistant', content: text, timestamp: makeTimestamp() },
-              ];
-              updatedConversation = {
-                ...updatedConversation,
-                messages: updatedMessages,
-              };
-
-              homeDispatch({
-                field: 'selectedConversation',
-                value: updatedConversation,
-              });
-            } else {
-
-              homeDispatch({
-                field: 'selectedConversation',
-                value: updatedConversation,
-              });
-            }
-          }
-          saveConversation(updatedConversation);
-          const updatedConversations: Conversation[] = conversations.map(
-            (conversation) => {
-              if (conversation.id === selectedConversation.id) {
-                return updatedConversation;
-              }
-              return conversation;
-            },
-          );
-          if (updatedConversations.length === 0) {
-            updatedConversations.push(updatedConversation);
-          }
-          homeDispatch({ field: 'conversations', value: updatedConversations });
-          saveConversations(updatedConversations);
-          homeDispatch({ field: 'messageIsStreaming', value: false });
-        } else {
-          const { answer } = await response.json();
-
-          try{
-            updatedConversation.assistantId = answer.assistantId;
-            updatedConversation.threadId = answer.threadId;
-          }
-          catch{}
-
+        if (isFirst) {
+          isFirst = false;
           const updatedMessages: Message[] = [
             ...updatedConversation.messages,
-            { role: 'assistant', content: answer, timestamp: makeTimestamp() },
+            { role: 'assistant', content: text, timestamp: makeTimestamp() },
           ];
           updatedConversation = {
             ...updatedConversation,
             messages: updatedMessages,
           };
+
           homeDispatch({
             field: 'selectedConversation',
-            value: updateConversation,
+            value: updatedConversation,
           });
+        } else {
 
-          saveConversation(updatedConversation);
-          const updatedConversations: Conversation[] = conversations.map(
-            (conversation) => {
-              if (conversation.id === selectedConversation.id) {
-                return updatedConversation;
-              }
-              return conversation;
-            },
-          );
-          if (updatedConversations.length === 0) {
-            updatedConversations.push(updatedConversation);
-          }
-          homeDispatch({ field: 'conversations', value: updatedConversations });
-          saveConversations(updatedConversations);
-          homeDispatch({ field: 'loading', value: false });
-          homeDispatch({ field: 'messageIsStreaming', value: false });
+          homeDispatch({
+            field: 'selectedConversation',
+            value: updatedConversation,
+          });
         }
       }
+      saveConversation(updatedConversation);
+      const updatedConversations: Conversation[] = conversations.map(
+        (conversation) => {
+          if (conversation.id === selectedConversation.id) {
+            return updatedConversation;
+          }
+          return conversation;
+        },
+      );
+      if (updatedConversations.length === 0) {
+        updatedConversations.push(updatedConversation);
+      }
+      homeDispatch({ field: 'conversations', value: updatedConversations });
+      saveConversations(updatedConversations);
+      homeDispatch({ field: 'messageIsStreaming', value: false });
+    
     },
     [
       apiKey,
       conversations,
-      pluginKeys,
       selectedConversation,
+      homeDispatch,
       stopConversationRef,
     ],
   );
@@ -590,13 +520,13 @@ const onDownloadFolder = () => {
             textareaRef={textareaRef}
             onSend={(message, plugin) => {
               setCurrentMessage(message);
-              handleSend(message, 0, plugin);
+              handleSend(message, 0);
               sendGTMEvent({ event: 'messageSent', messageLength: message.content.length });
             }}
             onScrollDownClick={handleScrollDown}
             onRegenerate={() => {
               if (currentMessage) {
-                handleSend(currentMessage, 2, null);
+                handleSend(currentMessage, 2);
               }
             }}
             showScrollDownButton={showScrollDownButton}
