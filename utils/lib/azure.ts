@@ -1,8 +1,9 @@
-import { DefaultAzureCredential } from "@azure/identity";
+import { DefaultAzureCredential, getBearerTokenProvider } from '@azure/identity';
 
 import { env } from "process";
-import { OPENAI_API_TYPE, OPENAI_ORGANIZATION, AZURE_APIM } from '../app/const';
+import { OPENAI_API_TYPE, OPENAI_ORGANIZATION, AZURE_APIM, OPENAI_API_VERSION, OPENAI_API_HOST } from '../app/const';
 import * as os from 'os';
+import { AzureOpenAI } from 'openai';
 
 
 export async function getEntraToken() {
@@ -26,7 +27,17 @@ export async function getAuthToken() {
   }
   return process.env.AUTH_TOKEN ? JSON.parse(process.env.AUTH_TOKEN) : '';;
 }
- 
+
+export function createAzureOpenAI(): AzureOpenAI {
+  const credential = new DefaultAzureCredential();
+  const scope = "https://cognitiveservices.azure.com/.default";
+
+  return new AzureOpenAI({
+    azureADTokenProvider:  getBearerTokenProvider(credential, scope),
+    endpoint: OPENAI_API_HOST,
+    apiVersion: OPENAI_API_VERSION
+  });
+}
 
 export async function auth(key: string, principalName: string | null, bearer: string | null, bearerAuth: string | null) {
   var header = {};
