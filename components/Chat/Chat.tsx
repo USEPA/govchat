@@ -49,6 +49,23 @@ const showError = (errorMessage: string, dispatch: Dispatch<ActionType<HomeIniti
   toast.error(errorMessage);
 }
 
+function insertMessageBeforeLast(
+  conversation: Conversation,
+  content: string
+): Conversation {
+  const { messages } = conversation;
+  if (messages.length === 0) return conversation;
+  const last = messages[messages.length - 1];
+  return {
+    ...conversation,
+    messages: [
+      ...messages.slice(0, -1),
+      { role: 'fileUpload', content, timestamp: last.timestamp },
+      last,
+    ],
+  };
+}
+
 export const Chat = memo(({ stopConversationRef }: Props) => {
   const { t } = useTranslation('chat');
 
@@ -149,6 +166,11 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
               ...(updatedConversation.fileIds ?? []),
               ...newFileIds,
             ];
+            const fileNames = uploadFiles.map(file => file.name);
+            updatedConversation = insertMessageBeforeLast(updatedConversation,
+              `New files attached: ${fileNames.join(', ')}\n\n` +
+              "*You can refer to these messages at any time in your conversation*."
+            )
             homeDispatch({ field: 'selectedConversation', value: updatedConversation });
           }
       }
