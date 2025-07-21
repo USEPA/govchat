@@ -1,5 +1,6 @@
 import { IconClearAll, IconSettings, IconDownload, IconFolderDown } from '@tabler/icons-react';
 import {
+  Dispatch,
   MutableRefObject,
   memo,
   useCallback,
@@ -35,9 +36,17 @@ import { Notice } from './Notice';
 import { MemoizedChatMessage } from './MemoizedChatMessage';
 import { AdvancedSettings } from './AdvancedSettings';
 import { timeStamp } from 'console';
+import { ActionType } from '@/hooks/useCreateReducer';
+import { HomeInitialState } from '@/utils/home/home.state';
 
 interface Props {
   stopConversationRef: MutableRefObject<boolean>;
+}
+
+const showError = (errorMessage: string, dispatch: Dispatch<ActionType<HomeInitialState>>) => {
+  dispatch({ field: 'loading', value: false });
+  dispatch({ field: 'messageIsStreaming', value: false });
+  toast.error(errorMessage);
 }
 
 export const Chat = memo(({ stopConversationRef }: Props) => {
@@ -71,89 +80,111 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = useCallback(
-    async (message: Message, deleteCount = 0) => {
+    async (message: Message, deleteCount = 0, uploadFiles: File[] | null = null) => {
       if (!selectedConversation) {
         return;
       }
+      const isNewUploadFiles = uploadFiles && uploadFiles.length > 0;
+      const useAssistant = selectedConversation.assistantId || isNewUploadFiles || null;
       let updatedConversation: Conversation;
-
-      const fileUploadText = setFileUploadText(message);
-      var filteredMessage = filterMessageText(message);
-
-      if(fileUploadText && fileUploadText.length > 0) {
-        filteredMessage.role = 'fileUpload'; 
-        filteredMessage.content = fileUploadText + ' \n\n' + filteredMessage.content;
-      }
-
       if (deleteCount) {
         const updatedMessages = [...selectedConversation.messages];
         for (let i = 0; i < deleteCount; i++) {
           updatedMessages.pop();
         }
-
         updatedConversation = {
           ...selectedConversation,
-          messages: [...updatedMessages, filteredMessage],
+          messages: [...updatedMessages, message],
         };
       } else {
         updatedConversation = {
           ...selectedConversation,
-          messages: [...selectedConversation.messages, filteredMessage],
+          messages: [...selectedConversation.messages, message],
         };
       }
-
       homeDispatch({
         field: 'selectedConversation',
-        value: {
-          ...updatedConversation,
-          messages: [...updatedConversation.messages],
-        },
+        value: updatedConversation,
       });
       homeDispatch({ field: 'loading', value: true });
       homeDispatch({ field: 'messageIsStreaming', value: true });
+
+      // If there's a file upload first we need to run a call to get the assistant id and thread id using /api/getids
+      if (useAssistant && !selectedConversation.assistantId) {
+        const response = await fetch('api/getids', {
+          method: 'POST',
+          body: ""
+        });
+        response.json().then((data) => {
+          if (data.assistantId && data.threadId) {
+            updatedConversation = {
+              ...updatedConversation,
+              assistantId: data.assistantId,
+              threadId: data.threadId,
+            };
+            homeDispatch({ field: 'selectedConversation', value: updatedConversation });
+          } else {
+            return showError('Failed to get assistant and thread IDs', homeDispatch);
+          }
+        })
+      }
+      // then we need to upload all the files to /api/upload
+      if(isNewUploadFiles) {
+          // Use multipart/form-data to upload files
+          const formData = new FormData();
+          uploadFiles.forEach((file) => {
+            formData.append('files', file);
+          });
+          formData.append('conversationId', updatedConversation.id);
+          formData.append('threadId', updatedConversation.threadId || '');
+          const uploadResponse = await fetch('api/upload', {
+            method: 'POST',
+            body: formData,
+          });
+          if (!uploadResponse.ok) {
+            return showError('Failed to upload files', homeDispatch);
+          } else {
+            const newFileIds = await uploadResponse.json();
+            updatedConversation.fileIds = [
+              ...(updatedConversation.fileIds ?? []),
+              ...newFileIds,
+            ];
+            homeDispatch({ field: 'selectedConversation', value: updatedConversation });
+          }
+      }
+
       const chatBody: ChatBody = {
-        conversationId: updatedConversation.id,
         model: updatedConversation.model,
-        messages: [message],
+        messages: updatedConversation.messages.map(({ role, content, timestamp }) => ({ role, content, timestamp })),
         key: apiKey,
         prompt: updatedConversation.prompt,
         temperature: updatedConversation.temperature,
         assistantId: updatedConversation.assistantId || null,
         threadId: updatedConversation.threadId || null,
+        fileIds: updatedConversation.fileIds || [],
       };
-      let body = JSON.stringify(chatBody);
-      const controller = new AbortController();
 
+      const controller = new AbortController();
       const response = await fetch('api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         signal: controller.signal,
-        body,
+        body: JSON.stringify(chatBody),
       });
       if (!response.ok) {
-        homeDispatch({ field: 'loading', value: false });
-        homeDispatch({ field: 'messageIsStreaming', value: false });
-        const errorMsg = await response.text();
-        if (errorMsg.includes('have exceeded call rate limit')) {
-          toast.error("This model is currently overloaded. Please try again in a few minutes.");
-        } else {
-            toast.error(response.statusText);
-        }
-        
-        return;
+        return showError(response.statusText, homeDispatch);
       }
       const data = response.body;
       if (!data) {
-        homeDispatch({ field: 'loading', value: false });
-        homeDispatch({ field: 'messageIsStreaming', value: false });
-        return;
+        return showError('No response data received', homeDispatch);
       }
 
       if (updatedConversation.messages.length === 1) {
-        const newName = filteredMessage.content;
-        const customName = newName.length > 30 ? newName.substring(0, 30) + '...' : newName;
+        const { content } = message;
+        const customName =
+          content.length > 30 ? content.substring(0, 30) + '...' : content;
         updatedConversation = {
           ...updatedConversation,
           name: customName,
@@ -173,43 +204,37 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         }
         const { value, done: doneReading } = await reader.read();
         done = doneReading;
-        var chunkValue = await decoder.decode(value);
-        if (!chunkValue || chunkValue.length === 0) {
-          continue;
-        }
-      
-        const valueJson = JSON.parse(chunkValue);
-        if (valueJson.conversationId) {
-          updatedConversation.id = valueJson.conversationId;
-        }
-        if (valueJson.assistantId) {
-          updatedConversation.assistantId = valueJson.assistantId;
-        }
-        if (valueJson.threadId) {
-          updatedConversation.threadId = valueJson.threadId;
-        }
-        if (valueJson.messages && Array.isArray(valueJson.messages)) {
-          chunkValue = valueJson.messages[0].content;
-          text += chunkValue;
-        }
-
+        const chunkValue = decoder.decode(value);
+        text += chunkValue;
         if (isFirst) {
           isFirst = false;
           const updatedMessages: Message[] = [
             ...updatedConversation.messages,
-            { role: 'assistant', content: text, timestamp: makeTimestamp() },
+            { role: 'assistant', content: chunkValue, timestamp: makeTimestamp() },
           ];
           updatedConversation = {
             ...updatedConversation,
             messages: updatedMessages,
           };
-
           homeDispatch({
             field: 'selectedConversation',
             value: updatedConversation,
           });
         } else {
-
+          const updatedMessages: Message[] =
+            updatedConversation.messages.map((message, index) => {
+              if (index === updatedConversation.messages.length - 1) {
+                return {
+                  ...message,
+                  content: text,
+                };
+              }
+              return message;
+            });
+          updatedConversation = {
+            ...updatedConversation,
+            messages: updatedMessages,
+          };
           homeDispatch({
             field: 'selectedConversation',
             value: updatedConversation,
@@ -231,7 +256,6 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
       homeDispatch({ field: 'conversations', value: updatedConversations });
       saveConversations(updatedConversations);
       homeDispatch({ field: 'messageIsStreaming', value: false });
-    
     },
     [
       apiKey,
@@ -259,7 +283,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         setAutoScrollEnabled(false);
         setShowScrollDownButton(true);
       } else {
-        if(loading) {
+        if (loading) {
           setAutoScrollEnabled(true);
         }
         setShowScrollDownButton(false);
@@ -290,19 +314,19 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
     }
   };
 
-const downloadTextFile = (filename: string, text: string) => {
-  const link = Object.assign(document.createElement('a'), {
-    href: URL.createObjectURL(new Blob([text], { type: 'text/plain' })),
-    download: filename,
-  });
+  const downloadTextFile = (filename: string, text: string) => {
+    const link = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(new Blob([text], { type: 'text/plain' })),
+      download: filename,
+    });
 
-  document.body.append(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(link.href);
-};
+    document.body.append(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  };
 
-const onDownload = () => {
+  const onDownload = () => {
     const messages = selectedConversation?.messages;
     if (!messages?.length) return;
     const text = messages
@@ -313,26 +337,26 @@ const onDownload = () => {
       .join('\n');
 
     downloadTextFile(`conversation_${selectedConversation?.id}.txt`, text);
-};
+  };
 
-const onDownloadFolder = () => {
-  const sameFolderConversations = conversations.filter(
-    (conv) => conv.folderId === selectedConversation?.folderId
-  );
-  const text = sameFolderConversations
-    .map((conv, index) => {
-      const messagesText = conv.messages
-        ?.map(({ role, content, timestamp }) => {
-          const time = timestamp ? `(${timestamp})` : '';
-          return `[${role}] ${time}\n${content}\n`;
-        })
-        .join('\n') || '';
-      return `=== ${conv.name} ===\n${messagesText}`;
-    })
-    .join('\n\n');
+  const onDownloadFolder = () => {
+    const sameFolderConversations = conversations.filter(
+      (conv) => conv.folderId === selectedConversation?.folderId
+    );
+    const text = sameFolderConversations
+      .map((conv, index) => {
+        const messagesText = conv.messages
+          ?.map(({ role, content, timestamp }) => {
+            const time = timestamp ? `(${timestamp})` : '';
+            return `[${role}] ${time}\n${content}\n`;
+          })
+          .join('\n') || '';
+        return `=== ${conv.name} ===\n${messagesText}`;
+      })
+      .join('\n\n');
 
-  downloadTextFile('folder_conversations.txt', text);
-};
+    downloadTextFile('folder_conversations.txt', text);
+  };
 
 
   const scrollDown = () => {
@@ -435,29 +459,29 @@ const onDownloadFolder = () => {
                     )}
                   </div>
 
-                  
-                    <div className="flex h-full flex-col space-y-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-600">
-                    <img 
-                      src="images/cover.jpg" 
-                      alt="Decorative image of a robot hand holding a transparent globe." 
+
+                  <div className="flex h-full flex-col space-y-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-600">
+                    <img
+                      src="images/cover.jpg"
+                      alt="Decorative image of a robot hand holding a transparent globe."
                       className="w-full h-[200px] object-cover rounded-lg object-bottom"
                     />
-                        <Notice />
-                        <Rules isAdvancedOpen={showAdvanced} />
-                        <AdvancedSettings 
-                          selectedConversation={selectedConversation} 
-                          prompts={prompts} 
-                          handleUpdateConversation={handleUpdateConversation} 
-                          t={t}
-                          onToggle={setShowAdvanced}
-                        />
-                    </div>
+                    <Notice />
+                    <Rules isAdvancedOpen={showAdvanced} />
+                    <AdvancedSettings
+                      selectedConversation={selectedConversation}
+                      prompts={prompts}
+                      handleUpdateConversation={handleUpdateConversation}
+                      t={t}
+                      onToggle={setShowAdvanced}
+                    />
+                  </div>
                 </div>
               </>
             ) : (
               <>
                 <div className="sticky top-0 z-10 flex justify-center border border-b-neutral-300 bg-neutral-100 py-2 text-sm text-neutral-700 dark:border-none dark:bg-[#444654] dark:text-neutral-200">
-                <button
+                  <button
                     className="mr-2 cursor-pointer hover:opacity-50"
                     onClick={onClearAll}
                     title="Clear all messages"
@@ -518,9 +542,9 @@ const onDownloadFolder = () => {
           <ChatInput
             stopConversationRef={stopConversationRef}
             textareaRef={textareaRef}
-            onSend={(message, plugin) => {
+            onSend={(message, uploadFiles) => {
               setCurrentMessage(message);
-              handleSend(message, 0);
+              handleSend(message, 0, uploadFiles);
               sendGTMEvent({ event: 'messageSent', messageLength: message.content.length });
             }}
             onScrollDownClick={handleScrollDown}

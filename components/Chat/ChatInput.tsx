@@ -33,7 +33,7 @@ import { FileUploadButton, FileUploadListing } from './FileUpload';
 
 
 interface Props {
-  onSend: (message: Message, plugin: Plugin | null) => void;
+  onSend: (message: Message, uploadFiles: File[] | null) => void;
   onRegenerate: () => void;
   onScrollDownClick: () => void;
   stopConversationRef: MutableRefObject<boolean>;
@@ -65,7 +65,6 @@ export const ChatInput = ({
   const [variables, setVariables] = useState<string[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showPluginSelect, setShowPluginSelect] = useState(false);
-  const [plugin, setPlugin] = useState<Plugin | null>(null);
   const [promptCharacterLength, setPromptCharacterLength] = useState(0);
   const [characterLength, setCharacterLength] = useState(0);
 
@@ -85,96 +84,24 @@ export const ChatInput = ({
   };
 
 
-  const handleSend = () => {
-
-    console.log('handleSend triggered ');
-
+ const handleSend = () => {
     if (messageIsStreaming) {
-      console.log('handleSend messageIsStreaming');
       return;
     }
-
     if (!content) {
       alert(t('Please enter a message'));
       return;
     }
 
-
-    if (uploadFiles && uploadFiles.length > 0) {
-      console.log('files attached: ' + uploadFiles.length);
-
-      getContentForFiles(content, uploadFiles).then(fileContent => {
-
-        console.log('new content from async func, length: ' + fileContent.length);
-        console.log(fileContent);
-
-        var newContent = `[{"type": "text","text": "${content}"},${fileContent}]`; 
-
-        onSend({ role: 'user', content: newContent, timestamp: makeTimestamp() }, plugin);
-
-        setContent('');
-        setPlugin(null);
-        setUploadFiles([]);
-      })
-      .catch(error => {
-        //do nothing
-      })
-
-    }
-    else {
-      console.log('no files attached');
-
-      var newContent = `[{"type": "text","text": "${content}"}]`; 
-
-      onSend({ role: 'user', content: newContent, timestamp: makeTimestamp() }, plugin);
-      setContent('');
-      setPlugin(null);
-      setUploadFiles([]);
-    }
+    onSend({ role: 'user', content, timestamp: makeTimestamp() }, uploadFiles);
+    setContent('');
+    setUploadFiles([]);
 
     if (window.innerWidth < 640 && textareaRef && textareaRef.current) {
       textareaRef.current.blur();
     }
-
   };
 
-  const getContentForFiles = async (content: string, files: File[]) => {
-
-    let tmpContent = "";
-
-    const filePromises = files.map((file) => {
-      // Return a promise per file
-      return new Promise((resolve, reject) => {
-        console.log('--file: ' + file.name);
-        const reader = new FileReader();
-
-        reader.onload = async () => {
-          try {
-            const base64String = reader.result;
-
-            tmpContent += '{"type": "file","file":{"filename": "' + file.name + '","file_data": "`' + base64String + '`"}},';
-
-            // Resolve the promise with the response value
-            resolve(tmpContent);
-          } catch (err) {
-            reject(err);
-          }
-        };
-        reader.onerror = (error) => {
-          console.error("Error reading file:", file.name);
-          reject(error);
-        };
-        reader.readAsDataURL(file);
-      });
-    });
-
-    // Wait for all promises to be resolved
-    const resultStr = await Promise.all(filePromises);
-
-    console.log('COMPLETED');
-
-    return tmpContent.substring(0, tmpContent.length - 1);  
-  };
 
   const handleStopConversation = () => {
     stopConversationRef.current = true;
