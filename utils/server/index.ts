@@ -1,13 +1,10 @@
-import { Message, makeTimestamp } from '@/types/chat';
+import { Message } from '@/types/chat';
 import { OpenAIModel } from '@/types/openai';
 
-import { OPENAI_API_TYPE, DEFAULT_SYSTEM_PROMPT, DEFAULT_MODEL } from '../app/const';
 import { createAzureOpenAI } from '../lib/azure';
 
-import { AzureOpenAI } from 'openai';
-import * as fs from 'fs';
-import { randomUUID } from 'crypto';
 import { ChatCompletionCreateParams, ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import { ThreadCreateAndRunParams } from 'openai/resources/beta/threads/threads';
 
 
 export class OpenAIError extends Error {
@@ -62,12 +59,47 @@ export const OpenAIStream = async (
   if (modelId == "o3-mini" || modelId == "o1") {
     delete body.temperature;
   }
-  var res = await openAI.chat.completions.create(body);
+  let res: AsyncIterable<any>;
+  if (!fileIds || fileIds.length === 0) {
+    res = await openAI.chat.completions.create(body);
+  } else {
+    // Use openAI.beta.threads.createAndRunStream attaching fileIds as file search tool
+    const assistantMessages: ThreadCreateAndRunParams.Thread.Message[] = messages.map((msg) => ({
+      role: msg.role == "user" ? 'user' : 'assistant',
+      content: msg.content,
+    }));
+    // Create the AssistantStream for file search
+    res = openAI.beta.threads.createAndRunStream({
+      assistant_id: assistantId || '',
+      model: modelId,
+      temperature: temperature,
+      stream: true,
+      thread: {
+        messages: assistantMessages,
+        tool_resources: {
+          file_search: {
+          vector_stores: [{ file_ids: fileIds }]
+          }
+        }
+      }
+    }) as AsyncIterable<any>; // Cast to AsyncIterable for compatibility
+  }
 
   const stream = new ReadableStream({
     async start(controller) {
       for await (const chunk of res) {
-        const text = chunk.choices?.[0]?.delta?.content;
+        // Support both standard OpenAI stream and AssistantStream
+        let text: string | undefined;
+        if (chunk.choices?.[0]?.delta?.content) {
+          text = chunk.choices[0].delta.content;
+        } else if (chunk.data?.delta?.content) {
+          // AssistantStream: chunk.data.delta.content is an array of content blocks
+          // Find the first text content block with a value
+          const textBlock = Array.isArray(chunk.data.delta.content)
+            ? chunk.data.delta.content.find((c: any) => c.type === 'text' && c.text?.value)
+            : undefined;
+          text = textBlock?.text?.value;
+        }
         if (text) {
           controller.enqueue(new TextEncoder().encode(text));
         }
@@ -77,75 +109,4 @@ export const OpenAIStream = async (
   });
 
   return stream;
- 
-  // var newMessageContent = messages[messages.length - 1].content;
-  // var newMessageText = JSON.parse(newMessageContent)
-  //   .filter((part: { type: string; }) => part.type === 'text')[0].text;
-
-  // messages[messages.length - 1] = newMessageText;
-
-  // var newMessageFiles = "";
-  // var fileIds: string[] = [];
-
-  // if (isJson(newMessageContent) && JSON.parse(newMessageContent).some((content: { type: string; }) => content.type === 'file')) {
-  //   newMessageFiles = JSON.parse(newMessageContent).filter( (part: { type: string; }) => part.type === 'file')
-  //   .map((part: { file: { filename: string, file_data: string; }; }) => part.file);
-
-  //   fileIds = await getChatFileIds(
-  //     newMessageFiles,
-  //     openAI
-  //   );
-  // }
-
-  // await openAI.beta.threads.messages.create(threadId, {
-  //   role: "user",
-  //   content: newMessageText,
-  //   attachments: fileIds.map((id: any) => ({ file_id: id, tools: [{ type: "file_search" }] }))
-  // });
-
-  // var openAIConversation : OpenAIConversation = {
-  //   conversationId: conversationId,
-  //   assistantId: assistantId,
-  //   threadId: threadId,
-  //   messages: messages
-  // };
-
-  // const run = await openAI.beta.threads.runs.create(threadId, {
-  //   assistant_id: assistantId
-  // });
-
-  // let runStatus;
-  // do {
-  //   await new Promise(r => setTimeout(r, 2000));
-  //   runStatus = await openAI.beta.threads.runs.retrieve(threadId, run.id);
-  // } while (runStatus.status !== "completed" && runStatus.status !== "failed");
-
-  // if (runStatus.status === "completed") {
-  //   const threadMessages = await openAI.beta.threads.messages.list(threadId);
-  //   const lastMessage = threadMessages.data.find(m => m.role === "assistant");
-
-  //   const reply: Message = { 
-  //     role: lastMessage?.role || "assistant", 
-  //     content: lastMessage?.content[0].type == "text" ? lastMessage?.content[0].text.value : "", 
-  //     timestamp: makeTimestamp() 
-  //   };
-    
-  //   if(reply) {
-  //     openAIConversation.messages.pop(); // only send the reply
-  //     openAIConversation.messages.push(reply);
-  //   }
-
-  // } else {
-  //   console.error('Assistant run failed:', runStatus);
-  // }
-
-  // const res = new Response(JSON.stringify(openAIConversation), {
-  //   status: 200,
-  //   statusText: "Response received",
-  //   headers: {
-  //       'Content-Type': 'application/json'
-  //   }
-  // });
-
-  // return Promise.resolve(res.body);
 };
