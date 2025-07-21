@@ -511,8 +511,12 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                   >
                     <IconClearAll size={18} />
                   </button>
-                  {(selectedConversation?.model.name != "GPT-4") ? "Model: " + (selectedConversation?.model.name) + " | " : ""}
-                  {t('Temp')} : {selectedConversation?.temperature}
+                  {(selectedConversation?.model.name != "GPT-4") ? "Model: " + (selectedConversation?.model.name) : ""}
+                  {selectedConversation?.model.name === "GPT-4" && (
+                    <>
+                      {t('Temp')} : {selectedConversation?.temperature}
+                    </>
+                  )}
 
                   <button
                     className="ml-2 cursor-pointer hover:opacity-50"
