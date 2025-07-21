@@ -29,11 +29,11 @@ import { PluginSelect } from './PluginSelect';
 import { PromptList } from './PromptList';
 import { VariableModal } from './VariableModal';
 
-import { FileUpload } from './FileUpload';
+import { FileUploadButton, FileUploadListing } from './FileUpload';
 
 
 interface Props {
-  onSend: (message: Message, plugin: Plugin | null) => void;
+  onSend: (message: Message, uploadFiles: File[] | null) => void;
   onRegenerate: () => void;
   onScrollDownClick: () => void;
   stopConversationRef: MutableRefObject<boolean>;
@@ -65,7 +65,6 @@ export const ChatInput = ({
   const [variables, setVariables] = useState<string[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showPluginSelect, setShowPluginSelect] = useState(false);
-  const [plugin, setPlugin] = useState<Plugin | null>(null);
   const [promptCharacterLength, setPromptCharacterLength] = useState(0);
   const [characterLength, setCharacterLength] = useState(0);
 
@@ -85,96 +84,24 @@ export const ChatInput = ({
   };
 
 
-  const handleSend = () => {
-
-    console.log('handleSend triggered ');
-
+ const handleSend = () => {
     if (messageIsStreaming) {
-      console.log('handleSend messageIsStreaming');
       return;
     }
-
     if (!content) {
       alert(t('Please enter a message'));
       return;
     }
 
-
-    if (uploadFiles && uploadFiles.length > 0) {
-      console.log('files attached: ' + uploadFiles.length);
-
-      getContentForFiles(content, uploadFiles).then(fileContent => {
-
-        console.log('new content from async func, length: ' + fileContent.length);
-        console.log(fileContent);
-
-        var newContent = `[{"type": "text","text": "${content}"},${fileContent}]`; 
-
-        onSend({ role: 'user', content: newContent, timestamp: makeTimestamp() }, plugin);
-
-        setContent('');
-        setPlugin(null);
-        setUploadFiles([]);
-      })
-      .catch(error => {
-        //do nothing
-      })
-
-    }
-    else {
-      console.log('no files attached');
-
-      var newContent = `[{"type": "text","text": "${content}"}]`; 
-
-      onSend({ role: 'user', content: newContent, timestamp: makeTimestamp() }, plugin);
-      setContent('');
-      setPlugin(null);
-      setUploadFiles([]);
-    }
+    onSend({ role: 'user', content, timestamp: makeTimestamp() }, uploadFiles);
+    setContent('');
+    setUploadFiles([]);
 
     if (window.innerWidth < 640 && textareaRef && textareaRef.current) {
       textareaRef.current.blur();
     }
-
   };
 
-  const getContentForFiles = async (content: string, files: File[]) => {
-
-    let tmpContent = "";
-
-    const filePromises = files.map((file) => {
-      // Return a promise per file
-      return new Promise((resolve, reject) => {
-        console.log('--file: ' + file.name);
-        const reader = new FileReader();
-
-        reader.onload = async () => {
-          try {
-            const base64String = reader.result;
-
-            tmpContent += '{"type": "file","file":{"filename": "' + file.name + '","file_data": "`' + base64String + '`"}},';
-
-            // Resolve the promise with the response value
-            resolve(tmpContent);
-          } catch (err) {
-            reject(err);
-          }
-        };
-        reader.onerror = (error) => {
-          console.error("Error reading file:", file.name);
-          reject(error);
-        };
-        reader.readAsDataURL(file);
-      });
-    });
-
-    // Wait for all promises to be resolved
-    const resultStr = await Promise.all(filePromises);
-
-    console.log('COMPLETED');
-
-    return tmpContent.substring(0, tmpContent.length - 1);  
-  };
 
   const handleStopConversation = () => {
     stopConversationRef.current = true;
@@ -240,10 +167,6 @@ export const ChatInput = ({
       setShowPluginSelect(!showPluginSelect);
     }
   };
-
-  const handleFileSelect = (uploadFiles: File[]) => {
-    setUploadFiles(uploadFiles);
-  }
 
   const parseVariables = (content: string) => {
     const regex = /{{(.*?)}}/g;
@@ -335,6 +258,10 @@ export const ChatInput = ({
 
   return (
     <div className="absolute bottom-0 left-0 w-full border-transparent bg-gradient-to-b from-transparent via-white to-white pt-6 dark:border-white/20 dark:via-[#343541] dark:to-[#343541] md:pt-2">
+      
+
+      
+
       <div className="stretch mx-2 mt-4 flex flex-row gap-3 last:mb-2 md:mx-4 md:mt-[52px] md:last:mb-12 lg:mx-auto lg:max-w-3xl">
         {messageIsStreaming && (
           <button
@@ -360,13 +287,17 @@ export const ChatInput = ({
             </button>
           )}
 
-        <div className="relative mx-2 flex w-full flex-grow flex-col rounded-md border border-black/10 bg-white shadow-[0_0_10px_rgba(0,0,0,0.10)] dark:border-gray-900/50 dark:bg-[#40414F] dark:text-white dark:shadow-[0_0_15px_rgba(0,0,0,0.10)] sm:mx-4">
+        
+        
 
-          <FileUpload onFileSelect={handleFileSelect} onCancelUpload={handleStopConversation} />
+        <div className="relative mx-2 flex w-full flex-grow flex-col rounded-md border border-black/10 bg-white shadow-[0_0_10px_rgba(0,0,0,0.10)] dark:border-gray-900/50 dark:bg-[#40414F] dark:text-white dark:shadow-[0_0_15px_rgba(0,0,0,0.10)] sm:mx-4">
+           <FileUploadListing uploadFiles={uploadFiles} setUploadFiles={setUploadFiles} onCancelUpload={handleStopConversation} />
+          <div className="relative flex">
+            <FileUploadButton uploadFiles={uploadFiles} setUploadFiles={setUploadFiles} onCancelUpload={handleStopConversation} />
 
           <textarea
             ref={textareaRef}
-            className="placeholder-neutral-700 m-0 w-full box-border resize-none border-0 bg-transparent p-0 py-2 pr-4 pl-9 text-black dark:bg-transparent dark:text-white md:py-3 md:pl-9 "
+            className={(uploadFiles.length ? "pl-4" : "pl-9") + (" placeholder-neutral-700 m-0 w-full box-border resize-none border-0 bg-transparent p-0 py-2 pr-4 text-black dark:bg-transparent dark:text-white md:py-3")}
             style={{
               resize: 'none',
               bottom: `${textareaRef?.current?.scrollHeight}px`,
@@ -438,7 +369,7 @@ export const ChatInput = ({
             />
           )}
 
-
+</div>
 
           {(promptCharacterLength <= maxLength && promptCharacterLength > maxLength * .75) && (
             <div className="text-orange-500 m-4">

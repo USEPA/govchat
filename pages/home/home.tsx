@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DefaultAzureCredential,ChainedTokenCredential } from "@azure/identity";
-import { getAuthToken } from "@/utils/lib/azure"
-//import { getCache } from "@/utils/lib/cache"
 
 import { GetServerSideProps } from 'next';
 import { useTranslation } from 'next-i18next';
@@ -53,7 +51,6 @@ interface Props {
   defaultModelId: OpenAIModelID;
 }
 
-let aztoken=null;
 
 const Home = ({
   serverSideApiKeyIsSet,
@@ -413,7 +410,6 @@ export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
       process.env.DEFAULT_MODEL) ||
     fallbackModelID;
 
-  aztoken = await getAuthToken();
   let serverSidePluginKeysSet = false;
 
   const googleApiKey = process.env.GOOGLE_API_KEY;
@@ -427,7 +423,6 @@ export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
     props: {
       serverSideApiKeyIsSet: !!process.env.OPENAI_API_KEY,
       defaultModelId,
-      aztoken,
       serverSidePluginKeysSet,
       ...(await serverSideTranslations(locale ?? 'en', [
         'common',

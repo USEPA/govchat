@@ -1,5 +1,6 @@
 import { IconClearAll, IconSettings, IconDownload, IconFolderDown } from '@tabler/icons-react';
 import {
+  Dispatch,
   MutableRefObject,
   memo,
   useCallback,
@@ -13,7 +14,6 @@ import { sendGTMEvent } from '@next/third-parties/google'
 
 import { useTranslation } from 'next-i18next';
 
-import { getEndpoint } from '@/utils/app/api';
 import {
   filterMessageText,
   setFileUploadText,
@@ -24,7 +24,6 @@ import {
 import { throttle } from '@/utils/data/throttle';
 
 import { ChatBody, Conversation, Message, makeTimestamp } from '@/types/chat';
-import { Plugin } from '@/types/plugin';
 
 import HomeContext from '@/utils/home/home.context';
 
@@ -37,9 +36,34 @@ import { Notice } from './Notice';
 import { MemoizedChatMessage } from './MemoizedChatMessage';
 import { AdvancedSettings } from './AdvancedSettings';
 import { timeStamp } from 'console';
+import { ActionType } from '@/hooks/useCreateReducer';
+import { HomeInitialState } from '@/utils/home/home.state';
 
 interface Props {
   stopConversationRef: MutableRefObject<boolean>;
+}
+
+const showError = (errorMessage: string, dispatch: Dispatch<ActionType<HomeInitialState>>) => {
+  dispatch({ field: 'loading', value: false });
+  dispatch({ field: 'messageIsStreaming', value: false });
+  toast.error(errorMessage);
+}
+
+function insertMessageBeforeLast(
+  conversation: Conversation,
+  content: string
+): Conversation {
+  const { messages } = conversation;
+  if (messages.length === 0) return conversation;
+  const last = messages[messages.length - 1];
+  return {
+    ...conversation,
+    messages: [
+      ...messages.slice(0, -1),
+      { role: 'fileUpload', content, timestamp: last.timestamp },
+      last,
+    ],
+  };
 }
 
 export const Chat = memo(({ stopConversationRef }: Props) => {
@@ -73,207 +97,142 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = useCallback(
-    async (message: Message, deleteCount = 0, plugin: Plugin | null = null) => {
-      if (selectedConversation) {
-        let updatedConversation: Conversation;
-
-        const fileUploadText = setFileUploadText(message);
-        var filteredMessage = filterMessageText(message);
-
-        if(fileUploadText && fileUploadText.length > 0) {
-          filteredMessage.role = 'fileUpload'; 
-          filteredMessage.content = fileUploadText + ' \n\n' + filteredMessage.content;
+    async (message: Message, deleteCount = 0, uploadFiles: File[] | null = null) => {
+      if (!selectedConversation) {
+        return;
+      }
+      const isNewUploadFiles = uploadFiles && uploadFiles.length > 0;
+      const useAssistant = selectedConversation.assistantId || isNewUploadFiles || null;
+      let updatedConversation: Conversation;
+      if (deleteCount) {
+        const updatedMessages = [...selectedConversation.messages];
+        for (let i = 0; i < deleteCount; i++) {
+          updatedMessages.pop();
         }
-
-        if (deleteCount) {
-          const updatedMessages = [...selectedConversation.messages];
-          for (let i = 0; i < deleteCount; i++) {
-            updatedMessages.pop();
-          }
-
-          updatedConversation = {
-            ...selectedConversation,
-            messages: [...updatedMessages, filteredMessage],
-          };
-        } else {
-          updatedConversation = {
-            ...selectedConversation,
-            messages: [...selectedConversation.messages, filteredMessage],
-          };
-        }
-
-        homeDispatch({
-          field: 'selectedConversation',
-          value: {
-            ...updatedConversation,
-            messages: [...updatedConversation.messages], //[...selectedConversation.messages, filteredMessage ],
-          },
-        });
-        homeDispatch({ field: 'loading', value: true });
-        homeDispatch({ field: 'messageIsStreaming', value: true });
-        const chatBody: ChatBody = {
-          conversationId: updatedConversation.id,
-          model: updatedConversation.model,
-          messages: [message], //updatedConversation.messages.map(({ role, content, timestamp }) => ({role, content, timestamp })),
-          key: apiKey,
-          prompt: updatedConversation.prompt,
-          temperature: updatedConversation.temperature,
-          assistantId: updatedConversation.assistantId || null,
-          threadId: updatedConversation.threadId || null,
+        updatedConversation = {
+          ...selectedConversation,
+          messages: [...updatedMessages, message],
         };
-        const endpoint = getEndpoint(plugin);
-        let body;
-        if (!plugin) {
-          body = JSON.stringify(chatBody);
-        } else {
-          body = JSON.stringify({
-            ...chatBody,
-            googleAPIKey: pluginKeys
-              .find((key) => key.pluginId === 'google-search')
-              ?.requiredKeys.find((key) => key.key === 'GOOGLE_API_KEY')?.value,
-            googleCSEId: pluginKeys
-              .find((key) => key.pluginId === 'google-search')
-              ?.requiredKeys.find((key) => key.key === 'GOOGLE_CSE_ID')?.value,
-          });
-        }
-        const controller = new AbortController();
+      } else {
+        updatedConversation = {
+          ...selectedConversation,
+          messages: [...selectedConversation.messages, message],
+        };
+      }
+      homeDispatch({
+        field: 'selectedConversation',
+        value: updatedConversation,
+      });
+      homeDispatch({ field: 'loading', value: true });
+      homeDispatch({ field: 'messageIsStreaming', value: true });
 
-        const response = await fetch(endpoint, {
+      // If there's a file upload first we need to run a call to get the assistant id and thread id using /api/getids
+      if (useAssistant && !selectedConversation.assistantId) {
+        const response = await fetch('api/getids', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          signal: controller.signal,
-          body,
+          body: ""
         });
-        if (!response.ok) {
-          homeDispatch({ field: 'loading', value: false });
-          homeDispatch({ field: 'messageIsStreaming', value: false });
-          const errorMsg = await response.text();
-          if (errorMsg.includes('have exceeded call rate limit')) {
-            toast.error("This model is currently overloaded. Please try again in a few minutes.");
-          } else {
-             toast.error(response.statusText);
-          }
-          
-          return;
-        }
-        const data = response.body;
-        if (!data) {
-          homeDispatch({ field: 'loading', value: false });
-          homeDispatch({ field: 'messageIsStreaming', value: false });
-          return;
-        }
-  
-        if (!plugin) {
-          if (updatedConversation.messages.length === 1) {
-            const newName = filteredMessage.content;
-            const customName = newName.length > 30 ? newName.substring(0, 30) + '...' : newName;
+        response.json().then((data) => {
+          if (data.assistantId && data.threadId) {
             updatedConversation = {
               ...updatedConversation,
-              name: customName,
+              assistantId: data.assistantId,
+              threadId: data.threadId,
             };
+            homeDispatch({ field: 'selectedConversation', value: updatedConversation });
+          } else {
+            return showError('Failed to get assistant and thread IDs', homeDispatch);
           }
-          homeDispatch({ field: 'loading', value: false });
-          const reader = data.getReader();
-          const decoder = new TextDecoder();
-          let done = false;
-          let isFirst = true;
-          let text = '';
-          while (!done) {
-            if (stopConversationRef.current === true) {
-              controller.abort();
-              done = true;
-              break;
-            }
-            const { value, done: doneReading } = await reader.read();
-            done = doneReading;
-            var chunkValue = await decoder.decode(value);
-            
-            try{
-              const valueJson = JSON.parse(chunkValue);
-              if (valueJson.conversationId) {
-                updatedConversation.id = valueJson.conversationId;
-              }
-              if (valueJson.assistantId) {
-                updatedConversation.assistantId = valueJson.assistantId;
-              }
-              if (valueJson.threadId) {
-                updatedConversation.threadId = valueJson.threadId;
-              }
-              if (valueJson.messages && Array.isArray(valueJson.messages)) {
-
-                console.log('chat.tsx - handleSend - valueJson messages:', valueJson.messages);
-
-                // const newMessages: Message[] = valueJson.messages.map((msg: any) => ({
-                //   role: msg.role,
-                //   content: msg.content,
-                //   timestamp: makeTimestamp(),
-                // }));
-
-                // console.log('chat.tsx - handleSend - newMessages:', newMessages);
-
-                // updatedConversation.messages = [
-                //   ...updatedConversation.messages,
-                //   ...newMessages,
-                // ];
-                chunkValue = valueJson.messages[0].content;
-                text += chunkValue;
-              }
-            }catch(e){
-              console.error('chat.tsx - handleSend - error parsing chunkValue:', e);
-            }
-
-            if (isFirst) {
-              isFirst = false;
-              const updatedMessages: Message[] = [
-                ...updatedConversation.messages,
-                { role: 'assistant', content: text, timestamp: makeTimestamp() },
-              ];
-              updatedConversation = {
-                ...updatedConversation,
-                messages: updatedMessages,
-              };
-
-              homeDispatch({
-                field: 'selectedConversation',
-                value: updatedConversation,
-              });
-            } else {
-
-              homeDispatch({
-                field: 'selectedConversation',
-                value: updatedConversation,
-              });
-            }
+        })
+      }
+      // then we need to upload all the files to /api/upload
+      if(isNewUploadFiles) {
+          // Use multipart/form-data to upload files
+          const formData = new FormData();
+          uploadFiles.forEach((file) => {
+            formData.append('files', file);
+          });
+          formData.append('conversationId', updatedConversation.id);
+          formData.append('threadId', updatedConversation.threadId || '');
+          const uploadResponse = await fetch('api/upload', {
+            method: 'POST',
+            body: formData,
+          });
+          if (!uploadResponse.ok) {
+            return showError('Failed to upload files', homeDispatch);
+          } else {
+            const newFileIds = await uploadResponse.json();
+            updatedConversation.fileIds = [
+              ...(updatedConversation.fileIds ?? []),
+              ...newFileIds,
+            ];
+            const fileNames = uploadFiles.map(file => file.name);
+            updatedConversation = insertMessageBeforeLast(updatedConversation,
+              `New files attached: ${fileNames.join(', ')}\n\n` +
+              "*You can refer to these messages at any time in your conversation*."
+            )
+            homeDispatch({ field: 'selectedConversation', value: updatedConversation });
           }
-          saveConversation(updatedConversation);
-          const updatedConversations: Conversation[] = conversations.map(
-            (conversation) => {
-              if (conversation.id === selectedConversation.id) {
-                return updatedConversation;
-              }
-              return conversation;
-            },
-          );
-          if (updatedConversations.length === 0) {
-            updatedConversations.push(updatedConversation);
-          }
-          homeDispatch({ field: 'conversations', value: updatedConversations });
-          saveConversations(updatedConversations);
-          homeDispatch({ field: 'messageIsStreaming', value: false });
-        } else {
-          const { answer } = await response.json();
+      }
 
-          try{
-            updatedConversation.assistantId = answer.assistantId;
-            updatedConversation.threadId = answer.threadId;
-          }
-          catch{}
+      const chatBody: ChatBody = {
+        model: updatedConversation.model,
+        messages: updatedConversation.messages.map(({ role, content, timestamp }) => ({ role, content, timestamp })),
+        key: apiKey,
+        prompt: updatedConversation.prompt,
+        temperature: updatedConversation.temperature,
+        assistantId: updatedConversation.assistantId || null,
+        threadId: updatedConversation.threadId || null,
+        fileIds: updatedConversation.fileIds || [],
+      };
 
+      const controller = new AbortController();
+      const response = await fetch('api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+        body: JSON.stringify(chatBody),
+      });
+      if (!response.ok) {
+        return showError(response.statusText, homeDispatch);
+      }
+      const data = response.body;
+      if (!data) {
+        return showError('No response data received', homeDispatch);
+      }
+
+      if (updatedConversation.messages.length === 1) {
+        const { content } = message;
+        const customName =
+          content.length > 30 ? content.substring(0, 30) + '...' : content;
+        updatedConversation = {
+          ...updatedConversation,
+          name: customName,
+        };
+      }
+      homeDispatch({ field: 'loading', value: false });
+      const reader = data.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let isFirst = true;
+      let text = '';
+      while (!done) {
+        if (stopConversationRef.current === true) {
+          controller.abort();
+          done = true;
+          break;
+        }
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        const chunkValue = decoder.decode(value);
+        text += chunkValue;
+        if (isFirst) {
+          isFirst = false;
           const updatedMessages: Message[] = [
             ...updatedConversation.messages,
-            { role: 'assistant', content: answer, timestamp: makeTimestamp() },
+            { role: 'assistant', content: chunkValue, timestamp: makeTimestamp() },
           ];
           updatedConversation = {
             ...updatedConversation,
@@ -281,33 +240,50 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           };
           homeDispatch({
             field: 'selectedConversation',
-            value: updateConversation,
+            value: updatedConversation,
           });
-
-          saveConversation(updatedConversation);
-          const updatedConversations: Conversation[] = conversations.map(
-            (conversation) => {
-              if (conversation.id === selectedConversation.id) {
-                return updatedConversation;
+        } else {
+          const updatedMessages: Message[] =
+            updatedConversation.messages.map((message, index) => {
+              if (index === updatedConversation.messages.length - 1) {
+                return {
+                  ...message,
+                  content: text,
+                };
               }
-              return conversation;
-            },
-          );
-          if (updatedConversations.length === 0) {
-            updatedConversations.push(updatedConversation);
-          }
-          homeDispatch({ field: 'conversations', value: updatedConversations });
-          saveConversations(updatedConversations);
-          homeDispatch({ field: 'loading', value: false });
-          homeDispatch({ field: 'messageIsStreaming', value: false });
+              return message;
+            });
+          updatedConversation = {
+            ...updatedConversation,
+            messages: updatedMessages,
+          };
+          homeDispatch({
+            field: 'selectedConversation',
+            value: updatedConversation,
+          });
         }
       }
+      saveConversation(updatedConversation);
+      const updatedConversations: Conversation[] = conversations.map(
+        (conversation) => {
+          if (conversation.id === selectedConversation.id) {
+            return updatedConversation;
+          }
+          return conversation;
+        },
+      );
+      if (updatedConversations.length === 0) {
+        updatedConversations.push(updatedConversation);
+      }
+      homeDispatch({ field: 'conversations', value: updatedConversations });
+      saveConversations(updatedConversations);
+      homeDispatch({ field: 'messageIsStreaming', value: false });
     },
     [
       apiKey,
       conversations,
-      pluginKeys,
       selectedConversation,
+      homeDispatch,
       stopConversationRef,
     ],
   );
@@ -329,7 +305,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         setAutoScrollEnabled(false);
         setShowScrollDownButton(true);
       } else {
-        if(loading) {
+        if (loading) {
           setAutoScrollEnabled(true);
         }
         setShowScrollDownButton(false);
@@ -360,19 +336,19 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
     }
   };
 
-const downloadTextFile = (filename: string, text: string) => {
-  const link = Object.assign(document.createElement('a'), {
-    href: URL.createObjectURL(new Blob([text], { type: 'text/plain' })),
-    download: filename,
-  });
+  const downloadTextFile = (filename: string, text: string) => {
+    const link = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(new Blob([text], { type: 'text/plain' })),
+      download: filename,
+    });
 
-  document.body.append(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(link.href);
-};
+    document.body.append(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  };
 
-const onDownload = () => {
+  const onDownload = () => {
     const messages = selectedConversation?.messages;
     if (!messages?.length) return;
     const text = messages
@@ -383,26 +359,26 @@ const onDownload = () => {
       .join('\n');
 
     downloadTextFile(`conversation_${selectedConversation?.id}.txt`, text);
-};
+  };
 
-const onDownloadFolder = () => {
-  const sameFolderConversations = conversations.filter(
-    (conv) => conv.folderId === selectedConversation?.folderId
-  );
-  const text = sameFolderConversations
-    .map((conv, index) => {
-      const messagesText = conv.messages
-        ?.map(({ role, content, timestamp }) => {
-          const time = timestamp ? `(${timestamp})` : '';
-          return `[${role}] ${time}\n${content}\n`;
-        })
-        .join('\n') || '';
-      return `=== ${conv.name} ===\n${messagesText}`;
-    })
-    .join('\n\n');
+  const onDownloadFolder = () => {
+    const sameFolderConversations = conversations.filter(
+      (conv) => conv.folderId === selectedConversation?.folderId
+    );
+    const text = sameFolderConversations
+      .map((conv, index) => {
+        const messagesText = conv.messages
+          ?.map(({ role, content, timestamp }) => {
+            const time = timestamp ? `(${timestamp})` : '';
+            return `[${role}] ${time}\n${content}\n`;
+          })
+          .join('\n') || '';
+        return `=== ${conv.name} ===\n${messagesText}`;
+      })
+      .join('\n\n');
 
-  downloadTextFile('folder_conversations.txt', text);
-};
+    downloadTextFile('folder_conversations.txt', text);
+  };
 
 
   const scrollDown = () => {
@@ -505,29 +481,29 @@ const onDownloadFolder = () => {
                     )}
                   </div>
 
-                  
-                    <div className="flex h-full flex-col space-y-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-600">
-                    <img 
-                      src="images/cover.jpg" 
-                      alt="Decorative image of a robot hand holding a transparent globe." 
+
+                  <div className="flex h-full flex-col space-y-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-600">
+                    <img
+                      src="images/cover.jpg"
+                      alt="Decorative image of a robot hand holding a transparent globe."
                       className="w-full h-[200px] object-cover rounded-lg object-bottom"
                     />
-                        <Notice />
-                        <Rules isAdvancedOpen={showAdvanced} />
-                        <AdvancedSettings 
-                          selectedConversation={selectedConversation} 
-                          prompts={prompts} 
-                          handleUpdateConversation={handleUpdateConversation} 
-                          t={t}
-                          onToggle={setShowAdvanced}
-                        />
-                    </div>
+                    <Notice />
+                    <Rules isAdvancedOpen={showAdvanced} />
+                    <AdvancedSettings
+                      selectedConversation={selectedConversation}
+                      prompts={prompts}
+                      handleUpdateConversation={handleUpdateConversation}
+                      t={t}
+                      onToggle={setShowAdvanced}
+                    />
+                  </div>
                 </div>
               </>
             ) : (
               <>
                 <div className="sticky top-0 z-10 flex justify-center border border-b-neutral-300 bg-neutral-100 py-2 text-sm text-neutral-700 dark:border-none dark:bg-[#444654] dark:text-neutral-200">
-                <button
+                  <button
                     className="mr-2 cursor-pointer hover:opacity-50"
                     onClick={onClearAll}
                     title="Clear all messages"
@@ -535,8 +511,12 @@ const onDownloadFolder = () => {
                   >
                     <IconClearAll size={18} />
                   </button>
-                  {(selectedConversation?.model.name != "GPT-4") ? "Model: " + (selectedConversation?.model.name) + " | " : ""}
-                  {t('Temp')} : {selectedConversation?.temperature}
+                  {(selectedConversation?.model.name != "GPT-4") ? "Model: " + (selectedConversation?.model.name) : ""}
+                  {selectedConversation?.model.name === "GPT-4" && (
+                    <>
+                      {t('Temp')} : {selectedConversation?.temperature}
+                    </>
+                  )}
 
                   <button
                     className="ml-2 cursor-pointer hover:opacity-50"
@@ -588,15 +568,15 @@ const onDownloadFolder = () => {
           <ChatInput
             stopConversationRef={stopConversationRef}
             textareaRef={textareaRef}
-            onSend={(message, plugin) => {
+            onSend={(message, uploadFiles) => {
               setCurrentMessage(message);
-              handleSend(message, 0, plugin);
+              handleSend(message, 0, uploadFiles);
               sendGTMEvent({ event: 'messageSent', messageLength: message.content.length });
             }}
             onScrollDownClick={handleScrollDown}
             onRegenerate={() => {
               if (currentMessage) {
-                handleSend(currentMessage, 2, null);
+                handleSend(currentMessage, 2);
               }
             }}
             showScrollDownButton={showScrollDownButton}

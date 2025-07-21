@@ -11,7 +11,6 @@ export const makeTimestamp = () => {return format(new Date(), "yyyy-MM-dd'T'HH:m
 export type Role = 'assistant' | 'user' | 'fileUpload';
 
 export interface ChatBody {
-  conversationId: string;
   model: OpenAIModel;
   messages: Message[];
   key: string;
@@ -19,6 +18,7 @@ export interface ChatBody {
   temperature: number;
   assistantId?: string | null;
   threadId?: string | null;
+  fileIds?: string[] | null;
 }
 
 export interface Conversation {
@@ -31,7 +31,7 @@ export interface Conversation {
   folderId: string | null;
   tokenLength: number;
   characterLength: number;
-  // conversationId?: string;
   assistantId?: string | null;
   threadId?: string | null;
+  fileIds?: string[] | null;
 }
