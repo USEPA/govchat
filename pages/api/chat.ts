@@ -25,9 +25,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       messagesToSend = [message, ...messagesToSend];
     }
 
-    const principalName: string = req.headers['x-ms-client-principal-name']?.toString() || "";
-    const bearer: string = req.headers['x-ms-token-aad-access-token']?.toString() || req.headers['x-ms-client-principal']?.toString() || "";
-    const bearerAuth: string = req.headers['x-ms-client-principal-id']?.toString() || "";
+    //const principalName: string = req.headers['x-ms-client-principal-name']?.toString() || "";
+    //const bearer: string = req.headers['x-ms-token-aad-access-token']?.toString() || req.headers['x-ms-client-principal']?.toString() || "";
+    //const bearerAuth: string = req.headers['x-ms-client-principal-id']?.toString() || "";
     const userName: string = req.headers['x-ms-client-principal-name']?.toString() || "";
 
     const stream = await OpenAIStream (
@@ -35,6 +35,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       promptToSend,
       temperature,
       messages,
+      userName,
       assistantId,
       threadId,
       fileIds

@@ -2,6 +2,7 @@ import { Message } from '@/types/chat';
 import { OpenAIModel } from '@/types/openai';
 
 import { createAzureOpenAI } from '../lib/azure';
+import { printLogLines } from '../lib/printLogLines';
 
 import { ChatCompletionCreateParams, ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import { ThreadCreateAndRunParams } from 'openai/resources/beta/threads/threads';
@@ -31,10 +32,11 @@ interface OpenAIConversation {
 export const OpenAIStream = async (
   model: OpenAIModel,
   systemPrompt: string,
-  temperature : number|undefined,
+  temperature: number | undefined,
   messages: Message[],
-  assistantId: string|null = '',
-  threadId: string|null = '',
+  userName: string | null,
+  assistantId: string | null = '',
+  threadId: string | null = '',
   fileIds: string[] | null = [],
 ) => {
   const openAI = createAzureOpenAI();
@@ -43,15 +45,17 @@ export const OpenAIStream = async (
     modelId = "gpt-4o"
   }
 
+  const messagesWithPrompt = [
+    {
+      role: 'system',
+      content: systemPrompt,
+    },
+    ...messages,
+  ];
+
   var body: ChatCompletionCreateParams = {
     model: modelId,
-    messages: [
-      {
-        role: 'system',
-        content: systemPrompt,
-      },
-      ...messages,
-    ] as Array<ChatCompletionMessageParam>,
+    messages: messagesWithPrompt as Array<ChatCompletionMessageParam>,
     temperature: temperature,
     stream: true
   };
@@ -78,17 +82,17 @@ export const OpenAIStream = async (
         messages: assistantMessages,
         tool_resources: {
           file_search: {
-          vector_stores: [{ file_ids: fileIds }]
+            vector_stores: [{ file_ids: fileIds }]
           }
         }
       }
     }) as AsyncIterable<any>; // Cast to AsyncIterable for compatibility
   }
+  const loggingObjectTempResult: string[] = [];
 
   const stream = new ReadableStream({
     async start(controller) {
       for await (const chunk of res) {
-        // Support both standard OpenAI stream and AssistantStream
         let text: string | undefined;
         if (chunk.choices?.[0]?.delta?.content) {
           text = chunk.choices[0].delta.content;
@@ -101,9 +105,17 @@ export const OpenAIStream = async (
           text = textBlock?.text?.value;
         }
         if (text) {
+          loggingObjectTempResult.push(text);
           controller.enqueue(new TextEncoder().encode(text));
         }
       }
+      printLogLines(
+        userName,
+        temperature === undefined ? null : temperature,
+        model.name,
+        messagesWithPrompt,
+        loggingObjectTempResult.join('')
+      );
       controller.close();
     }
   });
