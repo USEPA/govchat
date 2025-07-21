@@ -32,7 +32,7 @@ interface OpenAIConversation {
 export const OpenAIStream = async (
   model: OpenAIModel,
   systemPrompt: string,
-  temperature: number | undefined,
+  temperature: number | undefined | null,
   messages: Message[],
   userName: string | null,
   assistantId: string | null = '',
@@ -53,19 +53,17 @@ export const OpenAIStream = async (
     ...messages,
   ];
 
-  var body: ChatCompletionCreateParams = {
-    model: modelId,
-    messages: messagesWithPrompt as Array<ChatCompletionMessageParam>,
-    temperature: temperature,
-    stream: true
-  };
-
   if (modelId == "o3-mini" || modelId == "o1") {
-    delete body.temperature;
+    temperature = undefined;
   }
   let res: AsyncIterable<any>;
   if (!fileIds || fileIds.length === 0) {
-    res = await openAI.chat.completions.create(body);
+    res = await openAI.chat.completions.create({
+      model: modelId,
+      messages: messagesWithPrompt as Array<ChatCompletionMessageParam>,
+      temperature: temperature,
+      stream: true
+    })
   } else {
     // Use openAI.beta.threads.createAndRunStream attaching fileIds as file search tool
     const assistantMessages: ThreadCreateAndRunParams.Thread.Message[] = messages.map((msg) => ({
@@ -89,6 +87,7 @@ export const OpenAIStream = async (
     }) as AsyncIterable<any>; // Cast to AsyncIterable for compatibility
   }
   const loggingObjectTempResult: string[] = [];
+  var error = "";
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -108,6 +107,13 @@ export const OpenAIStream = async (
           loggingObjectTempResult.push(text);
           controller.enqueue(new TextEncoder().encode(text));
         }
+        if (chunk.data?.last_error) {
+          error = chunk.data.last_error;
+        }
+      }
+      if (error) {
+        controller.error(error);
+        loggingObjectTempResult.push(`\n\nError: ${error}`);
       }
       printLogLines(
         userName,
