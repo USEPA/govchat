@@ -20,8 +20,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             instructions: DEFAULT_SYSTEM_PROMPT,
             tools: [{ type: "file_search" }]
         });
-        // Create vector store with required body arguments
-        const vectorStore = await openAI.beta.vectorStores.create({});
+        const vectorStore = await openAI.beta.vectorStores.create({
+            expires_after: {
+                anchor: 'last_active_at',
+                days: 30
+            }
+        });
         res.status(200).json({ assistantId: assistant.id, vectorStoreId: vectorStore.id });
     } catch (error: any) {
         res.status(500).json({ error: error?.message || 'Failed to create assistant/vector store' });
