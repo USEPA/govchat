@@ -126,18 +126,18 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
       homeDispatch({ field: 'loading', value: true });
       homeDispatch({ field: 'messageIsStreaming', value: true });
 
-      // If there's a file upload first we need to run a call to get the assistant id and thread id using /api/getids
+      // If there's a file upload first we need to run a call to get the assistant id and vector store id using /api/getids
       if (useAssistant && !selectedConversation.assistantId) {
         const response = await fetch('api/getids', {
           method: 'POST',
           body: ""
         });
-        response.json().then((data) => {
-          if (data.assistantId && data.threadId) {
+        await response.json().then((data) => {
+          if (data.assistantId && data.vectorStoreId) {
             updatedConversation = {
               ...updatedConversation,
               assistantId: data.assistantId,
-              threadId: data.threadId,
+              vectorStoreId: data.vectorStoreId,
             };
             homeDispatch({ field: 'selectedConversation', value: updatedConversation });
           } else {
@@ -152,9 +152,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           uploadFiles.forEach((file) => {
             formData.append('files', file);
           });
-          formData.append('conversationId', updatedConversation.id);
-          formData.append('threadId', updatedConversation.threadId || '');
-          const uploadResponse = await fetch('api/upload', {
+          const uploadResponse =  await fetch(`api/upload?vectorStoreId=${updatedConversation.vectorStoreId || ''}`, {
             method: 'POST',
             body: formData,
           });
@@ -182,7 +180,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         prompt: updatedConversation.prompt,
         temperature: updatedConversation.temperature,
         assistantId: updatedConversation.assistantId || null,
-        threadId: updatedConversation.threadId || null,
+        vectorStoreId: updatedConversation.vectorStoreId || null,
         fileIds: updatedConversation.fileIds || [],
       };
 

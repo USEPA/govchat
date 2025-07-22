@@ -14,7 +14,7 @@ export const config = {
 
 const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
   try {
-    const { model, messages, key, prompt, temperature, assistantId, threadId, fileIds } = req.body as ChatBody;
+    const { model, messages, key, prompt, temperature, assistantId, vectorStoreId, fileIds } = req.body as ChatBody;
     let promptToSend = prompt || DEFAULT_SYSTEM_PROMPT;
     let temperatureToUse = temperature ?? DEFAULT_TEMPERATURE;
     let messagesToSend: Message[] = [];
@@ -37,7 +37,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       messages,
       userName,
       assistantId,
-      threadId,
+      vectorStoreId,
       fileIds
     );
 

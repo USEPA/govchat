@@ -22,12 +22,6 @@ export class OpenAIError extends Error {
   }
 }
 
-interface OpenAIConversation {
-  conversationId: string;
-  assistantId: string;
-  threadId: string;
-  messages: Message[];
-}
 
 export const OpenAIStream = async (
   model: OpenAIModel,
@@ -36,7 +30,7 @@ export const OpenAIStream = async (
   messages: Message[],
   userName: string | null,
   assistantId: string | null = '',
-  threadId: string | null = '',
+  vectorStoreId: string | null = '',
   fileIds: string[] | null = [],
 ) => {
   const openAI = createAzureOpenAI();
@@ -57,7 +51,7 @@ export const OpenAIStream = async (
     temperature = undefined;
   }
   let res: AsyncIterable<any>;
-  if (!fileIds || fileIds.length === 0) {
+  if (!vectorStoreId) {
     res = await openAI.chat.completions.create({
       model: modelId,
       messages: messagesWithPrompt as Array<ChatCompletionMessageParam>,
@@ -65,12 +59,12 @@ export const OpenAIStream = async (
       stream: true
     })
   } else {
-    // Use openAI.beta.threads.createAndRunStream attaching fileIds as file search tool
+    // Use openAI.beta.threads.createAndRunStream attaching vectorStoreId for file search tool
     const assistantMessages: ThreadCreateAndRunParams.Thread.Message[] = messages.map((msg) => ({
       role: msg.role == "user" ? 'user' : 'assistant',
       content: msg.content,
     }));
-    // Create the AssistantStream for file search
+    // Pass vectorStoreId instead of creating a new vector store from fileIds
     res = openAI.beta.threads.createAndRunStream({
       assistant_id: assistantId || '',
       model: modelId,
@@ -80,7 +74,7 @@ export const OpenAIStream = async (
         messages: assistantMessages,
         tool_resources: {
           file_search: {
-            vector_stores: [{ file_ids: fileIds }]
+            vector_store_ids: [vectorStoreId]
           }
         }
       }

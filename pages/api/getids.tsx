@@ -20,9 +20,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             instructions: DEFAULT_SYSTEM_PROMPT,
             tools: [{ type: "file_search" }]
         });
-        const thread = await openAI.beta.threads.create();
-        res.status(200).json({ assistantId: assistant.id, threadId: thread.id });
+        // Create vector store with required body arguments
+        const vectorStore = await openAI.beta.vectorStores.create({});
+        res.status(200).json({ assistantId: assistant.id, vectorStoreId: vectorStore.id });
     } catch (error: any) {
-        res.status(500).json({ error: error?.message || 'Failed to create assistant/thread' });
+        res.status(500).json({ error: error?.message || 'Failed to create assistant/vector store' });
     }
 }

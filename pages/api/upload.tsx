@@ -17,26 +17,37 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     }
     const openAI = createAzureOpenAI();
 
+    const vectorStoreId = typeof req.query.vectorStoreId === 'string' ? req.query.vectorStoreId : undefined;
+
     try {
         const bb = busboy({ headers: req.headers });
         const uploadPromises: Promise<any>[] = [];
 
         bb.on('file', (fieldname, file, filename) => {
+            // Randomuuid is used to prevent directory traversal attacks
             const tmpPath = path.join(os.tmpdir(), `${randomUUID()}.tmp`);
             const writeStream = fs.createWriteStream(tmpPath);
 
             file.pipe(writeStream);
 
-            const uploadPromise = new Promise((resolve, reject) => {
+            const uploadPromise = new Promise(async (resolve, reject) => {
                 writeStream.on('finish', async () => {
                     try {
                         const fileStream = fs.createReadStream(tmpPath);
-                        // Attach the original filename for OpenAI, do not overwrite .path
+                        // Monkey patch in the filename for metadata, do not overwrite .path
                         (fileStream as any).name = filename.filename;
                         const result = await openAI.files.create({
                             purpose: 'assistants',
                             file: fileStream,
                         });
+
+                        if (vectorStoreId) {
+                            await openAI.beta.vectorStores.files.create(
+                                vectorStoreId,
+                                { file_id: result.id }
+                            );
+                        }
+
                         fs.unlink(tmpPath, () => { });
                         resolve(result);
                     } catch (error: any) {
@@ -46,7 +57,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
                 });
                 writeStream.on('error', reject);
             });
-            
+
             uploadPromises.push(uploadPromise);
         });
 
