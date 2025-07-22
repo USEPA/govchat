@@ -1,7 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { randomUUID } from 'crypto';
-
-// Import your OpenAI client and constants
 import { DEFAULT_MODEL, DEFAULT_SYSTEM_PROMPT } from '@/utils/app/const';
 import { createAzureOpenAI } from '@/utils/lib/azure';
 
@@ -13,11 +10,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const openAI = createAzureOpenAI();
 
     try {
-        // Create assistant if not present
         const assistant = await openAI.beta.assistants.create({
-            model: DEFAULT_MODEL,
-            name: "GovChat Assistant " + randomUUID(),
-            instructions: DEFAULT_SYSTEM_PROMPT,
+            model: DEFAULT_MODEL, // The model can be overwritten by the thread
             tools: [{ type: "file_search" }]
         });
         const vectorStore = await openAI.beta.vectorStores.create({
