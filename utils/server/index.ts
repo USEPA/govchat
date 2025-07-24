@@ -22,6 +22,38 @@ export class OpenAIError extends Error {
   }
 }
 
+function replaceCitations(text: string, annotations?: any[], fileIdNameMap?: Record<string, string>): string {
+  if (!annotations || annotations.length === 0 || !fileIdNameMap) return text;
+  let result = text;
+  for (const ann of annotations) {
+    if (ann.type === 'file_citation' && ann.file_citation?.file_id) {
+      const citationRegex = /【*†(.+?)】/g;
+      result = result.replace(citationRegex, (match, filename) => {
+        const fileId = ann.file_citation.file_id;
+        const realFilename = fileIdNameMap[fileId] || filename;
+        return match.replace(filename, realFilename);
+      });
+    }
+  }
+  return result;
+}
+
+async function getFileIdNameMap(openAI: any, vectorStoreId: string): Promise<Record<string, string>> {
+  const fileIdNameMap: Record<string, string> = {};
+  const fileList = await openAI.beta.vectorStores.files.list(vectorStoreId);
+  if (fileList?.data && Array.isArray(fileList.data)) {
+    for (const fileObj of fileList.data) {
+      if (fileObj.id) {
+        const fileMeta = await openAI.files.retrieve(fileObj.id);
+        if (fileMeta?.id && fileMeta?.filename) {
+          fileIdNameMap[fileMeta.id] = fileMeta.filename;
+        }
+      }
+    }
+  }
+  return fileIdNameMap;
+}
+
 
 export const OpenAIStream = async (
   model: OpenAIModel,
@@ -51,6 +83,7 @@ export const OpenAIStream = async (
     temperature = undefined;
   }
   let res: AsyncIterable<any>;
+  let fileIdNameMap: Record<string, string> | undefined;
   if (!vectorStoreId) {
     res = await openAI.chat.completions.create({
       model: modelId,
@@ -59,6 +92,7 @@ export const OpenAIStream = async (
       stream: true
     })
   } else {
+    fileIdNameMap = await getFileIdNameMap(openAI, vectorStoreId);
     // Use openAI.beta.threads.createAndRunStream attaching vectorStoreId for file search tool
     const assistantMessages: ThreadCreateAndRunParams.Thread.Message[] = messages.map((msg) => ({
       role: msg.role == "user" ? 'user' : 'assistant',
@@ -96,6 +130,9 @@ export const OpenAIStream = async (
             ? chunk.data.delta.content.find((c: any) => c.type === 'text' && c.text?.value)
             : undefined;
           text = textBlock?.text?.value;
+          if (text && textBlock?.text?.annotations) {
+            text = replaceCitations(text, textBlock.text.annotations, fileIdNameMap);
+          }
         }
         if (text) {
           loggingObjectTempResult.push(text);
