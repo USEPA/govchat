@@ -91,6 +91,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [showScrollDownButton, setShowScrollDownButton] =
     useState<boolean>(false);
+  const [filesLeftToUpload, setFilesLeftToUpload] = useState<number>(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -147,6 +148,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
       }
       // then we need to upload all the files to /api/upload
       if(isNewUploadFiles) {
+          setFilesLeftToUpload(1);
           // Use multipart/form-data to upload files
           const formData = new FormData();
           uploadFiles.forEach((file) => {
@@ -156,6 +158,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             method: 'POST',
             body: formData,
           });
+          setFilesLeftToUpload(0);
           if (!uploadResponse.ok) {
             return showError('Failed to upload files', homeDispatch);
           } else {
@@ -578,6 +581,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
               }
             }}
             showScrollDownButton={showScrollDownButton}
+            filesLeftToUpload={filesLeftToUpload}
           />
         </>
       )}

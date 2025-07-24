@@ -55,6 +55,7 @@ export const FileUploadListing = ({
   uploadFiles,
   setUploadFiles,
   onCancelUpload,
+  filesLeftToUpload,
 }: Props) => {
 
 
@@ -63,7 +64,16 @@ export const FileUploadListing = ({
     onCancelUpload();
   }
 
-  if (uploadFiles.length > 0) {
+  if (filesLeftToUpload) {
+    return (
+<div className="w-full bg-blue-100 p-3 border-b border-blue-300">
+  <span className="text-blue-800 font-medium">
+    Uploading Files...
+  </span>
+</div>
+
+    )
+  } else if (uploadFiles.length > 0) {
     return (
       <div className="w-full bg-gray-100 p-3 border-b">
         <span className="text-gray-800">
