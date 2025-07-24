@@ -104,3 +104,11 @@ pre:has(div.codeblock) {
   position: absolute;
   cursor: pointer;
 }
+
+.reference {
+  font-size: 0.7em;
+  vertical-align: super;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  padding-left: 5px
+}

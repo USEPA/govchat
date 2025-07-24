@@ -23,6 +23,7 @@ import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
 import rehypeMathjax from 'rehype-mathjax';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
+import { rehypeReference } from '../Markdown/ReHypeReference';
 
 export interface Props {
   message: Message;
@@ -228,7 +229,7 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex, onEdit }) =
               <MemoizedReactMarkdown
                 className="prose dark:prose-invert flex-1"
                 remarkPlugins={[remarkGfm, remarkMath]}
-                rehypePlugins={[rehypeMathjax]}
+                rehypePlugins={[rehypeMathjax, rehypeReference]}
                 components={{
                   code({ node, inline, className, children, ...props }) {
                     if (children.length) {
