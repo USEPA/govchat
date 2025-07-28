@@ -10,6 +10,7 @@ interface Props {
   uploadFiles: File[];
   setUploadFiles: (files: File[]) => void;
   onCancelUpload: () => void;
+  filesLeftToUpload?: number;
 }
 
 export const FileUploadButton = ({
