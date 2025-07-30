@@ -46,7 +46,7 @@ interface Props {
 const showError = (errorMessage: string, dispatch: Dispatch<ActionType<HomeInitialState>>) => {
   dispatch({ field: 'loading', value: false });
   dispatch({ field: 'messageIsStreaming', value: false });
-  toast.error(errorMessage);
+  toast.error(errorMessage, {duration: 10000});
 }
 
 function insertMessageBeforeLast(
@@ -160,7 +160,12 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           });
           setFilesLeftToUpload(0);
           if (!uploadResponse.ok) {
-            return showError('Failed to upload files', homeDispatch);
+            try {
+              const errorMessage = (await uploadResponse.json()).error;
+              return showError(`Failed to upload files: ${errorMessage}`, homeDispatch);
+            } catch (e) {
+              return showError("Failed to upload files", homeDispatch);
+            }
           } else {
             const newFileIds = await uploadResponse.json();
             updatedConversation.fileIds = [
