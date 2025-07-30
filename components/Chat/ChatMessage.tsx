@@ -2,6 +2,7 @@ import {
   IconCheck,
   IconCopy,
   IconEdit,
+  IconFileStack,
   IconPaperclip,
   IconRobot,
   IconTrash,
@@ -24,6 +25,7 @@ import rehypeMathjax from 'rehype-mathjax';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import { rehypeReference } from '../Markdown/ReHypeReference';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface Props {
   message: Message;
@@ -49,6 +51,33 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex, onEdit }) =
   const toggleEditing = () => {
     setIsEditing(!isEditing);
   };
+
+  const newThreadWithFiles = () => {
+    const fileNotice = '*You can refer to these messages at any time in your conversation*.'
+    if (!selectedConversation) return;
+    let fileMessageMessage: string = selectedConversation.messages.filter(
+      (msg) => msg.role === 'fileUpload'
+    ).reduce((acc, msg) => {return acc + msg.content + "\n\n";}, "");
+    fileMessageMessage = fileMessageMessage.replaceAll(fileNotice, '') + fileNotice;
+    fileMessageMessage = fileMessageMessage + 
+    "\n\n*Note that this conversation shares its file storage with the original conversation, so uploading more files here may impact other conversations.*";
+
+    const newConversation = {
+      ...selectedConversation,
+      id: uuidv4(),
+      name: selectedConversation.name + ' (Files)',
+      messages: [
+        {
+          role: 'fileUpload',
+          content: fileMessageMessage,
+          timestamp: makeTimestamp()
+        },
+      ],
+    };
+    const updatedConversations = [newConversation, ...conversations];
+    homeDispatch({ field: 'selectedConversation', value: newConversation });
+    homeDispatch({ field: 'conversations', value: updatedConversations });
+  }
 
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessageContent(event.target.value);
@@ -284,6 +313,16 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex, onEdit }) =
               </MemoizedReactMarkdown>
 
               <div className="md:-mr-8 ml-1 md:ml-0 flex flex-col md:flex-row gap-4 md:gap-1 items-center md:items-start justify-end md:justify-start">
+                {message.role === 'fileUpload' && (
+                  <button
+                    className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                    onClick={newThreadWithFiles}
+                    title="Make a new conversation with all files in this conversation"
+                    aria-label='New Thread With These Files'
+                  >
+                    <IconFileStack size={20} />
+                  </button>
+                )}
                 {messagedCopied ? (
                   <IconCheck
                     size={20}
