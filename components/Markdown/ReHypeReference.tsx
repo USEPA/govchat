@@ -20,7 +20,7 @@ export function rehypeReference() {
             let cleanText = matches[i].slice(1, -1);
 
             // Reformat citations like 5:0†b.pdf to b.pdf:0
-            cleanText = cleanText.replace(/(\d+)(?::(\d+))?†([^\s]+)/g, (_m: string, _a: string, page: string, file: string) => {
+            cleanText = cleanText.replace(/(\d+)(?::(\d+))?†(.+)/g, (_m: string, _a: string, page: string, file: string) => {
                 return page ? `${file}:${page}` : `${file}`;
             });
 
