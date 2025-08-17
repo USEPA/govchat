@@ -22,6 +22,7 @@
     "date-fns": "^4.1.0",
     "debug": "^4.4.1",
     "eventsource-parser": "^0.1.0",
+    "form-data": "^4.0.4",
     "i18next": "^22.4.13",
     "next": "14.2.10",
     "next-i18next": "^13.2.2",
