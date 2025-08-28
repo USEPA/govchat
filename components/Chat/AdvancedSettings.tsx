@@ -1,14 +1,9 @@
 import { useState, FC } from 'react';
-import { TemperatureSlider } from './Temperature';
 import { SystemPrompt } from './SystemPrompt';
 import { Conversation } from '@/types/chat';
 import { KeyValuePair } from '@/types/data';
 import { Prompt } from '@/types/prompt';
 import { ModelSelect } from './ModelSelect';
-
-const SUPPORTS_TEMPERATURE = [
-  "GPT-4"
-]
 
 interface Props {
     selectedConversation: Conversation,
@@ -61,17 +56,6 @@ export const AdvancedSettings: FC<Props> = ({ selectedConversation, prompts, han
                 value: prompt,
               })
             }
-          />
-          {/* TemperatureSlider component */}
-          <TemperatureSlider
-            label={t('Temperature')}
-            onChangeTemperature={(temperature) =>
-              handleUpdateConversation(selectedConversation, {
-                key: 'temperature',
-                value: temperature,
-              })
-            }
-            disabled={!SUPPORTS_TEMPERATURE.includes(selectedConversation?.model.name || '')}
           />
         </div>
       )}
