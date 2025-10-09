@@ -76,7 +76,7 @@ export const OpenAIStream = async (
     ...messages,
   ];
 
-  if (modelId == "o3-mini" || modelId == "o1") {
+  if (modelId == "o3-mini" || modelId == "o1" || modelId == "gpt-5") {
     temperature = undefined;
   }
   let res: AsyncIterable<any>;

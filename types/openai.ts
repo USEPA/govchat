@@ -9,7 +9,7 @@ export interface OpenAIModel {
 }
 
 export enum OpenAIModelID {
-  GPT_5 = 'gpt5'
+  GPT_5 = 'gpt-5'
 }
 
 // in case the `DEFAULT_MODEL` environment variable is not set or set to an unsupported model
