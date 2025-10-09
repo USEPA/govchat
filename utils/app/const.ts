@@ -22,7 +22,7 @@ export const OPENAI_ORGANIZATION =
 export const AZURE_DEPLOYMENT_ID =
   process.env.AZURE_DEPLOYMENT_ID || '';
 
-export const DEFAULT_MODEL = process.env.DEFAULT_MODEL || 'gpt5';
+export const DEFAULT_MODEL = process.env.DEFAULT_MODEL || 'gpt-5';
 
 export const AZURE_SUBSCRIPTION_ID = process.env.AZURE_SUBSCRIPTION_ID || '';
 
