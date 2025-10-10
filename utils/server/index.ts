@@ -67,6 +67,9 @@ export const OpenAIStream = async (
 ) => {
   const openAI = createAzureOpenAI();
   var modelId: string = model.id as string;
+  if (modelId === "gpt-4") {
+    modelId = "gpt-4o";
+  }
 
   const messagesWithPrompt = [
     {
