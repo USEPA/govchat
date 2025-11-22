@@ -3,6 +3,7 @@ import { OpenAIModel } from '@/types/openai';
 
 import { createAzureOpenAI } from '../lib/azure';
 import { printLogLines } from '../lib/printLogLines';
+import { decryptVectorStoreJWE } from '../lib/decryptJWE';
 
 import { ChatCompletionCreateParams, ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import { ThreadCreateAndRunParams } from 'openai/resources/beta/threads/threads';
@@ -63,8 +64,9 @@ export const OpenAIStream = async (
   userName: string | null,
   assistantId: string | null = '',
   vectorStoreId: string | null = '',
+  vectorStoreJWE: string | null = '',
   fileIds: string[] | null = [],
-) => {
+): Promise<ReadableStream<Uint8Array>> => {
   const openAI = createAzureOpenAI();
   var modelId: string = model.id as string;
   if (modelId === "gpt-4") {
@@ -84,7 +86,7 @@ export const OpenAIStream = async (
   }
   let res: AsyncIterable<any>;
   let fileIdNameMap: Record<string, string> | undefined;
-  if (!vectorStoreId) {
+  if (!vectorStoreId && !vectorStoreJWE) {
     res = await openAI.chat.completions.create({
       model: modelId,
       messages: messagesWithPrompt as Array<ChatCompletionMessageParam>,
@@ -92,6 +94,15 @@ export const OpenAIStream = async (
       stream: true
     })
   } else {
+    if (vectorStoreJWE) {
+      const { vectorStoreId: decryptedVectorStoreId, assistantId: decryptedAssistantId } =
+        await decryptVectorStoreJWE(vectorStoreJWE, userName);
+      vectorStoreId = decryptedVectorStoreId;
+      assistantId = decryptedAssistantId;
+    }
+    if (vectorStoreId == null) {
+      throw new Error('Vector Store ID is required when using vector store features.');
+    }
     fileIdNameMap = await getFileIdNameMap(openAI, vectorStoreId);
     // Use openAI.beta.threads.createAndRunStream attaching vectorStoreId for file search tool
     const assistantMessages: ThreadCreateAndRunParams.Thread.Message[] = messages.map((msg) => ({

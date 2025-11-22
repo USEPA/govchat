@@ -134,11 +134,10 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           body: ""
         });
         await response.json().then((data) => {
-          if (data.assistantId && data.vectorStoreId) {
+          if (data.vectorStoreJWE) {
             updatedConversation = {
               ...updatedConversation,
-              assistantId: data.assistantId,
-              vectorStoreId: data.vectorStoreId,
+              vectorStoreJWE: data.vectorStoreJWE
             };
             homeDispatch({ field: 'selectedConversation', value: updatedConversation });
           } else {
@@ -154,7 +153,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           uploadFiles.forEach((file) => {
             formData.append('files', file);
           });
-          const uploadResponse =  await fetch(`api/upload?vectorStoreId=${updatedConversation.vectorStoreId || ''}`, {
+          const uploadResponse =  await fetch(`api/upload?vectorStoreId=${updatedConversation.vectorStoreId || ''}&vectorStoreJWE=${updatedConversation.vectorStoreJWE || ''}`, {
             method: 'POST',
             body: formData,
           });
@@ -189,6 +188,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         temperature: updatedConversation.temperature,
         assistantId: updatedConversation.assistantId || null,
         vectorStoreId: updatedConversation.vectorStoreId || null,
+        vectorStoreJWE: updatedConversation.vectorStoreJWE || null,
         fileIds: updatedConversation.fileIds || [],
       };
 
