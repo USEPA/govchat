@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		const userName = req.headers['x-ms-client-principal-name']?.toString() || '';
 		const valuesToStore = { assistantId: assistant.id, vectorStoreId: vectorStore.id, userName: userName };
 
-		const secret = (process.env.VECTOR_STORE_JWT_SECRET || process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || process.env.AZURE_CLIENT_SECRET || '').slice(0, 32);
+		const secret = (process.env.AUTH_SECRET || '').slice(0, 32);
 		if (!secret) {
 			res.status(500).json({ error: 'Server configuration error' });
 			return;

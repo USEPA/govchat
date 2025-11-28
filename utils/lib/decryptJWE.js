@@ -3,7 +3,7 @@ import { createSecretKey } from 'crypto';
 
 
 export async function decryptVectorStoreJWE(vectorStoreJWE, requestUser) {
-    const secret = (process.env.VECTOR_STORE_JWT_SECRET || process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || process.env.AZURE_CLIENT_SECRET || '').slice(0, 32);
+    const secret = (process.env.AUTH_SECRET || '').slice(0, 32);
     if (!secret) {
         throw new Error('Server configuration error');
     }
