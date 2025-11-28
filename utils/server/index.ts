@@ -24,16 +24,28 @@ export class OpenAIError extends Error {
 }
 
 function replaceCitations(text: string, annotations?: any[], fileIdNameMap?: Record<string, string>): string {
-  if (!annotations || annotations.length === 0 || !fileIdNameMap) return text;
+  //TODO: Support "fileciteturn0file12" turn0file19
+  if (!fileIdNameMap) return text;
+  if ((!annotations || annotations.length === 0) && text.indexOf("") == -1) return text;
   let result = text;
-  for (const ann of annotations) {
-    if (ann.type === 'file_citation' && ann.file_citation?.file_id) {
-      const citationRegex = /【*†(.+?)】/g;
-      result = result.replace(citationRegex, (match, filename) => {
-        const fileId = ann.file_citation.file_id;
-        const realFilename = fileIdNameMap[fileId] || filename;
-        return match.replace(filename, realFilename);
-      });
+  if (text.indexOf("") != -1) {
+    const fileCiteRegex = /?(?:filecite)?turn(\d+)file(\d+)/g;
+    result = result.replace(fileCiteRegex, (match, p1, p2) => {
+      const fileId = Number(p1);
+      const realFilename = Object.values(fileIdNameMap)[fileId] || fileId;
+      return "【5:" + p2 + "†" + realFilename + "】";
+    });
+  }
+  if (annotations) {
+    for (const ann of annotations) {
+      if (ann.type === 'file_citation' && ann.file_citation?.file_id) {
+        const citationRegex = /【*†(.+?)】/g;
+        result = result.replace(citationRegex, (match, filename) => {
+          const fileId = ann.file_citation.file_id;
+          const realFilename = fileIdNameMap[fileId] || filename;
+          return match.replace(filename, realFilename);
+        });
+      }
     }
   }
   return result;
@@ -141,9 +153,7 @@ export const OpenAIStream = async (
             ? chunk.data.delta.content.find((c: any) => c.type === 'text' && c.text?.value)
             : undefined;
           text = textBlock?.text?.value;
-          if (text && textBlock?.text?.annotations) {
-            text = replaceCitations(text, textBlock.text.annotations, fileIdNameMap);
-          }
+          text = replaceCitations(text || '', textBlock?.text?.annotations, fileIdNameMap);
         }
         if (text) {
           loggingObjectTempResult.push(text);
