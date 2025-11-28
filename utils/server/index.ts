@@ -78,7 +78,7 @@ export const OpenAIStream = async (
       role: 'system',
       content: systemPrompt,
     },
-    ...messages,
+    ...messages.map(m => m.role === 'fileUpload' ? { ...m, role: 'system' } : m),
   ];
 
   if (modelId == "o3-mini" || modelId == "o1" || modelId == "gpt-5") {
