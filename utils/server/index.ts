@@ -3,6 +3,7 @@ import { OpenAIModel } from '@/types/openai';
 
 import { createAzureOpenAI } from '../lib/azure';
 import { printLogLines } from '../lib/printLogLines';
+import { decryptVectorStoreJWE } from '../lib/decryptJWE';
 
 import { ChatCompletionCreateParams, ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import { ThreadCreateAndRunParams } from 'openai/resources/beta/threads/threads';
@@ -23,16 +24,29 @@ export class OpenAIError extends Error {
 }
 
 function replaceCitations(text: string, annotations?: any[], fileIdNameMap?: Record<string, string>): string {
-  if (!annotations || annotations.length === 0 || !fileIdNameMap) return text;
+  //Support "fileciteturn0file12" style citations in GPT-5
+  if (!fileIdNameMap) return text;
+  if ((!annotations || annotations.length === 0) && text.indexOf("") == -1) return text;
   let result = text;
-  for (const ann of annotations) {
-    if (ann.type === 'file_citation' && ann.file_citation?.file_id) {
-      const citationRegex = /【*†(.+?)】/g;
-      result = result.replace(citationRegex, (match, filename) => {
-        const fileId = ann.file_citation.file_id;
-        const realFilename = fileIdNameMap[fileId] || filename;
-        return match.replace(filename, realFilename);
-      });
+  let loopBreaker = 10; // Prevent infinite loops
+  while (/[\uE200-\uE210]/u.test(result) && --loopBreaker > 0) {
+    const fileCiteRegex = /[\uE200-\uE210]?(?:filecite[\uE200-\uE210])?turn(\d+)file(\d+)[\uE200-\uE210]/gu;
+    result = result.replace(fileCiteRegex, (match, p1, p2) => {
+      const fileId = Number(p1);
+      const realFilename = Object.values(fileIdNameMap)[fileId] || fileId;
+      return "【5:" + p2 + "†" + realFilename + "】";
+    });
+  }
+  if (annotations) {
+    for (const ann of annotations) {
+      if (ann.type === 'file_citation' && ann.file_citation?.file_id) {
+        const citationRegex = /【*†(.+?)】/g;
+        result = result.replace(citationRegex, (match, filename) => {
+          const fileId = ann.file_citation.file_id;
+          const realFilename = fileIdNameMap[fileId] || filename;
+          return match.replace(filename, realFilename);
+        });
+      }
     }
   }
   return result;
@@ -63,8 +77,9 @@ export const OpenAIStream = async (
   userName: string | null,
   assistantId: string | null = '',
   vectorStoreId: string | null = '',
+  vectorStoreJWE: string | null = '',
   fileIds: string[] | null = [],
-) => {
+): Promise<ReadableStream<Uint8Array>> => {
   const openAI = createAzureOpenAI();
   var modelId: string = model.id as string;
   if (modelId === "gpt-4") {
@@ -76,7 +91,7 @@ export const OpenAIStream = async (
       role: 'system',
       content: systemPrompt,
     },
-    ...messages,
+    ...messages.map(m => m.role === 'fileUpload' ? { ...m, role: 'system' } : m),
   ];
 
   if (modelId == "o3-mini" || modelId == "o1" || modelId == "gpt-5") {
@@ -84,7 +99,7 @@ export const OpenAIStream = async (
   }
   let res: AsyncIterable<any>;
   let fileIdNameMap: Record<string, string> | undefined;
-  if (!vectorStoreId) {
+  if (!vectorStoreId && !vectorStoreJWE) {
     res = await openAI.chat.completions.create({
       model: modelId,
       messages: messagesWithPrompt as Array<ChatCompletionMessageParam>,
@@ -92,6 +107,15 @@ export const OpenAIStream = async (
       stream: true
     })
   } else {
+    if (vectorStoreJWE) {
+      const { vectorStoreId: decryptedVectorStoreId, assistantId: decryptedAssistantId } =
+        await decryptVectorStoreJWE(vectorStoreJWE, userName);
+      vectorStoreId = decryptedVectorStoreId;
+      assistantId = decryptedAssistantId;
+    }
+    if (vectorStoreId == null) {
+      throw new Error('Vector Store ID is required when using vector store features.');
+    }
     fileIdNameMap = await getFileIdNameMap(openAI, vectorStoreId);
     // Use openAI.beta.threads.createAndRunStream attaching vectorStoreId for file search tool
     const assistantMessages: ThreadCreateAndRunParams.Thread.Message[] = messages.map((msg) => ({
@@ -119,6 +143,8 @@ export const OpenAIStream = async (
 
   const stream = new ReadableStream({
     async start(controller) {
+      let partialCitationText =  "";
+      let partialCitationCounter = 0;
       for await (const chunk of res) {
         let text: string | undefined;
         if (chunk.choices?.[0]?.delta?.content) {
@@ -130,9 +156,21 @@ export const OpenAIStream = async (
             ? chunk.data.delta.content.find((c: any) => c.type === 'text' && c.text?.value)
             : undefined;
           text = textBlock?.text?.value;
-          if (text && textBlock?.text?.annotations) {
-            text = replaceCitations(text, textBlock.text.annotations, fileIdNameMap);
+          // Start citation vacuuming
+          if (text?.indexOf("") != -1) {
+            partialCitationText += text;
+            partialCitationCounter = 50;
+            continue;
           }
+          if (--partialCitationCounter > 0) {
+            partialCitationText += text;
+            continue;
+          } else if (partialCitationText.length > 0) {
+            text = partialCitationText + text;
+            partialCitationText = "";
+          }
+          // End citation vacuuming
+          text = replaceCitations(text || '', textBlock?.text?.annotations, fileIdNameMap);
         }
         if (text) {
           loggingObjectTempResult.push(text);

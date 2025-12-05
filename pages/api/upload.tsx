@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createAzureOpenAI } from '@/utils/lib/azure';
+import { decryptVectorStoreJWE } from '@/utils/lib/decryptJWE';
 import busboy from 'busboy';
 import fs from 'fs';
 import os from 'os';
@@ -17,7 +18,11 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     }
     const openAI = createAzureOpenAI();
 
-    const vectorStoreId = typeof req.query.vectorStoreId === 'string' ? req.query.vectorStoreId : undefined;
+    let vectorStoreId = typeof req.query.vectorStoreId === 'string' ? req.query.vectorStoreId : undefined;
+    const vectorStoreJWE = typeof req.query.vectorStoreJWE === 'string' ? req.query.vectorStoreJWE : undefined;
+    if (vectorStoreJWE) {
+        vectorStoreId = (await decryptVectorStoreJWE(vectorStoreJWE, req.headers['x-ms-client-principal-name']?.toString() || '')).vectorStoreId;
+    }
 
     try {
         const bb = busboy({ headers: req.headers });

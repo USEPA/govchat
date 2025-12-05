@@ -18,6 +18,7 @@ export interface ChatBody {
   temperature: number;
   assistantId?: string | null;
   vectorStoreId?: string | null;
+  vectorStoreJWE?: string | null;
   fileIds?: string[] | null;
 }
 
@@ -33,5 +34,6 @@ export interface Conversation {
   characterLength: number;
   assistantId?: string | null;
   vectorStoreId?: string | null;
+  vectorStoreJWE?: string | null;
   fileIds?: string[] | null;
 }

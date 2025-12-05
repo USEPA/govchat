@@ -14,7 +14,7 @@ export const config = {
 
 const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
   try {
-    const { model, messages, key, prompt, temperature, assistantId, vectorStoreId, fileIds } = req.body as ChatBody;
+    const { model, messages, key, prompt, temperature, assistantId, vectorStoreId, vectorStoreJWE, fileIds } = req.body as ChatBody;
     let promptToSend = prompt || DEFAULT_SYSTEM_PROMPT;
     let temperatureToUse = temperature ?? DEFAULT_TEMPERATURE;
     let messagesToSend: Message[] = [];
@@ -38,6 +38,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       userName,
       assistantId,
       vectorStoreId,
+      vectorStoreJWE,
       fileIds
     );
 
@@ -47,7 +48,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
     res.flushHeaders();
 
 
-    if (!stream) {
+    if (stream == null) {
       res.status(500).send('Failed to create OpenAI stream');
       return;
     }
