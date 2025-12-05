@@ -24,12 +24,13 @@ export class OpenAIError extends Error {
 }
 
 function replaceCitations(text: string, annotations?: any[], fileIdNameMap?: Record<string, string>): string {
-  //TODO: Support "fileciteturn0file12" turn0file19
+  //Support "fileciteturn0file12" style citations in GPT-5
   if (!fileIdNameMap) return text;
   if ((!annotations || annotations.length === 0) && text.indexOf("") == -1) return text;
   let result = text;
-  if (text.indexOf("") != -1) {
-    const fileCiteRegex = /?(?:filecite)?turn(\d+)file(\d+)/g;
+  let loopBreaker = 10; // Prevent infinite loops
+  while (/[\uE200-\uE210]/u.test(result) && --loopBreaker > 0) {
+    const fileCiteRegex = /[\uE200-\uE210]?(?:filecite[\uE200-\uE210])?turn(\d+)file(\d+)[\uE200-\uE210]/gu;
     result = result.replace(fileCiteRegex, (match, p1, p2) => {
       const fileId = Number(p1);
       const realFilename = Object.values(fileIdNameMap)[fileId] || fileId;
@@ -142,6 +143,8 @@ export const OpenAIStream = async (
 
   const stream = new ReadableStream({
     async start(controller) {
+      let partialCitationText =  "";
+      let partialCitationCounter = 0;
       for await (const chunk of res) {
         let text: string | undefined;
         if (chunk.choices?.[0]?.delta?.content) {
@@ -153,6 +156,20 @@ export const OpenAIStream = async (
             ? chunk.data.delta.content.find((c: any) => c.type === 'text' && c.text?.value)
             : undefined;
           text = textBlock?.text?.value;
+          // Start citation vacuuming
+          if (text?.indexOf("") != -1) {
+            partialCitationText += text;
+            partialCitationCounter = 50;
+            continue;
+          }
+          if (--partialCitationCounter > 0) {
+            partialCitationText += text;
+            continue;
+          } else if (partialCitationText.length > 0) {
+            text = partialCitationText + text;
+            partialCitationText = "";
+          }
+          // End citation vacuuming
           text = replaceCitations(text || '', textBlock?.text?.annotations, fileIdNameMap);
         }
         if (text) {
