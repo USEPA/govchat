@@ -98,7 +98,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = useCallback(
-    async (message: Message, deleteCount = 0, uploadFiles: File[] | null = null) => {
+    async (message: Message, deleteCount = 0, uploadFiles: File[] | null = null, useGrounding: boolean = false) => {
       if (!selectedConversation) {
         return;
       }
@@ -128,7 +128,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
       homeDispatch({ field: 'messageIsStreaming', value: true });
 
       // If there's a file upload first we need to run a call to get the assistant id and vector store id using /api/getids
-      if (useAssistant && !selectedConversation.assistantId) {
+      if (useAssistant && !selectedConversation.vectorStoreJWE) {
         const response = await fetch('api/getids', {
           method: 'POST',
           body: ""
@@ -153,7 +153,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           uploadFiles.forEach((file) => {
             formData.append('files', file);
           });
-          const uploadResponse =  await fetch(`api/upload?vectorStoreId=${updatedConversation.vectorStoreId || ''}&vectorStoreJWE=${updatedConversation.vectorStoreJWE || ''}`, {
+          const uploadResponse =  await fetch(`api/upload?vectorStoreJWE=${updatedConversation.vectorStoreJWE || ''}`, {
             method: 'POST',
             body: formData,
           });
@@ -181,15 +181,10 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
       }
 
       const chatBody: ChatBody = {
-        model: updatedConversation.model,
-        messages: updatedConversation.messages.map(({ role, content, timestamp }) => ({ role, content, timestamp })),
         key: apiKey,
         prompt: updatedConversation.prompt,
-        temperature: updatedConversation.temperature,
-        assistantId: updatedConversation.assistantId || null,
-        vectorStoreId: updatedConversation.vectorStoreId || null,
-        vectorStoreJWE: updatedConversation.vectorStoreJWE || null,
-        fileIds: updatedConversation.fileIds || [],
+        conversation: updatedConversation,
+        useGrounding
       };
 
       const controller = new AbortController();
@@ -238,7 +233,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           isFirst = false;
           const updatedMessages: Message[] = [
             ...updatedConversation.messages,
-            { role: 'assistant', content: chunkValue, timestamp: makeTimestamp() },
+            { role: 'assistant', content: chunkValue, timestamp: makeTimestamp(), useGrounding },
           ];
           updatedConversation = {
             ...updatedConversation,
@@ -269,6 +264,28 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           });
         }
       }
+
+      if (useGrounding) {
+        const updatedMessages: Message[] =
+          updatedConversation.messages.map((message, index) => {
+            if (index === updatedConversation.messages.length - 1) {
+              return {
+                ...message,
+                content: `${message.content}\n\n_This response was generated using web grounding_.`,
+              };
+            }
+            return message;
+          });
+        updatedConversation = {
+          ...updatedConversation,
+          messages: updatedMessages,
+        };
+        homeDispatch({
+          field: 'selectedConversation',
+          value: updatedConversation,
+        });
+      }
+
       saveConversation(updatedConversation);
       const updatedConversations: Conversation[] = conversations.map(
         (conversation) => {
@@ -551,6 +568,8 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                       handleSend(
                         editedMessage,
                         selectedConversation?.messages.length - index,
+                        [],
+                        editedMessage.useGrounding
                       );
                     }}
                   />
@@ -569,15 +588,15 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           <ChatInput
             stopConversationRef={stopConversationRef}
             textareaRef={textareaRef}
-            onSend={(message, uploadFiles) => {
+            onSend={(message, uploadFiles, useGrounding) => {
               setCurrentMessage(message);
-              handleSend(message, 0, uploadFiles);
+              handleSend(message, 0, uploadFiles, useGrounding);
               sendGTMEvent({ event: 'messageSent', messageLength: message.content.length });
             }}
             onScrollDownClick={handleScrollDown}
-            onRegenerate={() => {
+            onRegenerate={(useGrounding) => {
               if (currentMessage) {
-                handleSend(currentMessage, 2);
+                handleSend(currentMessage, 2, [], useGrounding);
               }
             }}
             showScrollDownButton={showScrollDownButton}

@@ -2,6 +2,7 @@ import {
   IconCheck,
   IconCopy,
   IconEdit,
+  IconExternalLink,
   IconFileStack,
   IconPaperclip,
   IconRobot,
@@ -305,6 +306,9 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex, onEdit }) =
                       </td>
                     );
                   },
+                  a({ children, href }) {
+                    return <a href={href} target="_blank" className="inline-flex">{children} <IconExternalLink size={20} /></a>
+                  }
                 }}
               >
                 {`${message.content}${
@@ -312,7 +316,7 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex, onEdit }) =
                 }`}
               </MemoizedReactMarkdown>
 
-              <div className="md:-mr-8 ml-1 md:ml-0 flex flex-col md:flex-row gap-4 md:gap-1 items-center md:items-start justify-end md:justify-start">
+              <div className="md:-mr-8 md:ml-1 flex flex-col md:flex-row gap-4 md:gap-1 items-center md:items-start justify-end md:justify-start">
                 {message.role === 'fileUpload' && (
                   <button
                     className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
