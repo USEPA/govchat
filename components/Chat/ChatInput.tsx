@@ -76,6 +76,10 @@ export const ChatInput = ({
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [useGrounding, setUseGrounding] = useState<boolean>(false);
 
+  useEffect(() => {
+    setUseGrounding(false);
+  }, [selectedConversation?.id]);
+
   const filteredPrompts = prompts.filter((prompt) =>
     prompt.name.toLowerCase().includes(promptInputValue.toLowerCase()),
   );
