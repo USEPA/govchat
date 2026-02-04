@@ -97,7 +97,7 @@ export const ChatInput = ({
       return;
     }
 
-    onSend({ role: 'user', content, timestamp: makeTimestamp() }, uploadFiles, useGrounding);
+    onSend({ role: 'user', content, timestamp: makeTimestamp(), useGrounding }, uploadFiles, useGrounding);
     setContent('');
     setUploadFiles([]);
 

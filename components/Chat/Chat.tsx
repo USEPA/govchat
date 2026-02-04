@@ -250,6 +250,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                 return {
                   ...message,
                   content: text,
+                  useGrounding,
                 };
               }
               return message;
@@ -596,7 +597,8 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             onScrollDownClick={handleScrollDown}
             onRegenerate={(useGrounding) => {
               if (currentMessage) {
-                handleSend(currentMessage, 2, [], useGrounding);
+                const lastMessage = selectedConversation?.messages[selectedConversation?.messages.length - 1];
+                handleSend(currentMessage, 2, [], lastMessage?.useGrounding ?? false);
               }
             }}
             showScrollDownButton={showScrollDownButton}
