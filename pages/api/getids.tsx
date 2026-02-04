@@ -12,11 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 	const openAI = createAzureOpenAI();
 
 	try {
-		const assistant = await openAI.beta.assistants.create({
-			model: DEFAULT_MODEL, // The model can be overwritten by the thread
-			tools: [{ type: 'file_search' }]
-		});
-		const vectorStore = await openAI.beta.vectorStores.create({
+		const store = await openAI.vectorStores.create({
 			expires_after: {
 				anchor: 'last_active_at',
 				days: 30
@@ -25,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 		// Can be spoofed if not set or at least cleared by the proxy
 		const userName = req.headers['x-ms-client-principal-name']?.toString() || '';
-		const valuesToStore = { assistantId: assistant.id, vectorStoreId: vectorStore.id, userName: userName };
+		const valuesToStore = { assistantId: null, vectorStoreId: store.id, userName: userName };
 
 		const secret = (process.env.AUTH_SECRET || '').slice(0, 32);
 		if (!secret) {

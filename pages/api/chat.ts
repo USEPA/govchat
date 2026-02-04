@@ -1,6 +1,6 @@
-import { DEFAULT_SYSTEM_PROMPT, DEFAULT_TEMPERATURE } from '@/utils/app/const';
+import { DEFAULT_SYSTEM_PROMPT } from '@/utils/app/const';
 import { OpenAIError, OpenAIStream } from '@/utils/server';
-import { ChatBody, Message } from '@/types/chat';
+import { ChatBody } from '@/types/chat';
 
 import { NextApiRequest, NextApiResponse } from 'next';
 
@@ -14,32 +14,19 @@ export const config = {
 
 const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
   try {
-    const { model, messages, key, prompt, temperature, assistantId, vectorStoreId, vectorStoreJWE, fileIds } = req.body as ChatBody;
+    const { prompt, conversation, useGrounding } = req.body as ChatBody;
     let promptToSend = prompt || DEFAULT_SYSTEM_PROMPT;
-    let temperatureToUse = temperature ?? DEFAULT_TEMPERATURE;
-    let messagesToSend: Message[] = [];
-
-    // Reverse loop through the messages to add them until the token limit is reached
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const message: Message = messages[i];
-      messagesToSend = [message, ...messagesToSend];
-    }
 
     //const principalName: string = req.headers['x-ms-client-principal-name']?.toString() || "";
     //const bearer: string = req.headers['x-ms-token-aad-access-token']?.toString() || req.headers['x-ms-client-principal']?.toString() || "";
     //const bearerAuth: string = req.headers['x-ms-client-principal-id']?.toString() || "";
     const userName: string = req.headers['x-ms-client-principal-name']?.toString() || "";
-
+    
     const stream = await OpenAIStream (
-      model,
-      promptToSend,
-      temperature,
-      messages,
+      conversation,
       userName,
-      assistantId,
-      vectorStoreId,
-      vectorStoreJWE,
-      fileIds
+      promptToSend,
+      useGrounding
     );
 
     res.setHeader('Content-Type', 'text/event-stream');

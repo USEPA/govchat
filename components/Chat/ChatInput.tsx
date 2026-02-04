@@ -30,11 +30,12 @@ import { PromptList } from './PromptList';
 import { VariableModal } from './VariableModal';
 
 import { FileUploadButton, FileUploadListing } from './FileUpload';
+import EnableGroundingButton from '../Buttons/EnableGroundingButting';
 
 
 interface Props {
-  onSend: (message: Message, uploadFiles: File[] | null) => void;
-  onRegenerate: () => void;
+  onSend: (message: Message, uploadFiles: File[] | null, useGrounding: boolean) => void;
+  onRegenerate: (useGrounding: boolean) => void;
   onScrollDownClick: () => void;
   stopConversationRef: MutableRefObject<boolean>;
   textareaRef: MutableRefObject<HTMLTextAreaElement | null>;
@@ -73,6 +74,7 @@ export const ChatInput = ({
   const promptListRef = useRef<HTMLUListElement | null>(null);
 
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+  const [useGrounding, setUseGrounding] = useState<boolean>(false);
 
   const filteredPrompts = prompts.filter((prompt) =>
     prompt.name.toLowerCase().includes(promptInputValue.toLowerCase()),
@@ -95,7 +97,7 @@ export const ChatInput = ({
       return;
     }
 
-    onSend({ role: 'user', content, timestamp: makeTimestamp() }, uploadFiles);
+    onSend({ role: 'user', content, timestamp: makeTimestamp() }, uploadFiles, useGrounding);
     setContent('');
     setUploadFiles([]);
 
@@ -260,9 +262,6 @@ export const ChatInput = ({
 
   return (
     <div className="absolute bottom-0 left-0 w-full border-transparent bg-gradient-to-b from-transparent via-white to-white pt-6 dark:border-white/20 dark:via-[#343541] dark:to-[#343541] md:pt-2">
-      
-
-      
 
       <div className="stretch mx-2 mt-4 flex flex-row gap-3 last:mb-2 md:mx-4 md:mt-[52px] md:last:mb-12 lg:mx-auto lg:max-w-3xl">
         {messageIsStreaming && (
@@ -281,7 +280,7 @@ export const ChatInput = ({
           selectedConversation.messages.length > 0 && (
             <button
               className="absolute top-0 left-0 right-0 mx-auto mb-3 flex w-fit items-center gap-3 rounded border border-neutral-200 bg-white py-2 px-4 text-black hover:opacity-50 dark:border-neutral-600 dark:bg-[#343541] dark:text-white md:mb-0 md:mt-2"
-              onClick={onRegenerate}
+              onClick={() => onRegenerate(useGrounding)}
               title="Regenerate response"
               aria-label='Regenerate response'
             >
@@ -289,17 +288,15 @@ export const ChatInput = ({
             </button>
           )}
 
-        
-        
-
         <div className="relative mx-2 flex w-full flex-grow flex-col rounded-md border border-black/10 bg-white shadow-[0_0_10px_rgba(0,0,0,0.10)] dark:border-gray-900/50 dark:bg-[#40414F] dark:text-white dark:shadow-[0_0_15px_rgba(0,0,0,0.10)] sm:mx-4">
            <FileUploadListing uploadFiles={uploadFiles} setUploadFiles={setUploadFiles} onCancelUpload={handleStopConversation} filesLeftToUpload={filesLeftToUpload} />
           <div className="relative flex">
             <FileUploadButton uploadFiles={uploadFiles} setUploadFiles={setUploadFiles} onCancelUpload={handleStopConversation} />
+            <EnableGroundingButton enabled={useGrounding} onToggle={() => setUseGrounding(!useGrounding)} />
 
           <textarea
             ref={textareaRef}
-            className={(uploadFiles.length ? "pl-4" : "pl-9") + (" placeholder-neutral-700 m-0 w-full box-border resize-none border-0 bg-transparent p-0 py-2 pr-4 text-black dark:bg-transparent dark:text-white md:py-3")}
+            className={"ml-1 placeholder-neutral-700 m-0 w-full box-border resize-none border-0 bg-transparent p-2 text-black dark:bg-transparent dark:text-white md:py-3"}
             style={{
               resize: 'none',
               bottom: `${textareaRef?.current?.scrollHeight}px`,
@@ -325,7 +322,7 @@ export const ChatInput = ({
           />
 
           <button
-            className="absolute right-2 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"
+            className="inline-block ml-1 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"
             onClick={handleSend}
             title="Send"
             aria-label='Send'

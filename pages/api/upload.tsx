@@ -18,7 +18,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     }
     const openAI = createAzureOpenAI();
 
-    let vectorStoreId = typeof req.query.vectorStoreId === 'string' ? req.query.vectorStoreId : undefined;
+    let vectorStoreId: string;// = typeof req.query.vectorStoreId === 'string' ? req.query.vectorStoreId : undefined;
     const vectorStoreJWE = typeof req.query.vectorStoreJWE === 'string' ? req.query.vectorStoreJWE : undefined;
     if (vectorStoreJWE) {
         vectorStoreId = (await decryptVectorStoreJWE(vectorStoreJWE, req.headers['x-ms-client-principal-name']?.toString() || '')).vectorStoreId;
@@ -41,13 +41,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
                         const fileStream = fs.createReadStream(tmpPath);
                         // Monkey patch in the filename for metadata, do not overwrite .path
                         (fileStream as any).name = filename.filename;
-                        const result = await openAI.files.create({
+
+						const result = await openAI.files.create({
                             purpose: 'assistants',
                             file: fileStream,
                         });
 
                         if (vectorStoreId) {
-                            await openAI.beta.vectorStores.files.create(
+                            await openAI.vectorStores.files.create(
                                 vectorStoreId,
                                 { file_id: result.id }
                             );
