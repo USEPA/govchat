@@ -87,14 +87,9 @@ async function getFileIdNameMap(openAI: AzureOpenAI, vectorStoreId: string): Pro
 export const OpenAIStream = async (conversation: Conversation, userName: string, systemPrompt: string, useGrounding: boolean) => {
   const openAI = createAzureOpenAI();
 	let modelId: string = conversation.model.id as string;
-	if (modelId === "gpt-4") {
-    modelId = "gpt-4o";
-  }
 
 	let temperature: number | undefined = conversation.temperature;
-	if (modelId == "o3-mini" || modelId == "o1" || modelId == "gpt-5") {
-		temperature = undefined;
-	}
+	temperature = undefined;
 
 	const messagesWithPrompt = [
 		{
