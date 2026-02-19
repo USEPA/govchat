@@ -49,6 +49,7 @@ interface Props {
   serverSideApiKeyIsSet: boolean;
   serverSidePluginKeysSet: boolean;
   defaultModelId: OpenAIModelID;
+  enableWebGrounding: boolean;
 }
 
 
@@ -56,6 +57,7 @@ const Home = ({
   serverSideApiKeyIsSet,
   serverSidePluginKeysSet,
   defaultModelId,
+  enableWebGrounding
 }: Props) => {
   const { t } = useTranslation('chat');
   const { getModels } = useApiService();
@@ -63,7 +65,7 @@ const Home = ({
   const [initialRender, setInitialRender] = useState<boolean>(true);
 
   const contextValue = useCreateReducer<HomeInitialState>({
-    initialState,
+    initialState: {...initialState, enableWebGrounding }
   });
 
   const {
@@ -414,6 +416,7 @@ export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
 
   const googleApiKey = process.env.GOOGLE_API_KEY;
   const googleCSEId = process.env.GOOGLE_CSE_ID;
+  const enableWebGrounding = (process.env.ENABLE_WEB_GROUNDING ?? 'false').toLowerCase() === 'true';
 
   if (googleApiKey && googleCSEId) {
     serverSidePluginKeysSet = true;
