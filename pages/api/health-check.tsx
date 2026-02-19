@@ -11,7 +11,7 @@ export default async function healthCheck(req: NextApiRequest, res: NextApiRespo
     req.headers['x-ms-client-principal-id'] = req.headers['x-ms-client-principal-id'] || '';
 
     req.body = {
-      model: OpenAIModels['gpt-5'],
+      model: OpenAIModels['gpt52chat'],
       messages: [
         {
           role: 'user',

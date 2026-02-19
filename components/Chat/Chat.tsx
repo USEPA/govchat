@@ -24,6 +24,7 @@ import {
 import { throttle } from '@/utils/data/throttle';
 
 import { ChatBody, Conversation, Message, makeTimestamp } from '@/types/chat';
+import { OpenAIModels } from '@/types/openai';
 
 import HomeContext from '@/utils/home/home.context';
 
@@ -250,6 +251,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                 return {
                   ...message,
                   content: text,
+                  useGrounding,
                 };
               }
               return message;
@@ -419,6 +421,17 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         selectedConversation.messages[selectedConversation.messages.length - 2],
       );
   }, [selectedConversation, throttledScrollDown]);
+
+  useEffect(() => {
+    if (!selectedConversation?.model) return;
+    const firstModel = Object.values(OpenAIModels)[0];
+    if (selectedConversation.model.id !== firstModel.id) {
+      handleUpdateConversation(selectedConversation, {
+        key: 'model',
+        value: firstModel,
+      });
+    }
+  }, [handleUpdateConversation, selectedConversation]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -596,7 +609,8 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             onScrollDownClick={handleScrollDown}
             onRegenerate={(useGrounding) => {
               if (currentMessage) {
-                handleSend(currentMessage, 2, [], useGrounding);
+                const lastMessage = selectedConversation?.messages[selectedConversation?.messages.length - 1];
+                handleSend(currentMessage, 2, [], lastMessage?.useGrounding ?? false);
               }
             }}
             showScrollDownButton={showScrollDownButton}

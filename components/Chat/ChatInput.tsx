@@ -76,6 +76,10 @@ export const ChatInput = ({
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [useGrounding, setUseGrounding] = useState<boolean>(false);
 
+  useEffect(() => {
+    setUseGrounding(false);
+  }, [selectedConversation?.id]);
+
   const filteredPrompts = prompts.filter((prompt) =>
     prompt.name.toLowerCase().includes(promptInputValue.toLowerCase()),
   );
@@ -97,7 +101,7 @@ export const ChatInput = ({
       return;
     }
 
-    onSend({ role: 'user', content, timestamp: makeTimestamp() }, uploadFiles, useGrounding);
+    onSend({ role: 'user', content, timestamp: makeTimestamp(), useGrounding }, uploadFiles, useGrounding);
     setContent('');
     setUploadFiles([]);
 
