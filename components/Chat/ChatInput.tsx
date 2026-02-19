@@ -55,7 +55,7 @@ export const ChatInput = ({
   const { t } = useTranslation('chat');
 
   const {
-    state: { selectedConversation, messageIsStreaming, prompts },
+    state: { selectedConversation, messageIsStreaming, prompts, enableWebGrounding },
 
     dispatch: homeDispatch,
   } = useContext(HomeContext);
@@ -292,7 +292,7 @@ export const ChatInput = ({
            <FileUploadListing uploadFiles={uploadFiles} setUploadFiles={setUploadFiles} onCancelUpload={handleStopConversation} filesLeftToUpload={filesLeftToUpload} />
           <div className="relative flex">
             <FileUploadButton uploadFiles={uploadFiles} setUploadFiles={setUploadFiles} onCancelUpload={handleStopConversation} />
-            <EnableGroundingButton enabled={useGrounding} onToggle={() => setUseGrounding(!useGrounding)} />
+            {enableWebGrounding && <EnableGroundingButton enabled={useGrounding} onToggle={() => setUseGrounding(!useGrounding)} />}
 
           <textarea
             ref={textareaRef}

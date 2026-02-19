@@ -9,6 +9,10 @@ import { ResponseInputItem, ResponseOutputText, ResponseStreamEvent, Tool } from
 import { Stream } from 'openai/core/streaming';
 import { AzureOpenAI } from 'openai';
 
+type Citation = ResponseOutputText.ContainerFileCitation | ResponseOutputText.URLCitation | ResponseOutputText.FileCitation | ResponseOutputText.FilePath;
+type CitationWithBounds = ResponseOutputText.ContainerFileCitation | ResponseOutputText.URLCitation;
+type CitationWithFileId = ResponseOutputText.FileCitation | ResponseOutputText.FilePath;
+
 export class OpenAIError extends Error {
   type: string;
   param: string;
@@ -23,12 +27,12 @@ export class OpenAIError extends Error {
   }
 }
 
-const replaceUrlCitations = (text: string, annotations: any[]) => {
-	if (annotations) {
-    const urlCitations = annotations.filter(ann => ann.type === 'url_citation') as ResponseOutputText.URLCitation[];
-    if (urlCitations.length > 0) {
-      let result = text.substring(0, urlCitations[0].start_index - 1);
-      urlCitations.forEach((ann) => {
+const replaceCitations = (text: string, annotations: Citation[]) => {
+	const citations = annotations.filter(ann => ann.type === 'container_file_citation' || ann.type === 'url_citation') as CitationWithBounds[];
+	if (citations) {
+    if (citations.length > 0) {
+      let result = text.substring(0, citations[0].start_index - 1);
+      citations.forEach((ann) => {
         result += `\n\n* ${text.substring(ann.start_index, ann.end_index)}`;
       });
 
@@ -39,10 +43,12 @@ const replaceUrlCitations = (text: string, annotations: any[]) => {
 	return text;
 }
 
-function replaceFileCitations(text: string, annotations?: any[], fileIdNameMap?: Record<string, string>): string {
+function replaceFileCitations(text: string, annotations: Citation[], fileIdNameMap?: Record<string, string>): string {
+	const citations = annotations.filter(ann => ann.type === 'file_citation' || ann.type === 'file_path') as CitationWithFileId[];
+
   //Support "fileciteturn0file12" style citations in GPT-5
   if (!fileIdNameMap) return text;
-  if ((!annotations || annotations.length === 0) && text.indexOf("") == -1) return text;
+  if ((!citations || citations.length === 0) && text.indexOf("") == -1) return text;
   let result = text;
   let loopBreaker = 10; // Prevent infinite loops
   while (/[\uE200-\uE210]/u.test(result) && --loopBreaker > 0) {
@@ -53,16 +59,14 @@ function replaceFileCitations(text: string, annotations?: any[], fileIdNameMap?:
       return "【5:" + p2 + "†" + realFilename + "】";
     });
   }
-  if (annotations) {
-    for (const ann of annotations) {
-      if (ann.type === 'file_citation' && ann.file_id) {
-        const citationRegex = /【*†(.+?)】/g;
+  if (citations) {
+    for (const ann of citations) {
+      const citationRegex = /【*†(.+?)】/g;
         result = result.replace(citationRegex, (match, filename) => {
           const fileId = ann.file_id;
           const realFilename = fileIdNameMap[fileId] || filename;
           return match.replace(filename, realFilename);
         });
-      }
     }
   }
   return result;
@@ -180,7 +184,7 @@ export const OpenAIStream = async (conversation: Conversation, userName: string,
 
 						case 'response.content_part.done':
 							if (chunk.part.type === 'output_text') {
-								text = replaceUrlCitations(chunk.part.text, chunk.part.annotations);
+								text = replaceCitations(chunk.part.text, chunk.part.annotations);
 								text = replaceFileCitations(text || '', chunk.part.annotations, fileIdNameMap);
 							}
 
