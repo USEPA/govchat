@@ -34,8 +34,8 @@ export const FileUploadButton = ({
       <span>
       <label
         className="inline-block ml-1 mt-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200 cursor-pointer"
-        title="Send"
-        aria-label="Send"
+        title="Attach files"
+        aria-label="Attach files"
       >
       <IconPaperclip size={18} />
       <input
