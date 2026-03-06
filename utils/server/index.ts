@@ -100,7 +100,7 @@ export const OpenAIStream = async (conversation: Conversation, userName: string,
 			role: 'system',
 			content: systemPrompt,
 		},
-		...conversation.messages.reverse().map(m => {
+		...conversation.messages.map(m => {
 			return m.role === 'fileUpload' 
 				? { content: m.content, role: 'system' } 
 				: { content: m.content, role: m.role }
