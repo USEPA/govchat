@@ -1,6 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import handler from './chat';
-import { OpenAIModels } from '@/types/openai';
 
 export default async function healthCheck(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -11,16 +10,28 @@ export default async function healthCheck(req: NextApiRequest, res: NextApiRespo
     req.headers['x-ms-client-principal-id'] = req.headers['x-ms-client-principal-id'] || '';
 
     req.body = {
-      model: OpenAIModels['gpt-5'],
-      messages: [
-        {
-          role: 'user',
-          content: 'test',
+      conversation: {
+        id: 0,
+        messages: [
+          {
+            role: 'user',
+            content: 'test',
+          },
+        ],
+        model: {
+          id: 'gpt-5',
+          name: 'GPT-5',
+          maxLength: 128_000 * 3.5, // *3.5 was the tested limit using some trial and error
+          tokenLimit: 128_000,
         },
-      ],
-      key: '',
       prompt: "You are an AI Assistant that uses Azure OpenAI. Follow the user's instructions carefully. Respond using markdown.",
       temperature: 0.5,
+      folderId: null,
+      tokenLength: 0,
+      characterLength: 0,
+    },
+      useGrounding: false,
+      prompt: "You are an AI Assistant that uses Azure OpenAI. Follow the user's instructions carefully. Respond using markdown."
     };
     await handler(req, res);
   } catch (error: unknown) {
