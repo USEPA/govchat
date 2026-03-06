@@ -15,7 +15,7 @@ export default async function healthCheck(req: NextApiRequest, res: NextApiRespo
         messages: [
           {
             role: 'user',
-            content: 'test',
+            content: 'Reply with "ok" to this message to confirm the health of the API.',
           },
         ],
         model: {
