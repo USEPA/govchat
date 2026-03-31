@@ -10,7 +10,7 @@ export interface OpenAIModel {
 
 export enum OpenAIModelID {
   GPT_5 = 'gpt-5',
-  GPT_4 = 'gpt-4',
+  GPT_4O = 'gpt-4o',
   GPT_3om = 'o3-mini',
   GPT_o1 = 'o1'
 }
@@ -25,9 +25,9 @@ export const OpenAIModels: Record<OpenAIModelID, OpenAIModel> = {
     maxLength: 128_000 * 3.5, // *3.5 was the tested limit using some trial and error
     tokenLimit: 128_000,
   },
-  [OpenAIModelID.GPT_4]: {
-    id: OpenAIModelID.GPT_4,
-    name: 'GPT-4',
+  [OpenAIModelID.GPT_4O]: {
+    id: OpenAIModelID.GPT_4O,
+    name: 'GPT-4o',
     maxLength: 128_000 * 3.5, // *3.5 was the tested limit using some trial and error
     tokenLimit: 128_000,
   },
