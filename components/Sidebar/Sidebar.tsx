@@ -62,17 +62,17 @@ const Sidebar = <T,>({
       >
         <div className="text-black text-[8pt]">
             <span className="mb-1 font-bold">Information About: </span>
-            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-basic-information">AI</a> |&nbsp;
-            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-generative-ai">Generative AI</a>
+            <a className="underline" href="https://work.epa.gov/ai">AI</a> |&nbsp;
+            <a className="underline" href="https://work.epa.gov/ai/artificial-intelligence-epa-generative-ai">Generative AI</a>
         </div>
 
         <div className="text-black text-[8pt]">
             <span className="mb-1 font-bold">AI: </span>
-            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-ai-use-cases">Use Cases</a> |&nbsp;
-            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-training-and-events">Training</a> |&nbsp;
-            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-resources">Resources</a><br/>
-            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-ai-community">Community of Practice</a> |&nbsp;
-            <a className="underline" href="https://work.epa.gov/data/artificial-intelligence-epa-government-use">Government Use</a>
+            <a className="underline" href="https://work.epa.gov/artificial-intelligence/artificial-intelligence-use-cases-inventory">Use Cases</a> |&nbsp;
+            <a className="underline" href="https://work.epa.gov/ai/artificial-intelligence-epa-training-and-events">Training</a> |&nbsp;
+            <a className="underline" href="https://work.epa.gov/ai/artificial-intelligence-epa-resources">Resources</a><br/>
+            <a className="underline" href=" https://work.epa.gov/ai/artificial-intelligence-epa-ai-community">Community of Practice</a> |&nbsp;
+            <a className="underline" href="https://work.epa.gov/ai/artificial-intelligence-epa-government-use ">Government Use</a>
         </div>
 
         <div className="flex items-center">
