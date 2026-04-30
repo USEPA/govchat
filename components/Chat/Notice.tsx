@@ -13,7 +13,7 @@ export const Notice: FC = () => {
                 <ul>
                     <li>
                         <span>
-                            If you are a litigation hold custodian, <b>do not input any information relating to a subject matter addressed in a litigation hold into this tool</b>. 
+                            If you are a litigation hold custodian, <b>do not input any information relating to a subject matter addressed in a litigation hold into this tool.</b> Additionally, do not enter any information that is subject to a court-issued protective order into this tool, unless you have been given permission to do so by the DOJ attorney assigned to the matter. 
                             To determine if you are a litigation hold custodian and to review your litigation holds, access your personal Relativity Legal Hold (RLH) custodian portal by locating the most recent email
                             from <a href="mailto:EPA_Legal_Hold@epa.gov" title="mailto:EPA_Legal_Hold@epa.gov" className="underline">EPA_Legal_Hold@epa.gov</a> with
                             the subject line “Global Notice – Relativity Legal Hold Reminder” sent to you within the past 90 days. 
