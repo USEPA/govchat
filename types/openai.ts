@@ -11,10 +11,6 @@ export interface OpenAIModel {
 export enum OpenAIModelID {
   GPT_54m = 'gpt-5.4-mini',
   GPT_54 = 'gpt-5.4',
-  GPT_5 = 'gpt-5',
-  GPT_4O = 'gpt-4o',
-  GPT_3om = 'o3-mini',
-  GPT_o1 = 'o1'
 }
 
 // in case the `DEFAULT_MODEL` environment variable is not set or set to an unsupported model
@@ -31,30 +27,6 @@ export const OpenAIModels: Record<OpenAIModelID, OpenAIModel> = {
     id: OpenAIModelID.GPT_54,
     name: 'GPT-5.4',
     maxLength: 128_000 * 100, // Testing using trial and error to see the limit
-    tokenLimit: 128_000,
-  },
-  [OpenAIModelID.GPT_5]: {
-    id: OpenAIModelID.GPT_5,
-    name: 'GPT-5',
-    maxLength: 128_000 * 3.5, // *3.5 was the tested limit using some trial and error
-    tokenLimit: 128_000,
-  },
-  [OpenAIModelID.GPT_4O]: {
-    id: OpenAIModelID.GPT_4O,
-    name: 'GPT-4',
-    maxLength: 128_000 * 3.5, // *3.5 was the tested limit using some trial and error
-    tokenLimit: 128_000,
-  },
-  [OpenAIModelID.GPT_3om]: {
-    id: OpenAIModelID.GPT_3om,
-    name: 'o3-mini',
-    maxLength: 128_000 * 3.5, // *3.5 was the tested limit using some trial and error
-    tokenLimit: 128_000,
-  },
-  [OpenAIModelID.GPT_o1]: {
-    id: OpenAIModelID.GPT_o1,
-    name: 'o1',
-    maxLength: 128_000 * 3.5, // *3.5 was the tested limit using some trial and error
     tokenLimit: 128_000,
   }
 };
