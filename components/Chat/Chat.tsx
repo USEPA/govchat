@@ -24,7 +24,7 @@ import {
 import { throttle } from '@/utils/data/throttle';
 
 import { ChatBody, Conversation, Message, makeTimestamp } from '@/types/chat';
-import { OpenAIModels } from '@/types/openai';
+import { OpenAIModels, fallbackModelID } from '@/types/openai';
 
 import HomeContext from '@/utils/home/home.context';
 
@@ -424,11 +424,18 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
 
   useEffect(() => {
     if (!selectedConversation?.model) return;
-    const firstModel = Object.values(OpenAIModels)[0];
-    if (selectedConversation.model.id !== firstModel.id) {
+
+    const validModelIds = new Set(
+      Object.values(OpenAIModels).map((model) => model.id),
+    );
+
+    if (!validModelIds.has(selectedConversation.model.id)) {
+      const fallbackModel =
+        OpenAIModels[fallbackModelID] ?? Object.values(OpenAIModels)[0];
+
       handleUpdateConversation(selectedConversation, {
         key: 'model',
-        value: firstModel,
+        value: fallbackModel,
       });
     }
   }, [handleUpdateConversation, selectedConversation]);
