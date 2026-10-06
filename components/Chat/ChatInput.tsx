@@ -80,6 +80,37 @@ export const ChatInput = ({
     setUseGrounding(false);
   }, [selectedConversation?.id]);
 
+  useEffect(() => {
+    if (
+      !selectedConversation ||
+      selectedConversation.messages.length > 0 ||
+      !window.location.hash
+    ) {
+      return;
+    }
+
+    try {
+      const encodedPrompt = window.location.hash.slice(1);
+      const binaryPrompt = window.atob(encodedPrompt);
+      const promptBytes = Uint8Array.from(binaryPrompt, (character) =>
+        character.charCodeAt(0),
+      );
+      const prompt = new TextDecoder().decode(promptBytes);
+
+      setContent(prompt);
+      setPromptCharacterLength(
+        (selectedConversation.characterLength ?? 0) + prompt.length,
+      );
+    } catch {
+    } finally {
+      window.history.replaceState(
+        window.history.state,
+        '',
+        `${window.location.pathname}${window.location.search}`,
+      );
+    }
+  }, [selectedConversation]);
+
   const filteredPrompts = prompts.filter((prompt) =>
     prompt.name.toLowerCase().includes(promptInputValue.toLowerCase()),
   );
