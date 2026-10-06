@@ -62,12 +62,12 @@ const Sidebar = <T,>({
       >
         <div className="text-black text-[8pt]">
             <span className="mb-1 font-bold">Information About: </span>
-            <a className="underline" href="https://work.epa.gov/ai">AI</a> |&nbsp;
-            <a className="underline" href="https://work.epa.gov/ai/artificial-intelligence-epa-generative-ai">Generative AI</a>
+            <a className="underline" href="https://work.epa.gov/ai">SI</a> |&nbsp;
+            <a className="underline" href="https://work.epa.gov/ai/artificial-intelligence-epa-generative-ai">Generative SI</a>
         </div>
 
         <div className="text-black text-[8pt]">
-            <span className="mb-1 font-bold">AI: </span>
+            <span className="mb-1 font-bold">SI: </span>
             <a className="underline" href="https://work.epa.gov/artificial-intelligence/artificial-intelligence-use-cases-inventory">Use Cases</a> |&nbsp;
             <a className="underline" href="https://work.epa.gov/ai/artificial-intelligence-epa-training-and-events">Training</a> |&nbsp;
             <a className="underline" href="https://work.epa.gov/ai/artificial-intelligence-epa-resources">Resources</a><br/>

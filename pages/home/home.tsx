@@ -368,7 +368,7 @@ const Home = ({
       }}
     >
       <Head>
-        <title>Internal GenAI Tool</title>
+        <title>SI-Work</title>
         <meta name="description" content="An internal Generative Artificial Intelligence (GenAI) tool which uses AI language models designed and trained to understand and generate human-like language responses, using knowledge pulled from various models" />
         <meta
           name="viewport"
