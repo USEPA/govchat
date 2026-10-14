@@ -1,5 +1,6 @@
 import { DEFAULT_SYSTEM_PROMPT } from '@/utils/app/const';
 import { OpenAIError, OpenAIStream } from '@/utils/server';
+import { isGroundingAllowed } from '@/utils/server/grounding';
 import { ChatBody } from '@/types/chat';
 
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -26,7 +27,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
       conversation,
       userName,
       promptToSend,
-      useGrounding
+      !!useGrounding && isGroundingAllowed(userName)
     );
 
     res.setHeader('Content-Type', 'text/event-stream');

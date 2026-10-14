@@ -37,6 +37,7 @@ import { Chatbar } from '@/components/Chatbar/Chatbar';
 import { Navbar } from '@/components/Mobile/Navbar';
 import Promptbar from '@/components/Promptbar';
 
+import { isGroundingAllowed } from '@/utils/server/grounding';
 import HomeContext from '@/utils/home/home.context';
 import { HomeInitialState, initialState } from '@/utils/home/home.state';
 
@@ -403,7 +404,7 @@ const Home = ({
 export default Home;
 
 
-export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
+export const getServerSideProps: GetServerSideProps = async ({ locale, req }) => {
   const defaultModelId =
     (process.env.DEFAULT_MODEL &&
       Object.values(OpenAIModelID).includes(
@@ -416,7 +417,9 @@ export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
 
   const googleApiKey = process.env.GOOGLE_API_KEY;
   const googleCSEId = process.env.GOOGLE_CSE_ID;
-  const enableWebGrounding = (process.env.ENABLE_WEB_GROUNDING ?? 'false').toLowerCase() === 'true';
+  const enableWebGrounding = isGroundingAllowed(
+    req.headers['x-ms-client-principal-name']?.toString() || '',
+  );
 
   if (googleApiKey && googleCSEId) {
     serverSidePluginKeysSet = true;
