@@ -21,6 +21,7 @@ import {
   saveConversations,
   updateConversation,
 } from '@/utils/app/conversation';
+import { useImportHistory } from '@/hooks/useImportHistory';
 import { throttle } from '@/utils/data/throttle';
 
 import { ChatBody, Conversation, Message, makeTimestamp } from '@/types/chat';
@@ -37,6 +38,7 @@ import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
 import { Notice } from './Notice';
 import { MemoizedChatMessage } from './MemoizedChatMessage';
 import { AdvancedSettings } from './AdvancedSettings';
+import { DownloadLocalStorage } from '../Settings/DownloadLocalStorage';
 import { timeStamp } from 'console';
 import { ActionType } from '@/hooks/useCreateReducer';
 import { HomeInitialState } from '@/utils/home/home.state';
@@ -95,6 +97,16 @@ export const Chat = memo(({ stopConversationRef, bannerMsg }: Props) => {
   const [showScrollDownButton, setShowScrollDownButton] =
     useState<boolean>(false);
   const [filesLeftToUpload, setFilesLeftToUpload] = useState<number>(0);
+  const importHistory = useImportHistory();
+
+  const handleHistoryDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    const file = Array.from(e.dataTransfer.files).find((f) =>
+      f.name.toLowerCase().endsWith('.json'),
+    );
+    if (!file) return;
+    e.preventDefault();
+    await importHistory(file);
+  };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -514,7 +526,7 @@ export const Chat = memo(({ stopConversationRef, bannerMsg }: Props) => {
             aria-live="polite"
           >
             {selectedConversation?.messages.length === 0 ? (
-              <>
+              <div onDragOver={(e) => e.preventDefault()} onDrop={handleHistoryDrop}>
                 {bannerMsg && (
                   <div
                     role="alert"
@@ -532,6 +544,7 @@ export const Chat = memo(({ stopConversationRef, bannerMsg }: Props) => {
                     >
                       {bannerMsg}
                     </MemoizedReactMarkdown>
+                    <DownloadLocalStorage className="underline cursor-pointer" />
                   </div>
                 )}
                 <div className="mx-auto flex flex-col space-y-5 md:space-y-0 mb-40 px-3 pt-5 md:pt-6 sm:max-w-[600px]">
@@ -563,7 +576,7 @@ export const Chat = memo(({ stopConversationRef, bannerMsg }: Props) => {
                     />
                   </div>
                 </div>
-              </>
+              </div>
             ) : (
               <>
                 <div className="sticky top-0 z-10 flex justify-center border border-b-neutral-300 bg-neutral-100 py-2 text-sm text-neutral-700 dark:border-none dark:bg-[#444654] dark:text-neutral-200">

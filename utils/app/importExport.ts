@@ -71,7 +71,7 @@ function currentDate() {
   return `${month}-${day}`;
 }
 
-export const exportData = () => {
+export const exportData = (filename?: string) => {
   let history = localStorage.getItem('conversationHistory');
   let folders = localStorage.getItem('folders');
   let prompts = localStorage.getItem('prompts');
@@ -100,13 +100,29 @@ export const exportData = () => {
   });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
-  link.download = `chatbot_ui_history_${currentDate()}.json`;
+  link.download = filename ?? `chatbot_ui_history_${currentDate()}.json`;
   link.href = url;
   link.style.display = 'none';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+};
+
+// Accepts any export format, plus legacy raw localStorage dumps (values stored as JSON strings).
+export const parseImportFile = (text: string): SupportedExportFormats => {
+  const data = JSON.parse(text);
+  if (!data || typeof data !== 'object' || !('conversationHistory' in data)) {
+    return data;
+  }
+  const parse = (value: unknown) =>
+    typeof value === 'string' ? JSON.parse(value) : value ?? [];
+  return {
+    version: 4,
+    history: parse(data.conversationHistory),
+    folders: parse(data.folders),
+    prompts: parse(data.prompts),
+  } as LatestExportFormat;
 };
 
 export const importData = (
