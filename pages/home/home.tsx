@@ -51,6 +51,7 @@ interface Props {
   serverSidePluginKeysSet: boolean;
   defaultModelId: OpenAIModelID;
   enableWebGrounding: boolean;
+  bannerMsg: string;
 }
 
 
@@ -58,7 +59,8 @@ const Home = ({
   serverSideApiKeyIsSet,
   serverSidePluginKeysSet,
   defaultModelId,
-  enableWebGrounding
+  enableWebGrounding,
+  bannerMsg,
 }: Props) => {
   const { t } = useTranslation('chat');
   const { getModels } = useApiService();
@@ -392,7 +394,7 @@ const Home = ({
             <Chatbar />
 
             <div className="flex flex-1">
-              <Chat stopConversationRef={stopConversationRef} />
+              <Chat stopConversationRef={stopConversationRef} bannerMsg={bannerMsg} />
             </div>
 
           </div>
@@ -425,8 +427,14 @@ export const getServerSideProps: GetServerSideProps = async ({ locale, req }) =>
     serverSidePluginKeysSet = true;
   }
 
+  const bannerDomain = (process.env.BANNER_DOMAIN || 'localhost').toLowerCase();
+  const requestHost = (req.headers.host || '').split(':')[0].toLowerCase();
+  const bannerMsg =
+    requestHost === bannerDomain ? process.env.BANNER_DOMAIN_MSG || '' : '';
+
   return {
     props: {
+      bannerMsg,
       serverSideApiKeyIsSet: !!process.env.OPENAI_API_KEY,
       enableWebGrounding: enableWebGrounding,
       defaultModelId,

@@ -33,6 +33,7 @@ import { ChatInput } from './ChatInput';
 import { ChatLoader } from './ChatLoader';
 import { ErrorMessageDiv } from './ErrorMessageDiv';
 import { Rules } from './Rules';
+import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
 import { Notice } from './Notice';
 import { MemoizedChatMessage } from './MemoizedChatMessage';
 import { AdvancedSettings } from './AdvancedSettings';
@@ -42,6 +43,7 @@ import { HomeInitialState } from '@/utils/home/home.state';
 
 interface Props {
   stopConversationRef: MutableRefObject<boolean>;
+  bannerMsg?: string;
 }
 
 const showError = (errorMessage: string, dispatch: Dispatch<ActionType<HomeInitialState>>) => {
@@ -67,7 +69,7 @@ function insertMessageBeforeLast(
   };
 }
 
-export const Chat = memo(({ stopConversationRef }: Props) => {
+export const Chat = memo(({ stopConversationRef, bannerMsg }: Props) => {
   const { t } = useTranslation('chat');
 
   const {
@@ -513,6 +515,25 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           >
             {selectedConversation?.messages.length === 0 ? (
               <>
+                {bannerMsg && (
+                  <div
+                    role="alert"
+                    className="w-full bg-yellow-300 px-4 py-2 text-center font-semibold text-black"
+                  >
+                    <MemoizedReactMarkdown
+                      components={{
+                        p: ({ children }) => <p>{children}</p>,
+                        a: ({ href, children }) => (
+                          <a href={href} className="underline" target="_blank" rel="noopener noreferrer">
+                            {children}
+                          </a>
+                        ),
+                      }}
+                    >
+                      {bannerMsg}
+                    </MemoizedReactMarkdown>
+                  </div>
+                )}
                 <div className="mx-auto flex flex-col space-y-5 md:space-y-0 mb-40 px-3 pt-5 md:pt-6 sm:max-w-[600px]">
                   <div className="text-center text-3xl font-semibold text-gray-800 dark:text-gray-100">
                     {models.length === 0 ? (
