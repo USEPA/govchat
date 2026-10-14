@@ -68,7 +68,8 @@ function currentDate() {
   const date = new Date();
   const month = date.getMonth() + 1;
   const day = date.getDate();
-  return `${month}-${day}`;
+  const year = date.getFullYear();
+  return `${month}-${day}-${year}`;
 }
 
 export const exportData = (filename?: string) => {
@@ -100,7 +101,7 @@ export const exportData = (filename?: string) => {
   });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
-  link.download = filename ?? `chatbot_ui_history_${currentDate()}.json`;
+  link.download = filename ?? `conversation_history_${currentDate()}.json`;
   link.href = url;
   link.style.display = 'none';
   document.body.appendChild(link);
