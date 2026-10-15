@@ -62,17 +62,17 @@ const Sidebar = <T,>({
       >
         <div className="text-black text-[8pt]">
             <span className="mb-1 font-bold">Information About: </span>
-            <a className="underline" href="https://work.epa.gov/ai">SI</a> |&nbsp;
-            <a className="underline" href="https://work.epa.gov/ai/artificial-intelligence-epa-generative-ai">Generative SI</a>
+            <a className="underline" href="https://work.epa.gov/node/1737375">SI</a> |&nbsp;
+            <a className="underline" href="https://work.epa.gov/node/1964150">New Features</a>
         </div>
 
         <div className="text-black text-[8pt]">
             <span className="mb-1 font-bold">SI: </span>
-            <a className="underline" href="https://work.epa.gov/artificial-intelligence/artificial-intelligence-use-cases-inventory">Use Cases</a> |&nbsp;
-            <a className="underline" href="https://work.epa.gov/ai/artificial-intelligence-epa-training-and-events">Training</a> |&nbsp;
-            <a className="underline" href="https://work.epa.gov/ai/artificial-intelligence-epa-resources">Resources</a><br/>
-            <a className="underline" href=" https://work.epa.gov/ai/artificial-intelligence-epa-ai-community">Community of Practice</a> |&nbsp;
-            <a className="underline" href="https://work.epa.gov/ai/artificial-intelligence-epa-government-use ">Government Use</a>
+            <a className="underline" href="https://work.epa.gov/node/1964154">Use Cases</a> |&nbsp;
+            <a className="underline" href="https://work.epa.gov/node/611113">Training</a> |&nbsp;
+            <a className="underline" href="https://work.epa.gov/node/611111">Resources</a><br/>
+            <a className="underline" href="https://work.epa.gov/node/611115">Community of Practice</a> |&nbsp;
+            <a className="underline" href="https://work.epa.gov/node/611116#copy">Copying</a>
         </div>
 
         <div className="flex items-center">
